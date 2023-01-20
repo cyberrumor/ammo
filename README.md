@@ -12,8 +12,14 @@ Obviously Organizes Mods
 
 # Build instructions
 ```
+git clone https://github.com/cyberrumor/oom
+cd oom
 cargo build --release
 ```
 
 # Installation instructions
-- copy the binary to the folder with Skyrim in it.
+```
+sudo cp target/release/oom /usr/local/bin
+mkdir -p ~/.local/share/applications
+cp oom.desktop ~/.local/share/applications
+```
