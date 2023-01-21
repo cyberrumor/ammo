@@ -65,9 +65,9 @@ class Oom:
         """
         outputs a list of all mods, then a list of all plugins.
         """
-        for components in [self.mods, self.plugins]:
+        for index, components in enumerate([self.mods, self.plugins]):
             print()
-            print(" ### | Enabled | Name")
+            print(f" ### | Enabled | {'Mod name' if index == 0 else 'Plugin name'}")
             print("-----|---------|-----")
             for priority, component in enumerate(components):
                 num = f"[{priority}]     "
@@ -82,7 +82,18 @@ class Oom:
         """
         prints help text.
         """
-        print("this is some placeholder help")
+        print()
+        for k, v in {
+            "help": "show this help",
+            "activate": "activate a component. Usage: activate mod|plugin <index>",
+            "deactivate": "deactivate a component. Usage: deactivate mod|plugin <index>",
+            "commit": "commit the configuration to disk. Usage: commit",
+            "delete": "delete a mod and its plugins. Forces config reload from disk. Usage: delete <index>",
+            "move": "move a component from index to index. Usage: move mod|plugin <from_index> <to_index>",
+            "exit": "quit oom without applying changes.",
+        }.items():
+            print(f"{k} - {v}")
+        print()
         input("[Enter] to continue")
         return True
 
@@ -122,8 +133,19 @@ class Oom:
         return self._set_component_state(mod_type, mod_index, False)
 
 
+    def delete(self, mode_index):
+        """
+        deletes a component from oom's mod dir. Forces data reload from disk,
+        possibly discarding unapplied changes.
+        """
+        return True
+
+
     def move(self, mod_type, old_mod_index, new_mod_index):
-        return False
+        """
+        move a mod or plugin from old index to new index.
+        """
+        return True
         
 
     def commit(self):
@@ -141,12 +163,13 @@ class Oom:
 
         self.command = {
             # cmd: (method, len(args))
-            "help": (self.help, 0),
-            "activate": (self.activate, 2),
-            "deactivate": (self.deactivate, 2),
-            "move": (self.move, 2),
-            "commit": (self.commit, 0),
-            "exit": (exit, 0),
+            "help": {"func": self.help, "num_args": 0},
+            "activate": {"func": self.activate, "num_args": 2},
+            "deactivate": {"func": self.deactivate, "num_args": 2},
+            "move": {"func": self.move, "num_args": 3},
+            "commit": {"func": self.commit, "num_args": 0},
+            "delete": {"func": self.delete, "num_args": 1},
+            "exit": {"func": exit, "num_args": 0},
         }
 
         cmd = ""
@@ -154,6 +177,8 @@ class Oom:
             os.system("clear")
             self.print_status()
             cmd = input(">_: ")
+            if not cmd:
+                continue
             cmds = cmd.split()
             args = []
             func = cmds[0]
@@ -162,20 +187,19 @@ class Oom:
             if func not in self.command:
                 self.help()
                 continue
-            cmd_arg_pair = self.command[func]
-            if cmd_arg_pair[1] != len(args):
-                print(f"{func} expected {cmd_arg_pair[1]} arg(s) but received {len(args)}")
+            command = self.command[func]
+            if command["num_args"] != len(args):
+                print(f"{func} expected {command['num_args']} arg(s) but received {len(args)}")
                 input("[Enter]")
                 continue
-            if cmd_arg_pair[1] == 0:
-                ret = cmd_arg_pair[0]()
-            elif cmd_arg_pair[1] == 1:
-                ret = cmd_arg_pair[0](args[0])
-            elif cmd_arg_pair[1] == 2:
-                ret = cmd_arg_pair[0](args[0], args[1])
+            if command["num_args"] == 0:
+                ret = command["func"]()
+            elif command["num_args"] == 1:
+                ret = command["func"](args[0])
+            elif command["num_args"] == 2:
+                ret = command["func"](args[0], args[1])
             else:
-                print("placeholder error")
-                exit()
+                ret = command["func"](args[0], args[1], args[2])
 
             if not ret:
                 input("[Enter]")
