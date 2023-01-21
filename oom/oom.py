@@ -17,12 +17,11 @@ CONF_DIR = os.path.join(HOME, ".config/oom/")
 
 
 class Oom:
-    def __init__(self, conf, plugins):
+    def __init__(self, conf, plugin_file):
         self.conf = conf
-        self.plugins = plugins
+        self.plugin_file = plugin_file
         self.mods = []
-        self.esps = []
-
+        self.plugins = []
 
     def load_mods(self):
         if os.path.isfile(self.conf):
@@ -34,25 +33,39 @@ class Oom:
         self.mods = mods
 
 
-    def load_mods_from(self, conf):
+    def load_mods_from_conf(self):
         pass
 
 
-    def load_esps(self):
-        esps = []
-        with open(self.plugins, "r") as file:
+    def load_plugins(self):
+        plugins = []
+        with open(self.plugin_file, "r") as file:
             for line in file:
                 if line.startswith('#'):
                     continue
                 if line.startswith('*'):
-                    esps.append(Esp(line.strip('*').strip(), True))
+                    plugins.append(Esp(line.strip('*').strip(), True))
                 else:
-                    esps.append(Esp(line.strip(), False))
-        self.esps = esps
+                    plugins.append(Esp(line.strip(), False))
+        self.plugins = plugins
+        return True
+
+
+    def save_plugins(self):
+        """
+        responsible for writing Plugins.txt
+        """
+        with open(self.plugins, "w") as file:
+            for esp in self.plugins:
+                file.write(f"{'*' if esp.enabled else ''}{esp.name}\n")
+        return True
 
 
     def print_status(self):
-        for components in [self.mods, self.esps]:
+        """
+        outputs a list of all mods, then a list of all plugins.
+        """
+        for components in [self.mods, self.plugins]:
             print()
             print(" ### | Enabled | Name")
             print("-----|---------|-----")
@@ -65,17 +78,108 @@ class Oom:
             print()
 
 
+    def help(self, *args):
+        """
+        prints help text.
+        """
+        print("this is some placeholder help")
+        input("[Enter] to continue")
+        return True
+
+
+    def _set_component_state(self, mod_type, mod_index, state):
+        """
+        activate or deactivate a component. Returns success.
+        """
+        index = None
+        try:
+            index = int(mod_index)
+        except ValueError:
+            return False
+
+        # validation
+        if mod_type not in ["plugin", "mod"]:
+            print(f"expected 'plugin' or 'mod', got arg {mod_type}")
+            return False
+        components = self.plugins.copy() if mod_type == "plugin" else self.mods.copy()
+        if index > len(components) - 1:
+            return False
+        components[index].enabled = state
+        return True
+
+
+    def activate(self, mod_type, mod_index):
+        """
+        activate a component. Returns success.
+        """
+        return self._set_component_state(mod_type, mod_index, True)
+
+
+    def deactivate(self, mod_type, mod_index):
+        """
+        deactivate a component. Returns success.
+        """
+        return self._set_component_state(mod_type, mod_index, False)
+
+
+    def move(self, mod_type, old_mod_index, new_mod_index):
+        return False
+        
+
+    def commit(self):
+        """
+        This method is responsible for computing the files to stage,
+        writing oom.conf, and writing Plugins.txt.
+        """
+        return False
+
+
     def run(self):
         # complete setup
         self.load_mods()
-        self.load_esps()
+        self.load_plugins()
+
+        self.command = {
+            # cmd: (method, len(args))
+            "help": (self.help, 0),
+            "activate": (self.activate, 2),
+            "deactivate": (self.deactivate, 2),
+            "move": (self.move, 2),
+            "commit": (self.commit, 0),
+            "exit": (exit, 0),
+        }
 
         cmd = ""
         while cmd != "exit":
             os.system("clear")
             self.print_status()
             cmd = input(">_: ")
+            cmds = cmd.split()
+            args = []
+            func = cmds[0]
+            if len(cmds) > 1:
+                args = cmds[1:]
+            if func not in self.command:
+                self.help()
+                continue
+            cmd_arg_pair = self.command[func]
+            if cmd_arg_pair[1] != len(args):
+                print(f"{func} expected {cmd_arg_pair[1]} arg(s) but received {len(args)}")
+                input("[Enter]")
+                continue
+            if cmd_arg_pair[1] == 0:
+                ret = cmd_arg_pair[0]()
+            elif cmd_arg_pair[1] == 1:
+                ret = cmd_arg_pair[0](args[0])
+            elif cmd_arg_pair[1] == 2:
+                ret = cmd_arg_pair[0](args[0], args[1])
+            else:
+                print("placeholder error")
+                exit()
 
+            if not ret:
+                input("[Enter]")
+                continue
 
 if __name__ == "__main__":
 
