@@ -1,20 +1,8 @@
 #!/usr/bin/env python3
 import sys
 import os
-from mod import Mod, Esp
-
-APP_ID = "489830"
-APP_NAME = "Skyrim Special Edition"
-HOME = os.environ["HOME"]
-STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
-PFX = os.path.join(STEAM, f"compatdata/{APP_ID}/pfx/")
-GAME_DIR = os.path.join(STEAM, f"common/{APP_NAME}")
-PLUGINS = os.path.join(STEAM, f"{PFX}/drive_c/users/steamuser/AppData/Local/{APP_NAME}/Plugins.txt")
-DATA = os.path.join(GAME_DIR, "Data")
-MODS = os.path.join(HOME, ".local/share/oom/mods")
-DOWNLOADS = os.path.join(HOME, ".local/share/oom/downloads")
-CONF_DIR = os.path.join(HOME, ".config/oom/")
-
+from const import *
+from mod import Mod, Plugin
 
 class Oom:
     def __init__(self, conf, plugin_file):
@@ -24,12 +12,16 @@ class Oom:
         self.plugins = []
 
     def load_mods(self):
+        """
+        Instance a  Mod class for each mod folder in oom's mod directory.
+        """
         if os.path.isfile(self.conf):
             return load_mods_from(self.conf)
         mods = []
-        mod_folders = [i for i in os.listdir(MODS) if os.path.isdir(i)]
-        for mod in os.listdir(MODS):
-            mods.append(Mod(mod, os.path.join(MODS, mod), False))
+        mod_folders = [i for i in os.listdir(MODS) if os.path.isdir(os.path.join(MODS, i))]
+        for mod_folder in mod_folders:
+            mod = Mod(mod_folder, os.path.join(MODS, mod_folder), False)
+            mods.append(mod)
         self.mods = mods
 
 
@@ -38,16 +30,29 @@ class Oom:
 
 
     def load_plugins(self):
-        plugins = []
         with open(self.plugin_file, "r") as file:
             for line in file:
                 if line.startswith('#'):
                     continue
+
+                name = line.strip('*').strip()
+                parent_mod = None
+                for mod in self.mods:
+                    if name in mod.plugins:
+                        parent_mod = mod
+                        break
+
+                enabled = False
                 if line.startswith('*'):
-                    plugins.append(Esp(line.strip('*').strip(), True))
-                else:
-                    plugins.append(Esp(line.strip(), False))
-        self.plugins = plugins
+                    enabled = True
+                    parent_mod.enabled = True
+
+
+                plugin = Plugin(name, enabled, parent_mod)
+                # don't manage plugins belonging to disabled mods.
+                if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
+                    self.plugins.append(plugin)
+
         return True
 
 
@@ -56,8 +61,9 @@ class Oom:
         responsible for writing Plugins.txt
         """
         with open(self.plugins, "w") as file:
-            for esp in self.plugins:
-                file.write(f"{'*' if esp.enabled else ''}{esp.name}\n")
+            # only save plugins to Plugins.txt if their parent mod is enabled.
+            for plugin in self.plugins:
+                file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
         return True
 
 
@@ -67,13 +73,13 @@ class Oom:
         """
         for index, components in enumerate([self.mods, self.plugins]):
             print()
-            print(f" ### | Enabled | {'Mod name' if index == 0 else 'Plugin name'}")
-            print("-----|---------|-----")
+            print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
+            print("-----|-----------|-----")
             for priority, component in enumerate(components):
                 num = f"[{priority}]     "
                 l = len(str(priority)) + 1
                 num = num[0:-l]
-                enabled = "[True]    " if component.enabled else "[False]   "
+                enabled = "[True]     " if component.enabled else "[False]    "
                 print(f"{num} {enabled} {component.name}")
             print()
 
@@ -100,42 +106,55 @@ class Oom:
 
     def _set_component_state(self, mod_type, mod_index, state):
         """
-        activate or deactivate a component. Returns success.
+        Activate or deactivate a component.
+        Returns which plugins need to be added to or removed from self.plugins.
         """
         index = None
         try:
             index = int(mod_index)
+            if index < 0:
+                raise ValueError
         except ValueError:
+            print("Expected a number greater than or equal to 0")
             return False
 
         # validation
         if mod_type not in ["plugin", "mod"]:
             print(f"expected 'plugin' or 'mod', got arg {mod_type}")
             return False
-        components = self.plugins.copy() if mod_type == "plugin" else self.mods.copy()
-        if index > len(components) - 1:
+
+        components = self.plugins if mod_type == "plugin" else self.mods
+        if not len(components):
+            print(f"Install mods to '{MODS}' to manage them with oom.")
+            print(f"To see your plugins, you must activate the mods they belong to.")
             return False
-        components[index].enabled = state
-        return True
+
+        if index > len(components) - 1:
+            print(f"Expected int 0 through {len(components) - 1} (inclusive)")
+            return False
+
+        return components[index].set(state, self.plugins)
 
 
     def activate(self, mod_type, mod_index):
         """
         activate a component. Returns success.
         """
-        return self._set_component_state(mod_type, mod_index, True)
+        self._set_component_state(mod_type, mod_index, True)
+        return True
 
 
     def deactivate(self, mod_type, mod_index):
         """
         deactivate a component. Returns success.
         """
-        return self._set_component_state(mod_type, mod_index, False)
+        self._set_component_state(mod_type, mod_index, False)
+        return True
 
 
     def delete(self, mode_index):
         """
-        deletes a component from oom's mod dir. Forces data reload from disk,
+        deletes a mod from oom's mod dir. Forces data reload from disk,
         possibly discarding unapplied changes.
         """
         return True
@@ -174,7 +193,7 @@ class Oom:
 
         cmd = ""
         while cmd != "exit":
-            os.system("clear")
+            # os.system("clear")
             self.print_status()
             cmd = input(">_: ")
             if not cmd:
@@ -208,7 +227,7 @@ class Oom:
 if __name__ == "__main__":
 
     # Create expected directories if they don't alrady exist.
-    expected_dirs = [MODS, DOWNLOADS, CONF_DIR]
+    expected_dirs = [MODS, CONF_DIR]
     for directory in expected_dirs:
         if not os.path.exists(directory):
             os.makedirs(directory)
