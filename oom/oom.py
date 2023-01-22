@@ -2,15 +2,17 @@
 import os
 import shutil
 from const import *
-from mod import Mod, Plugin
+from mod import Mod, Plugin, Download
 
 class Oom:
     def __init__(self, conf=os.path.join(CONF_DIR, "oom.conf"), plugin_file=PLUGINS):
         self.conf = conf
         self.plugin_file = plugin_file
+        self.downloads = []
         self.mods = []
         self.plugins = []
         self.changes = False
+
 
     def load_mods(self):
         """
@@ -96,6 +98,16 @@ class Oom:
         return True
 
 
+    def load_downloads(self):
+        downloads = []
+        for file in os.listdir(DOWNLOADS):
+            if any([file.endswith(ext) for ext in [".rar", ".zip", ".7z"]]):
+                download = Download(file, os.path.join(DOWNLOADS, file))
+                downloads.append(download)
+        self.downloads = downloads
+        return True
+
+
     def save_order(self):
         """
         Writes oom.conf and Plugins.txt.
@@ -109,12 +121,55 @@ class Oom:
         return True
 
 
+    def install(self, download_index):
+        """
+        extracts a Download to oom's mod folder.
+        """
+        if self.changes:
+            print("commit changes to disk before installing a mod,")
+            print("as this will force a data reload from disk.")
+            return False
+
+        if not self.downloads:
+            print(f"{DOWNLOADS} has no eligible files.")
+            return False
+
+        try:
+            index = int(download_index)
+        except ValueError:
+            print("expected an integer")
+            return False
+
+        if index > len(self.downloads) - 1:
+            print(f"Expected int 0 through {len(self.downloads) - 1} (inclusive)")
+            return False
+
+        download = self.downloads[index]
+        output_folder = os.path.splitext(download.name)[0].replace(' ', '_')
+        output_folder = ''.join([i for i in output_folder if i.isalpha() or i == '_'])
+        extract_to = os.path.join(MODS, output_folder)
+        os.system(f"7z x '{download.location}' -o'{extract_to}'")
+        self._hard_refresh()
+
+        # return false even if successful to show 7z output
+        return False
+
     def print_status(self):
         """
-        outputs a list of all mods, then a list of all plugins.
+        outputs a list of all downloads, then mods, then plugins.
         """
-        for index, components in enumerate([self.mods, self.plugins]):
+
+        if len(self.downloads):
             print()
+            print("Downloads")
+            print("---------")
+
+            for index, download in enumerate(self.downloads):
+                print(f"[{index}] {download.name}")
+
+            print()
+
+        for index, components in enumerate([self.mods, self.plugins]):
             print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
             print("-----|-----------|-----")
             for priority, component in enumerate(components):
@@ -131,22 +186,28 @@ class Oom:
         prints help text.
         """
         print()
-        for k, v in {
-            "help": "show this help",
-            "activate": "activate a component. Usage: activate mod|plugin <index>",
-            "deactivate": "deactivate a component. Usage: deactivate mod|plugin <index>",
-            "commit": "commit the configuration to disk. Usage: commit",
-            "delete": "delete a mod and its plugins. Forces config reload from disk. Usage: delete <index>",
-            "move": "move a component from index to index. Usage: move mod|plugin <from_index> <to_index>",
-            "exit": "quit oom without applying changes.",
-        }.items():
-            print(f"{k}: {v}")
+        print("Command    | Syntax")
+        print("-------------------")
+        for k, v in sorted({
+            'activate': '  activate mod|plugin <index>',
+            'clean': '     clean',
+            'commit': '    commit',
+            'deactivate': 'deactivate mod|plugin <index>',
+            'delete': '    delete download|mod <index>',
+            'disable': '   disable mod|plugin <index>',
+            'enable': '    enable mod|plugin <index>',
+            'exit': '      exit',
+            'help': '      help',
+            'install': '   install <index>',
+            'move': '      move mod|plugin <from_index> <to_index>',
+        }.items()):
+            print(f"{k} {v}")
         print()
         input("[Enter] to continue")
         return True
 
 
-    def _get_validated_components(self, mod_type, mod_index):
+    def _get_validated_components(self, component_type, mod_index):
         index = None
         try:
             index = int(mod_index)
@@ -156,10 +217,10 @@ class Oom:
             print("Expected a number greater than or equal to 0")
             return False
 
-        if mod_type not in ["plugin", "mod"]:
-            print(f"expected 'plugin' or 'mod', got arg {mod_type}")
+        if component_type not in ["plugin", "mod"]:
+            print(f"expected 'plugin' or 'mod', got arg {component_type}")
             return False
-        components = self.plugins if mod_type == "plugin" else self.mods
+        components = self.plugins if component_type == "plugin" else self.mods
         if not len(components):
             print(f"Install mods to '{MODS}' to manage them with oom.")
             print(f"To see your plugins, you must activate the mods they belong ot.")
@@ -172,12 +233,12 @@ class Oom:
         return components
 
 
-    def _set_component_state(self, mod_type, mod_index, state):
+    def _set_component_state(self, component_type, mod_index, state):
         """
         Activate or deactivate a component.
         Returns which plugins need to be added to or removed from self.plugins.
         """
-        components = self._get_validated_components(mod_type, mod_index)
+        components = self._get_validated_components(component_type, mod_index)
         if not components:
             input("[Enter]")
             return False
@@ -185,51 +246,68 @@ class Oom:
         return components[int(mod_index)].set(state, self.plugins)
 
 
-    def activate(self, mod_type, mod_index):
+    def activate(self, component_type, mod_index):
         """
         activate a component. Returns success.
         """
-        self._set_component_state(mod_type, mod_index, True)
+        self._set_component_state(component_type, mod_index, True)
         self.changes = True
         return True
 
 
-    def deactivate(self, mod_type, mod_index):
+    def deactivate(self, component_type, mod_index):
         """
         deactivate a component. Returns success.
         """
-        self._set_component_state(mod_type, mod_index, False)
+        self._set_component_state(component_type, mod_index, False)
         self.changes = True
         return True
 
 
-    def delete(self, mod_index):
+    def delete(self, component_type, mod_index):
         """
         deletes a mod from oom's mod dir. Forces data reload from disk,
         possibly discarding unapplied changes.
         """
+
         if self.changes:
             print("You must commit changes before deleting a mod, as this will")
             print("force a data reload from disk.")
             return False
 
-        if not self.deactivate("mod", mod_index):
-            # validation error
+
+        if component_type not in ["download", "mod"]:
+            print(f"expected either 'download' or 'mod', got '{component_type}'")
             return False
 
-        mod = self.mods.pop(int(mod_index))
-        shutil.rmtree(mod.location)
-        self.commit()
+        if component_type == "mod":
+            if not self.deactivate("mod", mod_index):
+                # validation error
+                return False
+
+            # get the mod out of oom's non-persistent mem.
+            mod = self.mods.pop(int(mod_index))
+            # delete the mod from oom's mod folder.
+            shutil.rmtree(mod.location)
+            self.commit()
+        else:
+            try:
+                index = int(mod_index)
+            except ValueError:
+                print("Expected a number greater than or equal to 0")
+                return False
+            download = self.downloads.pop(index)
+            os.remove(download.location)
         return True
 
 
-    def move(self, mod_type, old_mod_index, new_mod_index):
+    def move(self, component_type, old_mod_index, new_mod_index):
         """
         move a mod or plugin from old index to new index.
         """
         components = None
         for index in [old_mod_index, new_mod_index]:
-            components = self._get_validated_components(mod_type, index)
+            components = self._get_validated_components(component_type, index)
             if not components:
                 return False
 
@@ -257,6 +335,7 @@ class Oom:
         for dirpath, dirnames, filenames in list(os.walk(GAME_DIR, topdown=False)):
             pass
 
+        return True
 
     def stage(self):
         """
@@ -306,25 +385,40 @@ class Oom:
         exit()
 
 
-    def run(self):
-        # complete setup
+    def _hard_refresh(self):
+        self.downloads = []
+        self.mods = []
+        self.plugins = []
+
         self.load_mods()
         self.load_mods_from_conf()
         self.load_plugins()
+        self.load_downloads()
 
+        return True
+
+
+    def run(self):
+        self._hard_refresh()
+
+        # get a map of commands to functions and the amount of args they expect
         self.command = {
             # cmd: (method, len(args))
-            "help": {"func": self.help, "num_args": 0},
             "activate": {"func": self.activate, "num_args": 2},
-            "deactivate": {"func": self.deactivate, "num_args": 2},
-            "move": {"func": self.move, "num_args": 3},
-            "commit": {"func": self.commit, "num_args": 0},
-            "delete": {"func": self.delete, "num_args": 1},
             "clean": {"func": self._clean_data_dir, "num_args": 0},
+            "commit": {"func": self.commit, "num_args": 0},
+            "deactivate": {"func": self.deactivate, "num_args": 2},
+            "delete": {"func": self.delete, "num_args": 2},
+            "disable": {"func": self.deactivate, "num_args": 2}, # alias to deactivate
+            "enable": {"func": self.activate, "num_args": 2}, # alias to activate
             "exit": {"func": self._exit, "num_args": 0},
+            "help": {"func": self.help, "num_args": 0},
+            "install": {"func": self.install, "num_args": 1},
+            "move": {"func": self.move, "num_args": 3},
         }
 
         cmd = ""
+
         try:
             while True:
                 os.system("clear")

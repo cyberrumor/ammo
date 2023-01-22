@@ -8,6 +8,7 @@ IDS = {
 APP_NAME = "Skyrim Special Edition"
 APP_ID = IDS[APP_NAME]
 HOME = os.environ["HOME"]
+DOWNLOADS = os.path.join(HOME, "Downloads")
 STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
 PFX = os.path.join(STEAM, f"compatdata/{APP_ID}/pfx/")
 GAME_DIR = os.path.join(STEAM, f"common/{APP_NAME}")

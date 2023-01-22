@@ -9,6 +9,12 @@ def is_plugin(file):
     ])
 
 
+class Download:
+    def __init__(self, name, location):
+        self.name = name
+        self.location = location
+
+
 class Mod:
     def __init__(self, name, location, enabled):
         self.name = name
