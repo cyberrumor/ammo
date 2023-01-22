@@ -18,6 +18,24 @@ Obviously Organizes Mods
 - Linux version of Steam with proton enabled
 - Python3
 
+
+```
+ ### | Activated | Mod name
+-----|-----------|-----
+[0]    [False]     ussep
+[1]    [True]      standard_lighting_templates
+[2]    [True]      polishwithoil
+
+
+ ### | Activated | Plugin name
+-----|-----------|-----
+[0]    [True]      StandardLightingTemplates.esp
+[1]    [True]      PolishWithOil.esp
+
+>_: activate mod 0
+```
+
+
 # Build instructions
 ```
 git clone https://github.com/cyberrumor/oom
@@ -66,6 +84,5 @@ sudo cp bin/oom /usr/local/bin
 - Error handling is not very robust.
 - This will delete symlinks in your Skyrim Data dir.
 - I waive all liability. Use at your own risk.
-
 
 
