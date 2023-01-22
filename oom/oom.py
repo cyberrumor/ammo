@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import os
 from const import *
 from mod import Mod, Plugin
@@ -91,7 +90,7 @@ class Oom:
 
     def save_order(self):
         """
-        responsible for writing Plugins.txt and oom.conf
+        Writes oom.conf and Plugins.txt.
         """
         with open(self.plugin_file, "w") as file:
             for plugin in self.plugins:
@@ -129,17 +128,17 @@ class Oom:
             "activate": "activate a component. Usage: activate mod|plugin <index>",
             "deactivate": "deactivate a component. Usage: deactivate mod|plugin <index>",
             "commit": "commit the configuration to disk. Usage: commit",
-            "delete": "delete a mod and its plugins. Forces config reload from disk. Usage: delete <index>",
+            # "delete": "delete a mod and its plugins. Forces config reload from disk. Usage: delete <index>",
             "move": "move a component from index to index. Usage: move mod|plugin <from_index> <to_index>",
             "exit": "quit oom without applying changes.",
         }.items():
-            print(f"{k} - {v}")
+            print(f"{k}: {v}")
         print()
         input("[Enter] to continue")
         return True
 
 
-    def _validate_components(self, mod_type, mod_index):
+    def _get_validated_components(self, mod_type, mod_index):
         index = None
         try:
             index = int(mod_index)
@@ -170,7 +169,7 @@ class Oom:
         Activate or deactivate a component.
         Returns which plugins need to be added to or removed from self.plugins.
         """
-        components = self._validate_components(mod_type, mod_index)
+        components = self._get_validated_components(mod_type, mod_index)
         if not components:
             input("[Enter]")
             return False
@@ -208,7 +207,7 @@ class Oom:
         """
         components = None
         for index in [old_mod_index, new_mod_index]:
-            components = self._validate_components(mod_type, index)
+            components = self._get_validated_components(mod_type, index)
             if not components:
                 return False
 
@@ -219,15 +218,52 @@ class Oom:
         components.insert(new_ind, component)
 
         return True
+
+
+    def _clean_data_dir(self):
+        """
+        Removes all symlinks and deletes empty folders.
+        """
+        for tree in os.walk(DATA):
+            dirpath = tree[0]
+            dirnames = tree[1]
+            filenames = tree[2]
+            for file in filenames:
+                full_path = os.path.join(dirpath, file)
+                if os.path.islink(full_path):
+                    os.unlink(full_path)
         
+            if not dirnames and not filenames:
+                os.rmdir(dirpath)
+
+
+    def stage(self):
+        """
+        Returns a dict containing the final symlinks that will be installed.
+        """
+        # src: dest
+        result = {}
+        for mod in [i for i in self.mods if i.enabled]:
+            for src in mod.files.values():
+                corrected_name = src.split(mod.name, 1)[-1]
+                dest = os.path.join(DATA, corrected_name.lstrip('/Data'))
+                result[src] = dest
+        return result
+
 
     def commit(self):
         """
-        This method is responsible for computing the files to stage,
-        writing oom.conf, and writing Plugins.txt.
+        Makes changes persist on disk.
         """
         self.save_order()
-        return False
+        stage = self.stage()
+        self._clean_data_dir()
+
+        for src, dest in stage.items():
+            os.makedirs(os.path.split(dest)[0], exist_ok=True)
+            os.symlink(src, dest)
+
+        return True
 
 
     def run(self):
@@ -243,7 +279,7 @@ class Oom:
             "deactivate": {"func": self.deactivate, "num_args": 2},
             "move": {"func": self.move, "num_args": 3},
             "commit": {"func": self.commit, "num_args": 0},
-            "delete": {"func": self.delete, "num_args": 1},
+            # "delete": {"func": self.delete, "num_args": 1},
             "exit": {"func": exit, "num_args": 0},
         }
 
