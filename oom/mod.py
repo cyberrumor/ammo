@@ -64,8 +64,8 @@ class Mod:
             for plugin in self.associated_plugins(oom_plugins):
                 plugin.enabled = False if state == False else plugin.enabled
 
-            if plugin in oom_plugins:
-                oom_plugins.remove(plugin)
+                if plugin in oom_plugins:
+                    oom_plugins.remove(plugin)
         return True
 
 

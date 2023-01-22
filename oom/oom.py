@@ -83,7 +83,6 @@ class Oom:
                         print("instead of from")
                         print(f"{GAME_DIR}")
                         input("[Enter] to try to automatically fix, [CTRL+C] to exit.")
-                        self._clean_data_dir()
                         # literally just pretend it doesn't exist
                         continue
 
@@ -231,12 +230,12 @@ class Oom:
         """
         Removes all symlinks and deletes empty folders.
         """
-        for tree in os.walk(DATA):
+        for tree in os.walk(GAME_DIR):
             dirpath = tree[0]
             dirnames = tree[1]
             filenames = tree[2]
             for file in filenames:
-                full_path = os.path.join(dirpath, file)
+                full_path = os.path.join(dirpath, file.lower())
                 if os.path.islink(full_path):
                     os.unlink(full_path)
         
@@ -253,7 +252,7 @@ class Oom:
         for mod in [i for i in self.mods if i.enabled]:
             for src in mod.files.values():
                 corrected_name = src.split(mod.name, 1)[-1]
-                dest = os.path.join(DATA, corrected_name.lstrip('/Data'))
+                dest = os.path.join(GAME_DIR, corrected_name.lower().replace('/data', 'Data').lstrip('/'))
                 result[src] = dest
         return result
 
@@ -287,41 +286,46 @@ class Oom:
             "move": {"func": self.move, "num_args": 3},
             "commit": {"func": self.commit, "num_args": 0},
             # "delete": {"func": self.delete, "num_args": 1},
+            "clean": {"func": self._clean_data_dir, "num_args": 0},
             "exit": {"func": exit, "num_args": 0},
         }
 
         cmd = ""
-        while cmd != "exit":
-            os.system("clear")
-            self.print_status()
-            cmd = input(">_: ")
-            if not cmd:
-                continue
-            cmds = cmd.split()
-            args = []
-            func = cmds[0]
-            if len(cmds) > 1:
-                args = cmds[1:]
-            if func not in self.command:
-                self.help()
-                continue
-            command = self.command[func]
-            if command["num_args"] != len(args):
-                print(f"{func} expected {command['num_args']} arg(s) but received {len(args)}")
-                input("[Enter]")
-                continue
-            if command["num_args"] == 0:
-                ret = command["func"]()
-            elif command["num_args"] == 1:
-                ret = command["func"](args[0])
-            elif command["num_args"] == 2:
-                ret = command["func"](args[0], args[1])
-            else:
-                ret = command["func"](args[0], args[1], args[2])
+        try:
+            while cmd != "exit":
+                os.system("clear")
+                self.print_status()
+                cmd = input(">_: ")
+                if not cmd:
+                    continue
+                cmds = cmd.split()
+                args = []
+                func = cmds[0]
+                if len(cmds) > 1:
+                    args = cmds[1:]
+                if func not in self.command:
+                    self.help()
+                    continue
+                command = self.command[func]
+                if command["num_args"] != len(args):
+                    print(f"{func} expected {command['num_args']} arg(s) but received {len(args)}")
+                    input("[Enter]")
+                    continue
+                if command["num_args"] == 0:
+                    ret = command["func"]()
+                elif command["num_args"] == 1:
+                    ret = command["func"](args[0])
+                elif command["num_args"] == 2:
+                    ret = command["func"](args[0], args[1])
+                else:
+                    ret = command["func"](args[0], args[1], args[2])
 
-            if not ret:
-                input("[Enter]")
-                continue
+                if not ret:
+                    input("[Enter]")
+                    continue
+
+        except KeyboardInterrupt:
+            exit()
 
 
 if __name__ == "__main__":
