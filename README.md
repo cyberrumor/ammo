@@ -1,5 +1,6 @@
 # oom
 Obviously Organizes Mods
+
 A Terminal-Based Mod Organizer for Linux
 
 ```
@@ -16,8 +17,7 @@ A Terminal-Based Mod Organizer for Linux
 [1]    [True]      StandardLightingTemplates.esp
 [2]    [True]      PolishWithOil.esp
 
->_:
-
+>_: move mod 1 2
 ```
 
 # Goals
