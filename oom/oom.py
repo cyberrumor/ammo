@@ -331,10 +331,18 @@ class Oom:
                 if os.path.islink(full_path):
                     os.unlink(full_path)
 
-        # remove empty directories
-        for dirpath, dirnames, filenames in list(os.walk(GAME_DIR, topdown=False)):
-            pass
 
+        # remove empty directories
+        def remove_empty_dirs(path):
+            for dirpath, dirnames, filenames in list(os.walk(path, topdown=False)):
+                for dirname in dirnames:
+                    try:
+                        os.rmdir(os.path.realpath(os.path.join(dirpath, dirname)))
+                    except OSError:
+                        # directory wasn't empty, ignore this
+                        pass
+
+        remove_empty_dirs(GAME_DIR)
         return True
 
     def stage(self):
