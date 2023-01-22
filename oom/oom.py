@@ -5,7 +5,7 @@ from const import *
 from mod import Mod, Plugin
 
 class Oom:
-    def __init__(self, conf, plugin_file):
+    def __init__(self, conf=os.path.join(CONF_DIR, "oom.conf"), plugin_file=PLUGINS):
         self.conf = conf
         self.plugin_file = plugin_file
         self.mods = []
@@ -15,8 +15,6 @@ class Oom:
         """
         Instance a  Mod class for each mod folder in oom's mod directory.
         """
-        if os.path.isfile(self.conf):
-            return load_mods_from(self.conf)
         mods = []
         mod_folders = [i for i in os.listdir(MODS) if os.path.isdir(os.path.join(MODS, i))]
         for mod_folder in mod_folders:
@@ -26,7 +24,33 @@ class Oom:
 
 
     def load_mods_from_conf(self):
-        pass
+        """
+        Read our conf file. If there's mods in it, put them in order.
+        Put mods that aren't listed in the conf file at the end.
+        """
+        ordered_mods = []
+        with open(self.conf, "r") as file:
+            for line in file:
+                if line.startswith('#'):
+                    continue
+                name = line.strip('*').strip()
+                enabled = False
+                if line.startswith('*'):
+                    enabled = True
+
+                if name not in [i.name for i in self.mods]:
+                    print(f"we found a mod '{name}' that isn't in {self.conf}. Ignoring.")
+                    continue
+
+                for mod in self.mods:
+                    if mod.name == name:
+                        mod.enabled = enabled
+                        ordered_mods.append(mod)
+                        break
+        for mod in self.mods:
+            if mod not in ordered_mods:
+                ordered_mods.append(mod)
+        self.mods = ordered_mods
 
 
     def load_plugins(self):
@@ -45,8 +69,17 @@ class Oom:
                 enabled = False
                 if line.startswith('*'):
                     enabled = True
-                    parent_mod.enabled = True
-
+                    # attempt to enable the parent mod,
+                    # only do this if all that mod's files are present.
+                    if parent_mod.files_in_place():
+                        parent_mod.enabled = True 
+                    else:
+                        print(f"There was an enabled plugin {name} that was missing dependencies!")
+                        print("If you want to delete files from a mod, delete them from")
+                        print(f"{MODS}")
+                        print("instead of from")
+                        print(f"{GAME_DIR}")
+                        input("[Enter]")
 
                 plugin = Plugin(name, enabled, parent_mod)
                 # don't manage plugins belonging to disabled mods.
@@ -56,14 +89,16 @@ class Oom:
         return True
 
 
-    def save_plugins(self):
+    def save_order(self):
         """
-        responsible for writing Plugins.txt
+        responsible for writing Plugins.txt and oom.conf
         """
-        with open(self.plugins, "w") as file:
-            # only save plugins to Plugins.txt if their parent mod is enabled.
+        with open(self.plugin_file, "w") as file:
             for plugin in self.plugins:
                 file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
+        with open(self.conf, "w") as file:
+            for mod in self.mods:
+                file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
         return True
 
 
@@ -191,12 +226,14 @@ class Oom:
         This method is responsible for computing the files to stage,
         writing oom.conf, and writing Plugins.txt.
         """
+        self.save_order()
         return False
 
 
     def run(self):
         # complete setup
         self.load_mods()
+        self.load_mods_from_conf()
         self.load_plugins()
 
         self.command = {
@@ -243,18 +280,16 @@ class Oom:
                 input("[Enter]")
                 continue
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     # Create expected directories if they don't alrady exist.
     expected_dirs = [MODS, CONF_DIR]
     for directory in expected_dirs:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    # This is where our config will live.
-    oom_conf = os.path.join(CONF_DIR, "oom.conf")
 
     # Create an instance of Oom and run it.
-    oom = Oom(oom_conf, PLUGINS)
+    oom = Oom()
     exit(oom.run())
 

@@ -3,10 +3,12 @@ import sys
 import os
 from const import *
 
+
 def is_plugin(file):
     return any([
         file.endswith(i) for i in [".esp", ".esl", ".esm"]
     ])
+
 
 class Mod:
     def __init__(self, name, location, enabled):
@@ -65,9 +67,19 @@ class Mod:
 
             if plugin in oom_plugins:
                 oom_plugins.remove(plugin)
-
-
         return True
+
+
+    def files_in_place(self):
+        for location in self.files.values():
+            corrected_location = os.path.join(location.split(self.name, 1)[-1].strip('/'), DATA)
+            # note that we don't care if the files are the same here, just that the paths and
+            # filenames are the same. It's fine if our file comes from another mod.
+            if not os.path.exists(corrected_location):
+                print(f"unable to find expected file '{corrected_location}'")
+                return False
+        return True
+
 
 class Plugin:
     def __init__(self, name, enabled, parent_mod):
