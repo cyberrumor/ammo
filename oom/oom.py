@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import shutil
 from const import *
 from mod import Mod, Plugin
 
@@ -9,6 +10,7 @@ class Oom:
         self.plugin_file = plugin_file
         self.mods = []
         self.plugins = []
+        self.changes = False
 
     def load_mods(self):
         """
@@ -134,7 +136,7 @@ class Oom:
             "activate": "activate a component. Usage: activate mod|plugin <index>",
             "deactivate": "deactivate a component. Usage: deactivate mod|plugin <index>",
             "commit": "commit the configuration to disk. Usage: commit",
-            # "delete": "delete a mod and its plugins. Forces config reload from disk. Usage: delete <index>",
+            "delete": "delete a mod and its plugins. Forces config reload from disk. Usage: delete <index>",
             "move": "move a component from index to index. Usage: move mod|plugin <from_index> <to_index>",
             "exit": "quit oom without applying changes.",
         }.items():
@@ -188,6 +190,7 @@ class Oom:
         activate a component. Returns success.
         """
         self._set_component_state(mod_type, mod_index, True)
+        self.changes = True
         return True
 
 
@@ -196,14 +199,27 @@ class Oom:
         deactivate a component. Returns success.
         """
         self._set_component_state(mod_type, mod_index, False)
+        self.changes = True
         return True
 
 
-    def delete(self, mode_index):
+    def delete(self, mod_index):
         """
         deletes a mod from oom's mod dir. Forces data reload from disk,
         possibly discarding unapplied changes.
         """
+        if self.changes:
+            print("You must commit changes before deleting a mod, as this will")
+            print("force a data reload from disk.")
+            return False
+
+        if not self.deactivate("mod", mod_index):
+            # validation error
+            return False
+
+        mod = self.mods.pop(int(mod_index))
+        shutil.rmtree(mod.location)
+        self.commit()
         return True
 
 
@@ -222,7 +238,7 @@ class Oom:
 
         component = components.pop(old_ind)
         components.insert(new_ind, component)
-
+        self.changes = True
         return True
 
 
@@ -276,6 +292,7 @@ class Oom:
             os.makedirs(os.path.split(dest)[0], exist_ok=True)
             os.symlink(src, dest)
 
+        self.changes = False
         return True
 
 
@@ -292,7 +309,7 @@ class Oom:
             "deactivate": {"func": self.deactivate, "num_args": 2},
             "move": {"func": self.move, "num_args": 3},
             "commit": {"func": self.commit, "num_args": 0},
-            # "delete": {"func": self.delete, "num_args": 1},
+            "delete": {"func": self.delete, "num_args": 1},
             "clean": {"func": self._clean_data_dir, "num_args": 0},
             "exit": {"func": exit, "num_args": 0},
         }
