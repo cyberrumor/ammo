@@ -104,11 +104,7 @@ class Oom:
         return True
 
 
-    def _set_component_state(self, mod_type, mod_index, state):
-        """
-        Activate or deactivate a component.
-        Returns which plugins need to be added to or removed from self.plugins.
-        """
+    def _validate_components(self, mod_type, mod_index):
         index = None
         try:
             index = int(mod_index)
@@ -118,22 +114,33 @@ class Oom:
             print("Expected a number greater than or equal to 0")
             return False
 
-        # validation
         if mod_type not in ["plugin", "mod"]:
             print(f"expected 'plugin' or 'mod', got arg {mod_type}")
             return False
-
         components = self.plugins if mod_type == "plugin" else self.mods
         if not len(components):
             print(f"Install mods to '{MODS}' to manage them with oom.")
-            print(f"To see your plugins, you must activate the mods they belong to.")
+            print(f"To see your plugins, you must activate the mods they belong ot.")
             return False
 
         if index > len(components) - 1:
             print(f"Expected int 0 through {len(components) - 1} (inclusive)")
             return False
 
-        return components[index].set(state, self.plugins)
+        return components
+
+
+    def _set_component_state(self, mod_type, mod_index, state):
+        """
+        Activate or deactivate a component.
+        Returns which plugins need to be added to or removed from self.plugins.
+        """
+        components = self._validate_components(mod_type, mod_index)
+        if not components:
+            input("[Enter]")
+            return False
+
+        return components[int(mod_index)].set(state, self.plugins)
 
 
     def activate(self, mod_type, mod_index):
@@ -164,6 +171,18 @@ class Oom:
         """
         move a mod or plugin from old index to new index.
         """
+        components = None
+        for index in [old_mod_index, new_mod_index]:
+            components = self._validate_components(mod_type, index)
+            if not components:
+                return False
+
+        old_ind = int(old_mod_index)
+        new_ind = int(new_mod_index)
+
+        component = components.pop(old_ind)
+        components.insert(new_ind, component)
+
         return True
         
 
@@ -193,7 +212,7 @@ class Oom:
 
         cmd = ""
         while cmd != "exit":
-            # os.system("clear")
+            os.system("clear")
             self.print_status()
             cmd = input(">_: ")
             if not cmd:
