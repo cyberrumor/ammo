@@ -28,13 +28,12 @@ A Terminal-Based Mod Organizer for Linux
 
 # TODO
 - Extract files from ~/Downloads to oom's mod dir
+- Handle mods that are packaged like this: modname/extra_folder/Data
 - Enable the `delete` command.
-- More robust handling of mods that are packaged wierd.
 - handle FOMOD installers?
 - handle BAIN installers?
 - logging
-- Get a list of game names and steam APP IDs
-- Enable use on multiple games
+- Enable easier use on multiple games.
 
 # Dependencies
 - Linux version of Steam with proton enabled
@@ -53,14 +52,10 @@ sudo cp bin/oom /usr/local/bin
 ```
 
 # Setup Instructions
-- Have a vanalla skyrim install. skse should theoretically be fine. Plugins.txt should be empty.
+- Have a vanalla skyrim install. skse is fine. Plugins.txt should be empty.
 - oom expects mods to be in ~/.local/share/oom/mods
-- oom can handle the following styles of packaging right now:
-  - modname/Data/some_plugin.esp
-  - modname/some_plugin.esp
-- oom can't handle this kind of thing yet:
-  - modname/4.5.1/Data/some_plugin.esp
-  - modname/4.5.1/some_plugin.esp
+- oom can install SKSE but you still have to copy skse64_loader.exe to SkyrimSELauncher.exe manually.
+
 
 # Usage Instructions
 - Activate a component by type and index: `activate mod 0` or `activate plugin 5`.
@@ -88,9 +83,10 @@ upon `commit`:
 # Disclaimer
 - This is barely tested.
 - I've only tested with small load orders (3 or 4 mods).
-- This only works on mods pacakged with 'Data' as their parent dir name.
+- This only works on mods where the main mod folder either contains a Data folder,
+  or doesn't contain a data folder but stuff goes into Data anyway.
 - Error handling is not very robust.
-- This will delete symlinks in your Skyrim Data dir.
+- This will delete symlinks and empty directories in your Skyrim folder.
 - I waive all liability. Use at your own risk.
 
 

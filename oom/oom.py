@@ -75,7 +75,7 @@ class Oom:
                     # only do this if all that mod's files are present.
                     if hasattr(parent_mod, "files_in_place"):
                         if parent_mod.files_in_place():
-                            parent_mod.enabled = True 
+                            parent_mod.enabled = True
                     else:
                         print(f"There was an enabled plugin {name} that was missing dependencies!")
                         print("If you want to delete files from a mod, delete them from")
@@ -230,29 +230,36 @@ class Oom:
         """
         Removes all symlinks and deletes empty folders.
         """
-        for tree in os.walk(GAME_DIR):
-            dirpath = tree[0]
-            dirnames = tree[1]
-            filenames = tree[2]
+        # remove symlinks
+        for dirpath, dirnames, filenames in os.walk(GAME_DIR):
             for file in filenames:
-                full_path = os.path.join(dirpath, file.lower())
+                full_path = os.path.join(dirpath, file)
                 if os.path.islink(full_path):
                     os.unlink(full_path)
-        
-            if not dirnames and not filenames:
-                os.rmdir(dirpath)
+
+        # remove empty directories
+        for dirpath, dirnames, filenames in list(os.walk(GAME_DIR, topdown=False)):
+            pass
 
 
     def stage(self):
         """
         Returns a dict containing the final symlinks that will be installed.
         """
-        # src: dest
         result = {}
         for mod in [i for i in self.mods if i.enabled]:
             for src in mod.files.values():
                 corrected_name = src.split(mod.name, 1)[-1]
-                dest = os.path.join(GAME_DIR, corrected_name.lower().replace('/data', 'Data').lstrip('/'))
+                if mod.data_dir:
+                    dest = os.path.join(
+                            GAME_DIR,
+                            corrected_name.lower().replace('/data', 'Data').lstrip('/')
+                    )
+                else:
+                    dest = os.path.join(
+                            GAME_DIR,
+                            'Data' + corrected_name.lower(),
+                    )
                 result[src] = dest
         return result
 
