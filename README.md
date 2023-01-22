@@ -73,8 +73,11 @@ sudo cp bin/oom /usr/local/bin
 - Launch the game through steam. If you want to use skse, copy skse64_loader.exe to SkyrimSELauncher.exe.
 
 
-# Implementation Details of `commit`
-- unlink all symlinks and delete all empty directories in Skyrim/Data.
+# Implementation Details
+
+upon `commit`:
+
+- unlinks all symlinks and delete all empty directories in Skyrim/Data.
 - Iterates through enabled mods.
 - Mods have a list of full file paths associated with them.
 - A "staging" dictionary is populated with these paths, and the path that the mod's files will go.
