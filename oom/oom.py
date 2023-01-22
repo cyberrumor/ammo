@@ -28,6 +28,9 @@ class Oom:
         Put mods that aren't listed in the conf file at the end.
         """
         ordered_mods = []
+        if not os.path.exists(self.conf):
+            return
+
         with open(self.conf, "r") as file:
             for line in file:
                 if line.startswith('#'):
@@ -70,15 +73,19 @@ class Oom:
                     enabled = True
                     # attempt to enable the parent mod,
                     # only do this if all that mod's files are present.
-                    if parent_mod.files_in_place():
-                        parent_mod.enabled = True 
+                    if hasattr(parent_mod, "files_in_place"):
+                        if parent_mod.files_in_place():
+                            parent_mod.enabled = True 
                     else:
                         print(f"There was an enabled plugin {name} that was missing dependencies!")
                         print("If you want to delete files from a mod, delete them from")
                         print(f"{MODS}")
                         print("instead of from")
                         print(f"{GAME_DIR}")
-                        input("[Enter]")
+                        input("[Enter] to try to automatically fix, [CTRL+C] to exit.")
+                        self._clean_data_dir()
+                        # literally just pretend it doesn't exist
+                        continue
 
                 plugin = Plugin(name, enabled, parent_mod)
                 # don't manage plugins belonging to disabled mods.

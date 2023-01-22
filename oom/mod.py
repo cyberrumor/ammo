@@ -86,12 +86,6 @@ class Plugin:
         self.enabled = enabled
         self.parent_mod = parent_mod
 
-        if parent_mod == None:
-            print(f"Plugin {self.name} was found in Plugins.txt but is not owned by a mod.")
-            print(f"Please refrain from renaming plugins.")
-            print(f"oom only supports managing plugins from {MOD}.")
-            input("[Enter]")
-            exit()
 
     def set(self, state, plugins):
         if state and self.parent_mod.enabled == state:
