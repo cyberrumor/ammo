@@ -1,5 +1,24 @@
 # oom
 Obviously Organizes Mods
+A Terminal-Based Mod Organizer for Linux
+
+```
+ ### | Activated | Mod name
+-----|-----------|-----
+[0]    [True]      ussep
+[1]    [True]      standard_lighting_templates
+[2]    [True]      polishwithoil
+
+
+ ### | Activated | Plugin name
+-----|-----------|-----
+[0]    [True]      Unofficial Skyrim Special Edition Patch.esp
+[1]    [True]      StandardLightingTemplates.esp
+[2]    [True]      PolishWithOil.esp
+
+>_:
+
+```
 
 # Goals
 - Made for Linux
@@ -20,24 +39,6 @@ Obviously Organizes Mods
 # Dependencies
 - Linux version of Steam with proton enabled
 - Python3
-
-
-```
- ### | Activated | Mod name
------|-----------|-----
-[0]    [False]     ussep
-[1]    [True]      standard_lighting_templates
-[2]    [True]      polishwithoil
-
-
- ### | Activated | Plugin name
------|-----------|-----
-[0]    [True]      StandardLightingTemplates.esp
-[1]    [True]      PolishWithOil.esp
-
->_: activate mod 0
-```
-
 
 # Build instructions
 ```
@@ -69,6 +70,7 @@ sudo cp bin/oom /usr/local/bin
   will be moved up.
 - Make changes persist on disk! Nothing will be changed if you don't commit: `commit`
 - Use the `help` command so you don't have to read instructions from here :)
+- Launch the game through steam. If you want to use skse, copy skse64_loader.exe to SkyrimSELauncher.exe.
 
 
 # Implementation Details of `commit`
