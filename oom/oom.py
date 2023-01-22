@@ -296,6 +296,16 @@ class Oom:
         return True
 
 
+    def _exit(self):
+        if self.changes:
+            print("There are unsaved changes!")
+            answer = input("quit anyway? [y/n]: ").lower()
+            if answer == "y":
+                exit()
+            return True
+        exit()
+
+
     def run(self):
         # complete setup
         self.load_mods()
@@ -311,12 +321,12 @@ class Oom:
             "commit": {"func": self.commit, "num_args": 0},
             "delete": {"func": self.delete, "num_args": 1},
             "clean": {"func": self._clean_data_dir, "num_args": 0},
-            "exit": {"func": exit, "num_args": 0},
+            "exit": {"func": self._exit, "num_args": 0},
         }
 
         cmd = ""
         try:
-            while cmd != "exit":
+            while True:
                 os.system("clear")
                 self.print_status()
                 cmd = input(">_: ")
@@ -349,6 +359,10 @@ class Oom:
                     continue
 
         except KeyboardInterrupt:
+            if self.changes:
+                print()
+                print("There were unsaved changes! Please run 'commit' before exiting.")
+                print()
             exit()
 
 
