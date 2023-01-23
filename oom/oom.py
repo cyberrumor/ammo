@@ -149,7 +149,13 @@ class Oom:
         if not download.sane:
             download.sanitize()
 
-        output_folder = os.path.splitext(download.name)[0]
+        # get a decent name for our output folder.
+        output_folder = ''.join(
+            [i for i in os.path.splitext(download.name)[0] if i.isalpha() or i == '_']
+        ).strip('_')
+        if not output_folder:
+            output_folder = os.path.splittext(download.name)[0]
+
         extract_to = os.path.join(MODS, output_folder)
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
         extracted_files = os.listdir(extract_to)
