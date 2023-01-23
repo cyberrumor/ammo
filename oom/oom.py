@@ -160,7 +160,7 @@ class Oom:
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
         extracted_files = os.listdir(extract_to)
         if len(extracted_files) == 1 \
-                and extracted_files[0] not in ['Data', 'data'] \
+                and extracted_files[0].lower() not in ['data', 'skse'] \
                 and not is_plugin(extracted_files[0]):
                     # we are reasonably sure we can eliminate a redundant directory.
                     # This is needed for mods like skse that have a version directory
@@ -374,15 +374,16 @@ class Oom:
         for mod in [i for i in self.mods if i.enabled]:
             for src in mod.files.values():
                 corrected_name = src.split(mod.name, 1)[-1]
+                # TODO: replace all folder names with lowercase.
                 if mod.data_dir:
                     dest = os.path.join(
                             GAME_DIR,
-                            corrected_name.lower().replace('/data', '/Data').lstrip('/')
+                            corrected_name.replace('/data', '/Data').lstrip('/')
                     )
                 else:
                     dest = os.path.join(
                             GAME_DIR,
-                            'Data' + corrected_name.lower(),
+                            'Data' + corrected_name,
                     )
                 result[dest] = src
         return result
