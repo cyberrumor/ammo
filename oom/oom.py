@@ -152,7 +152,6 @@ class Oom:
         output_folder = os.path.splitext(download.name)[0]
         extract_to = os.path.join(MODS, output_folder)
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
-        # do some doctoring of the install folder if we have a version dir
         extracted_files = os.listdir(extract_to)
         if len(extracted_files) == 1 \
                 and extracted_files[0] not in ['Data', 'data'] \
@@ -213,6 +212,7 @@ class Oom:
             'help': '      help',
             'install': '   install <index>',
             'move': '      move mod|plugin <from_index> <to_index>',
+            'refresh': '   refresh',
         }.items()):
             print(f"{k} {v}")
         print()
@@ -419,6 +419,19 @@ class Oom:
         return True
 
 
+    def refresh(self):
+        if self.changes:
+            print("There are unsaved changes!")
+            print("refreshing reloads data from disk.")
+            answer = input("reload data from disk and lose unsaved changes? [y/n]: ").lower()
+            if answer == "y":
+                self._hard_refresh()
+                return True
+            return False
+        self._hard_refresh()
+        return True
+
+
     def run(self):
         self._hard_refresh()
 
@@ -436,6 +449,7 @@ class Oom:
             "help": {"func": self.help, "num_args": 0},
             "install": {"func": self.install, "num_args": 1},
             "move": {"func": self.move, "num_args": 3},
+            "refresh": {"func": self.refresh, "num_args": 0}, # reload data from disk
         }
 
         cmd = ""
