@@ -2,7 +2,7 @@
 import os
 import shutil
 from const import *
-from mod import Mod, Plugin, Download
+from mod import Mod, Plugin, Download, is_plugin
 
 class Oom:
     def __init__(self, conf=os.path.join(CONF_DIR, "oom.conf"), plugin_file=PLUGINS):
@@ -86,6 +86,7 @@ class Oom:
                         print(f"{MODS}")
                         print("instead of from")
                         print(f"{GAME_DIR}")
+                        print(f"Then run the 'commit' command to apply your changes.")
                         input("[Enter] to try to automatically fix, [CTRL+C] to exit.")
                         # literally just pretend it doesn't exist
                         continue
@@ -146,11 +147,26 @@ class Oom:
 
         download = self.downloads[index]
         output_folder = os.path.splitext(download.name)[0].replace(' ', '_')
-        output_folder = ''.join([i for i in output_folder if i.isalpha() or i == '_'])
+
+        # try to create a sane folder name, since this will appear in our UX
+        output_folder = ''.join(
+                [i for i in output_folder if i.isalpha() or i == '_']
+        ).strip('_').strip('_v').strip('_V')
+
         extract_to = os.path.join(MODS, output_folder)
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
+        # do some doctoring of the install folder if we have a version dir
+        extracted_files = os.listdir(extract_to)
+        if len(extracted_files) == 1 \
+                and extracted_files[0] not in ['Data', 'data'] \
+                and not is_plugin(extracted_files[0]):
+                    # we are reasonably sure we can eliminate a redundant directory.
+                    # This is needed for mods like skse that have a version directory
+                    # between our install location and the mod's data folder.
+                    for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
+                        filename  = os.path.join(extract_to, extracted_files[0], file)
+                        shutil.move(filename, extract_to)
         self._hard_refresh()
-
         # return false even if successful to show 7z output
         return False
 
@@ -356,7 +372,7 @@ class Oom:
                 if mod.data_dir:
                     dest = os.path.join(
                             GAME_DIR,
-                            corrected_name.lower().replace('/data', 'Data').lstrip('/')
+                            corrected_name.lower().replace('/data', '/Data').lstrip('/')
                     )
                 else:
                     dest = os.path.join(
