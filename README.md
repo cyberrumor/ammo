@@ -25,7 +25,8 @@ A Terminal-Based Mod Organizer for Linux
 # Dependencies
 - Linux version of Steam, Proton.
 - Python3
-- p7z
+- p7z (and the 7z cli utility somewhere in your PATH, which should
+  be automatic if you have p7z installed).
 
 # Installation Instructions
 ```
@@ -44,6 +45,15 @@ sudo cp bin/oom /usr/local/bin
 - Make changes persist on disk! Nothing will be changed if you don't commit: `commit`
 - Use the `help` command so you don't have to read instructions from here :)
 - Launch the game through steam. If you want to use skse, copy skse64_loader.exe to SkyrimSELauncher.exe.
+
+# How to Manully Install FOMOD
+- Download the mod to your ~/Downloads folder.
+- Launch oom and install the mod with `install <download index>`. Close oom.
+- check ~/.local/share/oom/Skyrim\ Special\ Edition/mods/your_mod_name
+- Inside that dir, create a `Data` folder.
+- Move the contents of the folders of your choice inside the new Data folder.
+- Delete all the folders besides the Data folder.
+- Launch oom, activate the mod and commit.
 
 # Disclaimer
 - I waive all liability. Use at your own risk.
