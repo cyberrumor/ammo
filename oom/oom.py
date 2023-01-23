@@ -100,9 +100,24 @@ class Oom:
 
 
     def load_downloads(self):
+        """
+        Populates self.downloads. Ignores downloads that have a '.part' file that
+        starts with the same name. This hides downloads that haven't completed yet.
+        """
         downloads = []
         for file in os.listdir(DOWNLOADS):
+            still_downloading = False
             if any([file.endswith(ext) for ext in [".rar", ".zip", ".7z"]]):
+                for other_file in [
+                    i for i in os.listdir(DOWNLOADS) if i.startswith(
+                        os.path.splitext(file)[0]
+                    )
+                ]:
+                    if other_file.lower().endswith(".part"):
+                        still_downloading = True
+                        break
+                if still_downloading:
+                    continue
                 download = Download(file, os.path.join(DOWNLOADS, file))
                 downloads.append(download)
         self.downloads = downloads
