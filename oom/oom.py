@@ -146,13 +146,10 @@ class Oom:
             return False
 
         download = self.downloads[index]
-        output_folder = os.path.splitext(download.name)[0].replace(' ', '_')
+        if not download.sane:
+            download.sanitize()
 
-        # try to create a sane folder name, since this will appear in our UX
-        output_folder = ''.join(
-                [i for i in output_folder if i.isalpha() or i == '_']
-        ).strip('_').strip('_v').strip('_V')
-
+        output_folder = os.path.splitext(download.name)[0]
         extract_to = os.path.join(MODS, output_folder)
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
         # do some doctoring of the install folder if we have a version dir

@@ -13,6 +13,26 @@ class Download:
     def __init__(self, name, location):
         self.name = name
         self.location = location
+        self.sane = False
+        if all([(i.isalnum() or i in ['.', '_', '-']) for i in self.name]):
+            self.sane = True
+
+    def sanitize(self):
+        """
+        This will make the download's name compatible with
+        our os.system(7z) call. We need this because of filenames
+        that contain quotes.
+        """
+        fixed_name = self.name.replace(' ', '_')
+        fixed_name = ''.join(
+            [i for i in fixed_name if i.isalnum() or i in ['.', '_', '-']]
+        )
+        parent_folder = os.path.split(self.location)[0]
+        new_location = os.path.join(parent_folder, fixed_name)
+        os.rename(self.location, new_location)
+        self.location = new_location
+        self.name = fixed_name
+        self.sane = True
 
 
 class Mod:
