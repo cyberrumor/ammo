@@ -221,7 +221,6 @@ class Oom:
         print("-------------------")
         for k, v in sorted({
             'activate': '  activate mod|plugin <index>               add a mod or plugin to the stage.',
-            'clean': '     clean                                     remove all symlinks and empty folders.',
             'commit': '    commit                                    make this configuration persistent.',
             'deactivate': 'deactivate mod|plugin <index>             remove a mod or plugin from the stage.',
             'delete': '    delete download|mod <index>               delete a file from the filesystem.',
@@ -232,6 +231,7 @@ class Oom:
             'install': '   install <index>                           extract a mod from downloads,',
             'move': '      move mod|plugin <from_index> <to_index>   rearrange the load order.',
             'refresh': '   refresh                                   reload all mods/plugins/downloads from disk.',
+            'vanilla': '   vanilla                                   disable all components and clean up.',
         }.items()):
             print(f"{k} {v}")
         print()
@@ -378,6 +378,22 @@ class Oom:
         remove_empty_dirs(GAME_DIR)
         return True
 
+
+    def vanilla(self):
+        print("This will disable all mods and plugins, and remove all symlinks and empty folders from your game dir.")
+        print("oom will remember your mod load order but not your plugin load order.")
+        print("These changes will take place immediately.")
+        choice = input("continue? [y/n]: ")
+        if choice.lower() != "y":
+            print("Not cleaned.")
+            return False
+
+        for mod in self.mods:
+            mod.set(False, self.plugins)
+        self.save_order()
+        self._clean_data_dir()
+        return True
+
     def stage(self):
         """
         Returns a dict containing the final symlinks that will be installed.
@@ -461,7 +477,7 @@ class Oom:
         self.command = {
             # cmd: (method, len(args))
             "activate": {"func": self.activate, "num_args": 2},
-            "clean": {"func": self._clean_data_dir, "num_args": 0},
+            "vanilla": {"func": self.vanilla, "num_args": 0},
             "commit": {"func": self.commit, "num_args": 0},
             "deactivate": {"func": self.deactivate, "num_args": 2},
             "delete": {"func": self.delete, "num_args": 2},
