@@ -201,18 +201,18 @@ class Oom:
         print("Command    | Syntax")
         print("-------------------")
         for k, v in sorted({
-            'activate': '  activate mod|plugin <index>',
-            'clean': '     clean',
-            'commit': '    commit',
-            'deactivate': 'deactivate mod|plugin <index>',
-            'delete': '    delete download|mod <index>',
-            'disable': '   disable mod|plugin <index>',
-            'enable': '    enable mod|plugin <index>',
-            'exit': '      exit',
-            'help': '      help',
-            'install': '   install <index>',
-            'move': '      move mod|plugin <from_index> <to_index>',
-            'refresh': '   refresh',
+            'activate': '  activate mod|plugin <index>               add a mod or plugin to the stage.',
+            'clean': '     clean                                     remove all symlinks and empty folders.',
+            'commit': '    commit                                    make this configuration persistent.',
+            'deactivate': 'deactivate mod|plugin <index>             remove a mod or plugin from the stage.',
+            'delete': '    delete download|mod <index>               delete a file from the filesystem.',
+            'disable': '   disable mod|plugin <index>                alias for deactivate.',
+            'enable': '    enable mod|plugin <index>                 alias for activate.',
+            'exit': '      exit                                      quit without saving changes.',
+            'help': '      help                                      show this menu.',
+            'install': '   install <index>                           extract a mod from downloads,',
+            'move': '      move mod|plugin <from_index> <to_index>   rearrange the load order.',
+            'refresh': '   refresh                                   reload all mods/plugins/downloads from disk.',
         }.items()):
             print(f"{k} {v}")
         print()
@@ -253,7 +253,7 @@ class Oom:
         """
         components = self._get_validated_components(component_type, mod_index)
         if not components:
-            input("[Enter]")
+            input(f"There are no {component_type}s. [Enter]")
             return False
 
         return components[int(mod_index)].set(state, self.plugins)
@@ -263,7 +263,8 @@ class Oom:
         """
         activate a component. Returns success.
         """
-        self._set_component_state(component_type, mod_index, True)
+        if not self._set_component_state(component_type, mod_index, True):
+            return False
         self.changes = True
         return True
 

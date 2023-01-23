@@ -40,28 +40,19 @@ class Mod:
         self.name = name
         self.location = location
         self.data_dir = False
+        self.fomod = False
         self.enabled = enabled
         self.files = {}
         self.plugins = []
-        self.visible = True
 
         # get our files
-        for struct in os.walk(self.location):
+        for parent_dir, folders, files in os.walk(self.location):
             # if we have a data dir, remember it.
-            parent_dir = struct[0]
-            folders = struct[1]
-            files = struct[2]
-
-
-        # get our files
-        for struct in os.walk(self.location):
-            # if we have a data dir, remember it.
-            parent_dir = struct[0]
-            folders = struct[1]
-            files = struct[2]
-
             if folders and "data" in [i.lower() for i in folders]:
                 self.data_dir = True
+
+            if folders and "fomod" in [i.lower() for i in folders]:
+                self.fomod = True
 
             for file in files:
                 self.files[file] = os.path.join(parent_dir, file)
@@ -80,6 +71,12 @@ class Mod:
 
 
     def set(self, state, oom_plugins):
+        if self.fomod:
+            print("This is a fomod. Please manually create proper Data structure in")
+            print(f"{self.location}")
+            print("then refresh and try again.")
+            return False
+
         self.enabled = state
         if self.enabled:
             for name in self.plugins:
