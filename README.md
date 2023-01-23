@@ -1,5 +1,5 @@
 # oom
-Obviously Organizes Mods
+Organizes Obvious Mods
 
 A Terminal-Based Mod Organizer for Linux
 
@@ -15,18 +15,14 @@ A Terminal-Based Mod Organizer for Linux
 - Works via symbolic links. No performance impact!
 
 # Planned Features
-- Handle mods that are packaged like this: modname/extra_folder/Data
-- Handle omod and exe file types during install command.
 - Expand to other Bethesda games. Fallout4, Oblivion, etc.
-- Handle fomod installers, someday, maybe.
-- Handle bain installers, someday, maybe.
-- LOOT integration, someday, maybe.
+- Don't show downloaded files when they are still being downloaded
+  (check for *.part and exclude if it exists).
 
 # Dependencies
 - Linux version of Steam, Proton.
 - Python3
-- p7z (and the 7z cli utility somewhere in your PATH, which should
-  be automatic if you have p7z installed).
+- p7z (or something else that puts 7z in your PATH).
 
 # Installation Instructions
 ```
@@ -46,7 +42,7 @@ sudo cp bin/oom /usr/local/bin
 - Use the `help` command so you don't have to read instructions from here :)
 - Launch the game through steam. If you want to use skse, copy skse64_loader.exe to SkyrimSELauncher.exe.
 
-# How to Manully Install FOMOD
+# Usage with non-obvious mods like FOMODs
 - Download the mod to your ~/Downloads folder.
 - Launch oom and install the mod with `install <download index>`. Close oom.
 - check ~/.local/share/oom/Skyrim\ Special\ Edition/mods/your_mod_name
@@ -57,5 +53,6 @@ sudo cp bin/oom /usr/local/bin
 
 # Disclaimer
 - I waive all liability. Use at your own risk.
-
+- This will rename your downloads to not have ****** up names.
+- This will remove symlinks and empty directories from your game dir.
 
