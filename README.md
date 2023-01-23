@@ -16,8 +16,6 @@ A Terminal-Based Mod Organizer for Linux
 
 # Planned Features
 - Expand to other Bethesda games. Fallout4, Oblivion, etc.
-- Don't show downloaded files when they are still being downloaded
-  (check for *.part and exclude if it exists).
 
 # Dependencies
 - Linux version of Steam, Proton.
