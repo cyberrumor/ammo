@@ -369,6 +369,7 @@ class Oom:
         """
         Returns a dict containing the final symlinks that will be installed.
         """
+        # destination: source
         result = {}
         for mod in [i for i in self.mods if i.enabled]:
             for src in mod.files.values():
@@ -383,7 +384,7 @@ class Oom:
                             GAME_DIR,
                             'Data' + corrected_name.lower(),
                     )
-                result[src] = dest
+                result[dest] = src
         return result
 
 
@@ -395,7 +396,7 @@ class Oom:
         stage = self.stage()
         self._clean_data_dir()
 
-        for src, dest in stage.items():
+        for dest, src in stage.items():
             os.makedirs(os.path.split(dest)[0], exist_ok=True)
             os.symlink(src, dest)
 
