@@ -10,12 +10,12 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Fallout 4
 
 # Features
-- Manage load order.
-- Install mods from ~/Downloads folder.
-- Delete downloads and installed mods.
-- Deactivate a mod, auto-hide its plugins.
-- Handle file conflicts correctly.
-- Return to vanilla game state easily.
+- Handles file conflicts correctly.
+- Deactivating a mod auto-hides its plugins.
+- Ability to manage load order of mods and plugins.
+- Ability to install mods from ~/Downloads folder.
+- Ability to delete downloads and installed mods.
+- Ability to return to vanilla game state easily.
 
 # Limitations
 - No fomod installer.
@@ -25,8 +25,12 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Manual downloads only.
 
 # Planned Features
-- FOMOD installer
-- Normalize capitalization of folder names
+- New name.
+- Morrowind support.
+- Automated testing.
+- FOMOD installer.
+- Launcher for .exe files anywhere inside the game folder.
+- Select multiple files at once for activation, deactivation, or deletion.
 
 # Dependencies
 - Linux version of Steam, Proton.
