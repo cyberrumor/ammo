@@ -26,6 +26,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 # Planned Features
 - FOMOD installer
+- Normalize capitalization of folder names
 
 # Dependencies
 - Linux version of Steam, Proton.
