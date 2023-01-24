@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 import os
 
-def is_plugin(file):
-    return any([
-        file.endswith(i) for i in [".esp", ".esl", ".esm"]
-    ])
-
 class DLC:
     def __init__(self, name):
         self.enabled = True
         self.name = name
         self.is_dlc = True
 
+
     def files_in_place(self):
         return True
+
 
 class Download:
     def __init__(self, name, location):
@@ -22,6 +19,7 @@ class Download:
         self.sane = False
         if all([(i.isalnum() or i in ['.', '_', '-']) for i in self.name]):
             self.sane = True
+
 
     def sanitize(self):
         """
@@ -64,10 +62,10 @@ class Mod:
 
             for file in files:
                 self.files[file] = os.path.join(parent_dir, file)
-
-                if is_plugin(file) and file not in self.plugins:
+                if os.path.splitext(file)[-1] in ['.esp', '.esl', '.esm'] \
+                and file not in self.plugins \
+                and "Docs" not in self.files[file]:
                     self.plugins.append(file)
-
 
     def associated_plugins(self, plugins):
         owned = []

@@ -223,7 +223,7 @@ class Oom:
                         'sounds',
                         'voices',
                 ] \
-                and not is_plugin(extracted_files[0]):
+                and not os.path.splitext(extracted_files[0])[-1] in ['.esp', '.esl', '.esm']:
                     # we are reasonably sure we can eliminate a redundant directory.
                     # This is needed for mods like skse that have a version directory
                     # between our install location and the mod's data folder.
