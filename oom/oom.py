@@ -1,17 +1,34 @@
 #!/usr/bin/env python3
 import os
 import shutil
-from const import *
 from mod import Mod, Plugin, Download, is_plugin
 
+
+IDS = {
+    "Skyrim Special Edition": "489830",
+    "Oblivion": "22330",
+    "Fallout 4": "377160",
+    "Skyrim": "72850",
+}
+HOME = os.environ["HOME"]
+DOWNLOADS = os.path.join(HOME, "Downloads")
+STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
+
+
 class Oom:
-    def __init__(self, conf=os.path.join(CONF_DIR, "oom.conf"), plugin_file=PLUGINS):
+    def __init__(self, app_name, game_dir, data_dir, conf, plugin_file, mods_dir):
+        self.name = app_name
+        self.game_dir = game_dir
+        self.data_dir = data_dir
         self.conf = conf
         self.plugin_file = plugin_file
+        self.mods_dir = mods_dir
+
         self.downloads = []
         self.mods = []
         self.plugins = []
         self.changes = False
+
 
 
     def load_mods(self):
@@ -19,9 +36,9 @@ class Oom:
         Instance a  Mod class for each mod folder in oom's mod directory.
         """
         mods = []
-        mod_folders = [i for i in os.listdir(MODS) if os.path.isdir(os.path.join(MODS, i))]
+        mod_folders = [i for i in os.listdir(self.mods_dir) if os.path.isdir(os.path.join(self.mods_dir, i))]
         for mod_folder in mod_folders:
-            mod = Mod(mod_folder, os.path.join(MODS, mod_folder), False)
+            mod = Mod(mod_folder, os.path.join(self.mods_dir, mod_folder), self.data_dir, False)
             mods.append(mod)
         self.mods = mods
 
@@ -60,6 +77,14 @@ class Oom:
 
 
     def load_plugins(self):
+        # make sure we actually have a plugins file to read, if it
+        # didn't already exist. This can happen if the game hasn't been
+        # launched before.
+        os.makedirs(os.path.split(self.plugin_file)[0], exist_ok=True)
+        if not os.path.exists(self.plugin_file):
+            with open(self.plugin_file, "w") as file:
+                file.write("")
+
         with open(self.plugin_file, "r") as file:
             for line in file:
                 if line.startswith('#'):
@@ -83,9 +108,9 @@ class Oom:
                     else:
                         print(f"There was an enabled plugin {name} that was missing dependencies!")
                         print("If you want to delete files from a mod, delete them from")
-                        print(f"{MODS}")
+                        print(f"{self.mods_dir}")
                         print("instead of from")
-                        print(f"{GAME_DIR}")
+                        print(f"{self.game_dir}")
                         print(f"Then run the 'commit' command to apply your changes.")
                         input("[Enter] to try to automatically fix, [CTRL+C] to exit.")
                         # literally just pretend it doesn't exist
@@ -171,7 +196,7 @@ class Oom:
         if not output_folder:
             output_folder = os.path.splittext(download.name)[0]
 
-        extract_to = os.path.join(MODS, output_folder)
+        extract_to = os.path.join(self.mods_dir, output_folder)
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
         extracted_files = os.listdir(extract_to)
         if len(extracted_files) == 1 \
@@ -269,7 +294,7 @@ class Oom:
             return False
         components = self.plugins if component_type == "plugin" else self.mods
         if not len(components):
-            print(f"Install mods to '{MODS}' to manage them with oom.")
+            print(f"Install mods to '{self.mods_dir}' to manage them with oom.")
             print(f"To see your plugins, you must activate the mods they belong ot.")
             return False
 
@@ -373,7 +398,7 @@ class Oom:
         Removes all symlinks and deletes empty folders.
         """
         # remove symlinks
-        for dirpath, dirnames, filenames in os.walk(GAME_DIR):
+        for dirpath, dirnames, filenames in os.walk(self.game_dir):
             for file in filenames:
                 full_path = os.path.join(dirpath, file)
                 if os.path.islink(full_path):
@@ -390,7 +415,7 @@ class Oom:
                         # directory wasn't empty, ignore this
                         pass
 
-        remove_empty_dirs(GAME_DIR)
+        remove_empty_dirs(self.game_dir)
         return True
 
 
@@ -421,12 +446,12 @@ class Oom:
                 # TODO: replace all folder names with lowercase.
                 if mod.data_dir:
                     dest = os.path.join(
-                            GAME_DIR,
+                            self.game_dir,
                             corrected_name.replace('/data', '/Data').lstrip('/')
                     )
                 else:
                     dest = os.path.join(
-                            GAME_DIR,
+                            self.game_dir,
                             'Data' + corrected_name,
                     )
                 result[dest] = src
@@ -549,14 +574,55 @@ class Oom:
 
 
 if __name__ == "__main__":
+    # game selection
+    games = os.listdir(os.path.join(STEAM, "common"))
+    games = [game for game in games if game in IDS]
+    if len(games) == 1:
+        choice = 0
+    elif len(games) > 1:
+        while True:
+            choice = None
+            print("Index   |   Game")
+            print("----------------")
+            for index, game in enumerate(games):
+                print(f"[{index}]         {game}")
+            choice = input("Index of game to manage: ")
+            try:
+                choice = int(choice)
+                assert choice in range(len(games))
+            except ValueError:
+                print(f"Expected integer 0 through {len(games) - 1} (inclusive)")
+                continue
+            except AssertionError:
+                print(f"Expected integer 0 through {len(games) - 1} (inclusive)")
+                continue
+            break
+    else:
+        print("Install some games to manage through steam!")
+        print(f"oom looks for games in {os.path.join(STEAM, 'common')}")
+        print("If you were previously managing mods with oom but uninstalled the game,")
+        print("you can find your mod files intact in ~/.local/share/oom")
+        exit()
+
+    # create out paths
+    app_name = games[choice]
+    app_id = IDS[app_name]
+    pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")
+    game_dir = os.path.join(STEAM, f"common/{app_name}")
+    plugins = os.path.join(STEAM, f"{pfx}/drive_c/users/steamuser/AppData/Local/{app_name.replace('Fallout 4', 'Fallout4')}/Plugins.txt")
+
+    data = os.path.join(game_dir, "Data")
+    mods_dir = os.path.join(HOME, f".local/share/oom/{app_name}/mods")
+    conf_dir = os.path.join(HOME, f".local/share/oom/{app_name}")
+    conf = os.path.join(conf_dir, "oom.conf")
+
     # Create expected directories if they don't alrady exist.
-    expected_dirs = [MODS, CONF_DIR]
+    expected_dirs = [mods_dir, conf_dir]
     for directory in expected_dirs:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-
     # Create an instance of Oom and run it.
-    oom = Oom()
+    oom = Oom(app_name, game_dir, data, conf, plugins, mods_dir)
     exit(oom.run())
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import os
-from const import *
-
 
 def is_plugin(file):
     return any([
@@ -36,9 +34,10 @@ class Download:
 
 
 class Mod:
-    def __init__(self, name, location, enabled):
+    def __init__(self, name, location, parent_data_dir, enabled):
         self.name = name
         self.location = location
+        self.parent_data_dir = parent_data_dir
         self.data_dir = False
         self.fomod = False
         self.enabled = enabled
@@ -94,7 +93,7 @@ class Mod:
 
     def files_in_place(self):
         for location in self.files.values():
-            corrected_location = os.path.join(location.split(self.name, 1)[-1].strip('/'), DATA)
+            corrected_location = os.path.join(location.split(self.name, 1)[-1].strip('/'), self.parent_data_dir)
             # note that we don't care if the files are the same here, just that the paths and
             # filenames are the same. It's fine if our file comes from another mod.
             if not os.path.exists(corrected_location):
