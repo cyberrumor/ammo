@@ -200,7 +200,7 @@ class Oom:
 
         # get a decent name for our output folder.
         output_folder = ''.join(
-            [i for i in os.path.splitext(download.name)[0] if i.isalpha() or i == '_']
+            [i for i in os.path.splitext(download.name)[0] if i.isalnum() or i == '_']
         ).strip('_')
         if not output_folder:
             output_folder = os.path.splittext(download.name)[0]
