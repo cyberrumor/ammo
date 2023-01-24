@@ -447,22 +447,35 @@ class Oom:
         """
         Returns a dict containing the final symlinks that will be installed.
         """
+        def normalize(destination):
+            """
+            Prevent folders with the same name but different case from being created.
+            """
+            path, file = os.path.split(destination)
+            local_path = path.split(self.game_dir)[-1].lower()
+            for i in ['Data', 'Plugins', 'SKSE', 'Edit Scripts', 'Docs', 'Scripts', 'Source']:
+                local_path = local_path.replace(i.lower(), i)
+            new_dest = os.path.join(self.game_dir, local_path.lstrip('/'))
+            result = os.path.join(new_dest, file)
+            return result
+
         # destination: source
         result = {}
         for mod in [i for i in self.mods if i.enabled]:
             for src in mod.files.values():
                 corrected_name = src.split(mod.name, 1)[-1]
-                # TODO: replace all folder names with lowercase.
                 if mod.data_dir:
                     dest = os.path.join(
                             self.game_dir,
                             corrected_name.replace('/data', '/Data').lstrip('/')
                     )
+                    dest = normalize(dest)
                 else:
                     dest = os.path.join(
                             self.game_dir,
                             'Data' + corrected_name,
                     )
+                    dest = normalize(dest)
                 result[dest] = src
         return result
 
