@@ -11,11 +11,12 @@ A Terminal-Based Mod Organizer for Linux
 - Manages activation state of mods and plugins.
 - Deactivating a mod auto-hides its plugins.
 - Handles file conflicts correctly.
-- Disable all mods and 'commit' to return to vanilla skyrim.
+- Disable all mods and 'commit' to return to vanilla.
 - Works via symbolic links. No performance impact!
+- Should work with most Bethesda games.
 
 # Planned Features
-- Expand to other Bethesda games. Fallout4, Oblivion, etc.
+- FOMOD installer
 
 # Dependencies
 - Linux version of Steam, Proton.
@@ -38,12 +39,11 @@ sudo cp bin/oom /usr/local/bin
   will be moved up.
 - Make changes persist on disk! Nothing will be changed if you don't commit: `commit`
 - Use the `help` command so you don't have to read instructions from here :)
-- Launch the game through steam. If you want to use skse, copy skse64_loader.exe to SkyrimSELauncher.exe.
 
 # Usage with non-obvious mods like FOMODs
 - Download the mod to your ~/Downloads folder.
 - Launch oom and install the mod with `install <download index>`. Close oom.
-- check ~/.local/share/oom/Skyrim\ Special\ Edition/mods/your_mod_name
+- check ~/.local/share/oom/your_game_name/mods/your_mod_name
 - Inside that dir, create a `Data` folder.
 - Move the contents of the folders of your choice inside the new Data folder.
 - Delete all the folders besides the Data folder.
