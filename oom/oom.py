@@ -453,7 +453,7 @@ class Oom:
             """
             path, file = os.path.split(destination)
             local_path = path.split(self.game_dir)[-1].lower()
-            for i in ['Data', 'Plugins', 'SKSE', 'Edit Scripts', 'Docs', 'Scripts', 'Source']:
+            for i in ['Data', 'DynDOLOD', 'Plugins', 'SKSE', 'Edit Scripts', 'Docs', 'Scripts', 'Source']:
                 local_path = local_path.replace(i.lower(), i)
             new_dest = os.path.join(self.game_dir, local_path.lstrip('/'))
             result = os.path.join(new_dest, file)
