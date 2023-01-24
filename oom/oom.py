@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import shutil
-from mod import Mod, Plugin, Download, is_plugin
+from mod import *
 
 
 IDS = {
@@ -87,11 +87,13 @@ class Oom:
 
         with open(self.plugin_file, "r") as file:
             for line in file:
+                if not line.strip():
+                    continue
                 if line.startswith('#'):
                     continue
 
                 name = line.strip('*').strip()
-                parent_mod = None
+                parent_mod = DLC(name)
                 for mod in self.mods:
                     if name in mod.plugins:
                         parent_mod = mod
@@ -102,22 +104,11 @@ class Oom:
                     enabled = True
                     # attempt to enable the parent mod,
                     # only do this if all that mod's files are present.
-                    if hasattr(parent_mod, "files_in_place"):
-                        if parent_mod.files_in_place():
-                            parent_mod.enabled = True
-                    else:
-                        print(f"There was an enabled plugin {name} that was missing dependencies!")
-                        print("If you want to delete files from a mod, delete them from")
-                        print(f"{self.mods_dir}")
-                        print("instead of from")
-                        print(f"{self.game_dir}")
-                        print(f"Then run the 'commit' command to apply your changes.")
-                        input("[Enter] to try to automatically fix, [CTRL+C] to exit.")
-                        # literally just pretend it doesn't exist
-                        continue
+                    if parent_mod.files_in_place():
+                        parent_mod.enabled = True
 
                 plugin = Plugin(name, enabled, parent_mod)
-                # don't manage plugins belonging to disabled mods.
+                # only manage plugins belonging to enabled mods.
                 if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
                     self.plugins.append(plugin)
 

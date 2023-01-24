@@ -6,6 +6,13 @@ def is_plugin(file):
         file.endswith(i) for i in [".esp", ".esl", ".esm"]
     ])
 
+class DLC:
+    def __init__(self, name):
+        self.enabled = True
+        self.name = name
+
+    def files_in_place(self):
+        return True
 
 class Download:
     def __init__(self, name, location):
