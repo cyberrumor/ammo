@@ -1,5 +1,5 @@
-# oom
-Organizes Obvious Mods
+# ammo
+Almost Manual Mod Organizer
 
 A Simple Terminal-Based Mod Organizer for Linux
 
@@ -40,10 +40,10 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 # Installation Instructions
 ```
-git clone https://github.com/cyberrumor/oom
-cd oom
-echo "$PWD/oom/oom.py" >> bin/oom
-sudo cp bin/oom /usr/local/bin
+git clone https://github.com/cyberrumor/ammo
+cd ammo
+echo "$PWD/ammo/ammo.py" >> bin/ammo
+sudo cp bin/ammo /usr/local/bin
 ```
 
 # Usage Instructions
@@ -57,12 +57,12 @@ sudo cp bin/oom /usr/local/bin
 
 # Usage with non-obvious mods like FOMODs
 - Download the mod to your ~/Downloads folder.
-- Launch oom and install the mod with `install <download index>`. Close oom.
-- check ~/.local/share/oom/your_game_name/mods/your_mod_name
+- Launch ammo and install the mod with `install <download index>`. Close ammo.
+- check ~/.local/share/ammo/your_game_name/mods/your_mod_name
 - Inside that dir, create a `Data` folder.
 - Move the contents of the folders of your choice inside the new Data folder.
 - Delete all the folders besides the Data folder.
-- Launch oom, activate the mod and commit.
+- Launch ammo, activate the mod and commit.
 
 # Disclaimer
 - I waive all liability. Use at your own risk.

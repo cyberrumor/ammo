@@ -76,7 +76,7 @@ class Mod:
         return owned
 
 
-    def set(self, state, oom_plugins):
+    def set(self, state, ammo_plugins):
         if self.fomod:
             print("This is a fomod. Please manually create proper Data structure in")
             print(f"{self.location}")
@@ -86,15 +86,15 @@ class Mod:
         self.enabled = state
         if self.enabled:
             for name in self.plugins:
-                if name not in [i.name for i in oom_plugins]:
+                if name not in [i.name for i in ammo_plugins]:
                     plugin = Plugin(name, False, self)
-                    oom_plugins.append(plugin)
+                    ammo_plugins.append(plugin)
         else:
-            for plugin in self.associated_plugins(oom_plugins):
+            for plugin in self.associated_plugins(ammo_plugins):
                 plugin.enabled = False if state == False else plugin.enabled
 
-                if plugin in oom_plugins:
-                    oom_plugins.remove(plugin)
+                if plugin in ammo_plugins:
+                    ammo_plugins.remove(plugin)
         return True
 
 

@@ -15,7 +15,7 @@ DOWNLOADS = os.path.join(HOME, "Downloads")
 STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
 
 
-class Oom:
+class Ammo:
     def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir):
         self.name = app_name
         self.game_dir = game_dir
@@ -34,7 +34,7 @@ class Oom:
 
     def load_mods(self):
         """
-        Instance a  Mod class for each mod folder in oom's mod directory.
+        Instance a  Mod class for each mod folder in ammo's mod directory.
         """
         mods = []
         mod_folders = [i for i in os.listdir(self.mods_dir) if os.path.isdir(os.path.join(self.mods_dir, i))]
@@ -160,7 +160,7 @@ class Oom:
 
     def save_order(self):
         """
-        Writes oom.conf and Plugins.txt.
+        Writes ammo.conf and Plugins.txt.
         """
         with open(self.plugin_file, "w") as file:
             for plugin in self.plugins:
@@ -173,7 +173,7 @@ class Oom:
 
     def install(self, download_index):
         """
-        extracts a Download to oom's mod folder.
+        extracts a Download to ammo's mod folder.
         """
         if self.changes:
             print("commit changes to disk before installing a mod,")
@@ -303,7 +303,7 @@ class Oom:
             return False
         components = self.plugins if component_type == "plugin" else self.mods
         if not len(components):
-            print(f"Install mods to '{self.mods_dir}' to manage them with oom.")
+            print(f"Install mods to '{self.mods_dir}' to manage them with ammo.")
             print(f"To see your plugins, you must activate the mods they belong ot.")
             return False
 
@@ -348,7 +348,7 @@ class Oom:
 
     def delete(self, component_type, mod_index):
         """
-        deletes a mod from oom's mod dir. Forces data reload from disk,
+        deletes a mod from ammo's mod dir. Forces data reload from disk,
         possibly discarding unapplied changes.
         """
 
@@ -367,9 +367,9 @@ class Oom:
                 # validation error
                 return False
 
-            # get the mod out of oom's non-persistent mem.
+            # get the mod out of ammo's non-persistent mem.
             mod = self.mods.pop(int(mod_index))
-            # delete the mod from oom's mod folder.
+            # delete the mod from ammo's mod folder.
             shutil.rmtree(mod.location)
             self.commit()
         else:
@@ -430,7 +430,7 @@ class Oom:
 
     def vanilla(self):
         print("This will disable all mods and plugins, and remove all symlinks and empty folders from your game dir.")
-        print("oom will remember your mod load order but not your plugin load order.")
+        print("ammo will remember your mod load order but not your plugin load order.")
         print("These changes will take place immediately.")
         choice = input("continue? [y/n]: ")
         if choice.lower() != "y":
@@ -621,9 +621,9 @@ if __name__ == "__main__":
             break
     else:
         print("Install some games to manage through steam!")
-        print(f"oom looks for games in {os.path.join(STEAM, 'common')}")
-        print("If you were previously managing mods with oom but uninstalled the game,")
-        print("you can find your mod files intact in ~/.local/share/oom")
+        print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
+        print("If you were previously managing mods with ammo but uninstalled the game,")
+        print("you can find your mod files intact in ~/.local/share/ammo")
         exit()
 
     # create out paths
@@ -636,9 +636,9 @@ if __name__ == "__main__":
     dlc = os.path.join(app_data, f"{app_name.replace(' ', '')}/DLCList.txt")
 
     data = os.path.join(game_dir, "Data")
-    mods_dir = os.path.join(HOME, f".local/share/oom/{app_name}/mods")
-    conf_dir = os.path.join(HOME, f".local/share/oom/{app_name}")
-    conf = os.path.join(conf_dir, "oom.conf")
+    mods_dir = os.path.join(HOME, f".local/share/ammo/{app_name}/mods")
+    conf_dir = os.path.join(HOME, f".local/share/ammo/{app_name}")
+    conf = os.path.join(conf_dir, "ammo.conf")
 
     # Create expected directories if they don't alrady exist.
     expected_dirs = [mods_dir, conf_dir]
@@ -646,7 +646,7 @@ if __name__ == "__main__":
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    # Create an instance of Oom and run it.
-    oom = Oom(app_name, game_dir, data, conf, dlc, plugins, mods_dir)
-    exit(oom.run())
+    # Create an instance of Ammo and run it.
+    ammo = Ammo(app_name, game_dir, data, conf, dlc, plugins, mods_dir)
+    exit(ammo.run())
 
