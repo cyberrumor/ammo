@@ -16,11 +16,12 @@ STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
 
 
 class Oom:
-    def __init__(self, app_name, game_dir, data_dir, conf, plugin_file, mods_dir):
+    def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir):
         self.name = app_name
         self.game_dir = game_dir
         self.data_dir = data_dir
         self.conf = conf
+        self.dlc_file = dlc_file
         self.plugin_file = plugin_file
         self.mods_dir = mods_dir
 
@@ -84,33 +85,50 @@ class Oom:
         if not os.path.exists(self.plugin_file):
             with open(self.plugin_file, "w") as file:
                 file.write("")
+        files_with_plugins = [self.plugin_file]
+        if os.path.exists(self.dlc_file):
+            files_with_plugins.append(self.dlc_file)
 
-        with open(self.plugin_file, "r") as file:
-            for line in file:
-                if not line.strip():
-                    continue
-                if line.startswith('#'):
-                    continue
+        for file_with_plugin in files_with_plugins:
+            with open(file_with_plugin, "r") as file:
+                for line in file:
+                    if not line.strip():
+                        continue
+                    if line.startswith('#'):
+                        continue
 
-                name = line.strip('*').strip()
-                parent_mod = DLC(name)
-                for mod in self.mods:
-                    if name in mod.plugins:
-                        parent_mod = mod
-                        break
+                    name = line.strip('*').strip()
+                    parent_mod = DLC(name)
+                    for mod in self.mods:
+                        if name in mod.plugins:
+                            parent_mod = mod
+                            break
 
-                enabled = False
-                if line.startswith('*'):
-                    enabled = True
-                    # attempt to enable the parent mod,
-                    # only do this if all that mod's files are present.
-                    if parent_mod.files_in_place():
-                        parent_mod.enabled = True
+                    enabled = False
+                    pre_existing = False
+                    if line.startswith('*'):
+                        enabled = True
+                        # attempt to enable the parent mod,
+                        # only do this if all that mod's files are present.
+                        if parent_mod.files_in_place():
+                            parent_mod.enabled = True
 
-                plugin = Plugin(name, enabled, parent_mod)
-                # only manage plugins belonging to enabled mods.
-                if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
-                    self.plugins.append(plugin)
+                        for plug in self.plugins:
+                            # enable DLC if it's already in our plugins list.
+                            # plugins.txt as enabled.
+                            if plug.name == name:
+                                plug.enabled = True
+                                pre_existing = True
+                                break
+
+                    if pre_existing:
+                        # we've already added this file from DLCList.txt
+                        continue
+
+                    plugin = Plugin(name, enabled, parent_mod)
+                    # only manage plugins belonging to enabled mods.
+                    if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
+                        self.plugins.append(plugin)
 
         return True
 
@@ -600,7 +618,9 @@ if __name__ == "__main__":
     app_id = IDS[app_name]
     pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")
     game_dir = os.path.join(STEAM, f"common/{app_name}")
-    plugins = os.path.join(STEAM, f"{pfx}/drive_c/users/steamuser/AppData/Local/{app_name.replace('Fallout 4', 'Fallout4')}/Plugins.txt")
+    app_data = os.path.join(STEAM, f"{pfx}/drive_c/users/steamuser/AppData/Local")
+    plugins = os.path.join(app_data, f"{app_name.replace(' ', '')}/Plugins.txt")
+    dlc = os.path.join(app_data, f"{app_name.replace(' ', '')}/DLCList.txt")
 
     data = os.path.join(game_dir, "Data")
     mods_dir = os.path.join(HOME, f".local/share/oom/{app_name}/mods")
@@ -614,6 +634,6 @@ if __name__ == "__main__":
             os.makedirs(directory)
 
     # Create an instance of Oom and run it.
-    oom = Oom(app_name, game_dir, data, conf, plugins, mods_dir)
+    oom = Oom(app_name, game_dir, data, conf, dlc, plugins, mods_dir)
     exit(oom.run())
 

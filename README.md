@@ -1,19 +1,28 @@
 # oom
 Organizes Obvious Mods
 
-A Terminal-Based Mod Organizer for Linux
+A Simple Terminal-Based Mod Organizer for Linux
+
+# Supported Games
+- Skyrim
+- Skyrim SE
+- Oblivion
+- Fallout 4
 
 # Features
-- Works on Linux (and probably only on Linux).
-- Manages mod and plugin load order independently of one another.
-- Deletes mods and downloads.
-- Installs mods from ~/Downloads folder.
-- Manages activation state of mods and plugins.
-- Deactivating a mod auto-hides its plugins.
-- Handles file conflicts correctly.
-- Disable all mods and 'commit' to return to vanilla.
-- Works via symbolic links. No performance impact!
-- Should work with most Bethesda games.
+- Manage load order.
+- Install mods from ~/Downloads folder.
+- Delete downloads and installed mods.
+- Deactivate a mod, auto-hide its plugins.
+- Handle file conflicts correctly.
+- Return to vanilla game state easily.
+
+# Limitations
+- No fomod installer.
+- No dependency checking.
+- No automated load order handling.
+- No external tool integration.
+- Manual downloads only.
 
 # Planned Features
 - FOMOD installer

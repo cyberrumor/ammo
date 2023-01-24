@@ -10,6 +10,7 @@ class DLC:
     def __init__(self, name):
         self.enabled = True
         self.name = name
+        self.is_dlc = True
 
     def files_in_place(self):
         return True
@@ -47,6 +48,7 @@ class Mod:
         self.parent_data_dir = parent_data_dir
         self.data_dir = False
         self.fomod = False
+        self.is_dlc = False
         self.enabled = enabled
         self.files = {}
         self.plugins = []
