@@ -397,7 +397,7 @@ class Ammo:
             name = self.downloads[index].name
             try:
                 os.remove(self.downloads[index].location)
-                self.downloads.remove(index)
+                self.downloads.pop(index)
             except IsADirectoryError:
                 print(f"Error deleting {name}, it is a directory not an archive!")
                 return False
