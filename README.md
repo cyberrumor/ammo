@@ -47,13 +47,23 @@ sudo cp bin/ammo /usr/local/bin
 ```
 
 # Usage Instructions
-- Activate a component by type and index: `activate mod 0` or `activate plugin 5`.
-- Deactivate a component by type and index: `deactivate mod 0` or `deactivate plugin 2`.
-- Arrange your load order with the move command: `move mod 0 3`.
-  This will cause the mod at index 0 to be inserted at index 3. Mods that had indicies 3 or lower
-  will be moved up.
-- Make changes persist on disk! Nothing will be changed if you don't commit: `commit`
-- Use the `help` command so you don't have to read instructions from here :)
+
+`ammo` - Launch the interactive shell. Select a game via index if prompted.
+
+```
+activate   activate mod|plugin <index>               add a mod or plugin to the stage.
+commit     commit                                    make this configuration persistent.
+deactivate deactivate mod|plugin <index>             remove component from the stage.
+delete     delete download|mod <index>               delete a mod or download from the filesystem.
+disable    disable mod|plugin <index>                alias for deactivate.
+enable     enable mod|plugin <index>                 alias for activate.
+exit       exit                                      quit without saving changes.
+help       help                                      show this menu.
+install    install <index>                           extract a mod from downloads.
+move       move mod|plugin <from_index> <to_index>   rearrange the load order.
+refresh    refresh                                   reload all mods/plugins/downloads/orders from disk.
+vanilla    vanilla                                   disable all non-vanilla components and clean up.
+```
 
 # Usage with non-obvious mods like FOMODs
 - Download the mod to your ~/Downloads folder.
