@@ -3,7 +3,6 @@ import os
 import shutil
 from mod import *
 
-
 IDS = {
     "Skyrim Special Edition": "489830",
     "Oblivion": "22330",
@@ -45,7 +44,7 @@ class Ammo:
 
     def load_mods_from_conf(self):
         """
-        Read our conf file. If there's mods in it, put them in order.
+        Read the conf file. If there's mods in it, put them in order.
         Put mods that aren't listed in the conf file at the end.
         """
         ordered_mods = []
@@ -77,9 +76,9 @@ class Ammo:
 
     def load_plugins(self):
         """
-        Read our DLCList.txt and Plugins.txt files.
-        Add Plugins from these files to the list of plugins that we manage,
-        with attention to their order and whether they were enabled or not.
+        Read the DLCList.txt and Plugins.txt files.
+        Add Plugins from these files to the list of managed plugins,
+        with attention to the order and enabled state.
         """
         # Create the plugins file if it didn't already exist.
         os.makedirs(os.path.split(self.plugin_file)[0], exist_ok=True)
@@ -246,8 +245,7 @@ class Ammo:
                 shutil.move(filename, extract_to)
 
         self._hard_refresh()
-        # Return false even if successful to show 7z output.
-        return False
+        return True
 
 
     def print_status(self):
@@ -340,6 +338,7 @@ class Ammo:
             print(f"There are no {component_type}s. [Enter]")
             return False
 
+        self.changes = True
         return components[int(mod_index)].set(state, self.plugins)
 
 
@@ -347,19 +346,14 @@ class Ammo:
         """
         Activate a component. Returns success.
         """
-        if not self._set_component_state(component_type, mod_index, True):
-            return False
-        self.changes = True
-        return True
+        return self._set_component_state(component_type, mod_index, True)
 
 
     def deactivate(self, component_type, mod_index):
         """
         Aeactivate a component. Returns success.
         """
-        self._set_component_state(component_type, mod_index, False)
-        self.changes = True
-        return True
+        return self._set_component_state(component_type, mod_index, False)
 
 
     def delete(self, component_type, mod_index):
@@ -551,6 +545,7 @@ class Ammo:
         self.load_mods_from_conf()
         self.load_plugins()
         self.load_downloads()
+        self.changes = False
 
         return True
 
