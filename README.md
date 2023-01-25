@@ -25,7 +25,6 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Manual downloads only.
 
 # Planned Features
-- Ability to rename mods and downloads (but not plugins).
 - Morrowind support.
 - Automated testing.
 - FOMOD installer.

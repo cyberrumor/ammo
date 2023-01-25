@@ -62,7 +62,6 @@ class Ammo:
                     enabled = True
 
                 if name not in [i.name for i in self.mods]:
-                    print(f"we found a mod '{name}' that isn't in {self.conf}. Ignoring.")
                     continue
 
                 for mod in self.mods:
@@ -297,7 +296,6 @@ class Ammo:
             'install': '   install <index>                           extract a mod from downloads,',
             'move': '      move mod|plugin <from_index> <to_index>   rearrange the load order.',
             'refresh': '   refresh                                   reload all mods/plugins/downloads from disk.',
-            # 'rename': '    rename download|mod <index> <new_name>    rename a mod or download without file extension.',
             'vanilla': '   vanilla                                   disable all components and clean up.',
         }.items()):
             print(f"{k} {v}")
@@ -422,13 +420,6 @@ class Ammo:
         self.changes = True
         return True
 
-    """
-    def rename(self, component_type, component_index, new_name):
-        '''
-        Rename a download or a mod at index <component_index> to <new_name>.
-        '''
-        pass
-    """
 
     def _clean_data_dir(self):
         """
@@ -595,7 +586,6 @@ class Ammo:
             "install": {"func": self.install, "num_args": 1},
             "move": {"func": self.move, "num_args": 3},
             "refresh": {"func": self.refresh, "num_args": 0}, # reload data from disk
-            # "rename": {"func": self.rename, "num_args": 3},
         }
 
         cmd = ""

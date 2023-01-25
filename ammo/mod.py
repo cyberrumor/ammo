@@ -64,8 +64,9 @@ class Mod:
                 self.files[file] = os.path.join(parent_dir, file)
                 if os.path.splitext(file)[-1] in ['.esp', '.esl', '.esm'] \
                 and file not in self.plugins \
-                and "Docs" not in self.files[file]:
+                and (parent_dir == self.location or parent_dir == os.path.join(self.location, 'Data')):
                     self.plugins.append(file)
+
 
     def associated_plugins(self, plugins):
         owned = []
