@@ -215,30 +215,37 @@ class Ammo:
             output_folder = os.path.splittext(download.name)[0]
 
         extract_to = os.path.join(self.mods_dir, output_folder)
-        os.system(f"7z x '{download.location}' -o'{extract_to}'")
-        extracted_files = os.listdir(extract_to)
+        extracted_files = []
+        try:
+            os.system(f"7z x '{download.location}' -o'{extract_to}'")
+            extracted_files = os.listdir(extract_to)
+        except FileNotFoundError:
+            print("There was an issue extracting files. Is this a real archive?")
+            return False
+
         if len(extracted_files) == 1 \
-                and extracted_files[0].lower() not in [
-                        'data',
-                        'skse',
-                        'bashtags',
-                        'docs',
-                        'meshes',
-                        'textures',
-                        'animations',
-                        'interface',
-                        'misc',
-                        'shaders',
-                        'sounds',
-                        'voices',
-                ] \
-                and not os.path.splitext(extracted_files[0])[-1] in ['.esp', '.esl', '.esm']:
-                    # It is reasonable to conclude an extra directory can be eliminated.
-                    # This is needed for mods like skse that have a version directory
-                    # between the mod's root folder and the Data folder.
-                    for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
-                        filename  = os.path.join(extract_to, extracted_files[0], file)
-                        shutil.move(filename, extract_to)
+        and extracted_files[0].lower() not in [
+            'data',
+            'skse',
+            'bashtags',
+            'docs',
+            'meshes',
+            'textures',
+            'animations',
+            'interface',
+            'misc',
+            'shaders',
+            'sounds',
+            'voices',
+        ] \
+        and not os.path.splitext(extracted_files[0])[-1] in ['.esp', '.esl', '.esm']:
+            # It is reasonable to conclude an extra directory can be eliminated.
+            # This is needed for mods like skse that have a version directory
+            # between the mod's root folder and the Data folder.
+            for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
+                filename  = os.path.join(extract_to, extracted_files[0], file)
+                shutil.move(filename, extract_to)
+
         self._hard_refresh()
         # Return false even if successful to show 7z output.
         return False
@@ -387,8 +394,13 @@ class Ammo:
             except ValueError:
                 print("Expected a number greater than or equal to 0")
                 return False
-            download = self.downloads.pop(index)
-            os.remove(download.location)
+            name = self.downloads[index].name
+            try:
+                os.remove(self.downloads[index].location)
+                self.downloads.remove(index)
+            except IsADirectoryError:
+                print(f"Error deleting {name}, it is a directory not an archive!")
+                return False
         return True
 
 
