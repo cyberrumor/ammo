@@ -476,7 +476,7 @@ class Ammo:
             result = os.path.join(new_dest, file)
             return result
 
-        # destination: source
+        # destination: (mod_name, source)
         result = {}
         # Iterate through enabled mods in order.
         for mod in [i for i in self.mods if i.enabled]:
@@ -497,7 +497,7 @@ class Ammo:
                     )
                     dest = normalize(dest)
                 # Add the sanitized full path to our stage, resolving conflicts.
-                result[dest] = src
+                result[dest] = (mod.name, src)
         return result
 
 
@@ -510,12 +510,13 @@ class Ammo:
         self._clean_data_dir()
 
         all_files_success = True
-        for dest, src in stage.items():
+        for dest, source in stage.items():
             os.makedirs(os.path.split(dest)[0], exist_ok=True)
+            (name, src) = source
             try:
                 os.symlink(src, dest)
             except FileExistsError:
-                print(f"Skipped an existing file: {os.path.split(dest)[-1]}.")
+                print(f"{name} skipped overwriting an unmanaged file: {dest.split(self.game_dir)[-1].lstrip('/')}.")
                 all_files_success = False
         self.changes = False
         return all_files_success
