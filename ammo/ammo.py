@@ -31,7 +31,6 @@ class Ammo:
         self.changes = False
 
 
-
     def load_mods(self):
         """
         Instance a  Mod class for each mod folder in ammo's mod directory.
@@ -78,13 +77,18 @@ class Ammo:
 
 
     def load_plugins(self):
-        # make sure we actually have a plugins file to read, if it
-        # didn't already exist. This can happen if the game hasn't been
-        # launched before.
+        """
+        Read our DLCList.txt and Plugins.txt files.
+        Add Plugins from these files to the list of plugins that we manage,
+        with attention to their order and whether they were enabled or not.
+        """
+        # Create the plugins file if it didn't already exist.
         os.makedirs(os.path.split(self.plugin_file)[0], exist_ok=True)
         if not os.path.exists(self.plugin_file):
             with open(self.plugin_file, "w") as file:
                 file.write("")
+
+        # Detect whether DLCList.txt needs parsing.
         files_with_plugins = [self.plugin_file]
         if os.path.exists(self.dlc_file):
             files_with_plugins.append(self.dlc_file)
@@ -92,11 +96,16 @@ class Ammo:
         for file_with_plugin in files_with_plugins:
             with open(file_with_plugin, "r") as file:
                 for line in file:
+                    # Empty lines
                     if not line.strip():
                         continue
+                    # Comments
                     if line.startswith('#'):
                         continue
 
+                    # Initially assign all plugin parents as a DLC.
+                    # If the plugin has a parent mod, assign parent as that Mod.
+                    # This is used to track ownership for when a mod is disabled.
                     name = line.strip('*').strip()
                     parent_mod = DLC(name)
                     for mod in self.mods:
@@ -108,25 +117,24 @@ class Ammo:
                     pre_existing = False
                     if line.startswith('*'):
                         enabled = True
-                        # attempt to enable the parent mod,
-                        # only do this if all that mod's files are present.
+                        # Attempt to enable the parent mod,
+                        # Only do this if all that mod's files are present.
                         if parent_mod.files_in_place():
                             parent_mod.enabled = True
 
                         for plug in self.plugins:
-                            # enable DLC if it's already in our plugins list.
-                            # plugins.txt as enabled.
+                            # Enable DLC if it's already in our plugins list as enabled.
                             if plug.name == name:
                                 plug.enabled = True
                                 pre_existing = True
                                 break
 
                     if pre_existing:
-                        # we've already added this file from DLCList.txt
+                        # This file was already added from DLCList.txt
                         continue
 
                     plugin = Plugin(name, enabled, parent_mod)
-                    # only manage plugins belonging to enabled mods.
+                    # Only manage plugins belonging to enabled mods.
                     if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
                         self.plugins.append(plugin)
 
@@ -173,7 +181,7 @@ class Ammo:
 
     def install(self, download_index):
         """
-        extracts a Download to ammo's mod folder.
+        Extracts a Download to ammo's mod folder.
         """
         if self.changes:
             print("commit changes to disk before installing a mod,")
@@ -198,7 +206,8 @@ class Ammo:
         if not download.sane:
             download.sanitize()
 
-        # get a decent name for our output folder.
+        # Get a decent name for the output folder.
+        # This has to be done for a safe 7z call.
         output_folder = ''.join(
             [i for i in os.path.splitext(download.name)[0] if i.isalnum() or i == '_']
         ).strip('_')
@@ -224,19 +233,20 @@ class Ammo:
                         'voices',
                 ] \
                 and not os.path.splitext(extracted_files[0])[-1] in ['.esp', '.esl', '.esm']:
-                    # we are reasonably sure we can eliminate a redundant directory.
+                    # It is reasonable to conclude an extra directory can be eliminated.
                     # This is needed for mods like skse that have a version directory
-                    # between our install location and the mod's data folder.
+                    # between the mod's root folder and the Data folder.
                     for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
                         filename  = os.path.join(extract_to, extracted_files[0], file)
                         shutil.move(filename, extract_to)
         self._hard_refresh()
-        # return false even if successful to show 7z output
+        # Return false even if successful to show 7z output.
         return False
+
 
     def print_status(self):
         """
-        outputs a list of all downloads, then mods, then plugins.
+        Outputs a list of all downloads, then mods, then plugins.
         """
 
         if len(self.downloads):
@@ -280,6 +290,7 @@ class Ammo:
             'install': '   install <index>                           extract a mod from downloads,',
             'move': '      move mod|plugin <from_index> <to_index>   rearrange the load order.',
             'refresh': '   refresh                                   reload all mods/plugins/downloads from disk.',
+            # 'rename': '    rename download|mod <index> <new_name>    rename a mod or download without file extension.',
             'vanilla': '   vanilla                                   disable all components and clean up.',
         }.items()):
             print(f"{k} {v}")
@@ -299,12 +310,12 @@ class Ammo:
             return False
 
         if component_type not in ["plugin", "mod"]:
-            print(f"expected 'plugin' or 'mod', got arg {component_type}")
+            print(f"Expected 'plugin' or 'mod', got arg {component_type}")
             return False
         components = self.plugins if component_type == "plugin" else self.mods
         if not len(components):
             print(f"Install mods to '{self.mods_dir}' to manage them with ammo.")
-            print(f"To see your plugins, you must activate the mods they belong ot.")
+            print(f"To see plugins, the mods they belong to must be activated.")
             return False
 
         if index > len(components) - 1:
@@ -321,7 +332,7 @@ class Ammo:
         """
         components = self._get_validated_components(component_type, mod_index)
         if not components:
-            input(f"There are no {component_type}s. [Enter]")
+            print(f"There are no {component_type}s. [Enter]")
             return False
 
         return components[int(mod_index)].set(state, self.plugins)
@@ -329,7 +340,7 @@ class Ammo:
 
     def activate(self, component_type, mod_index):
         """
-        activate a component. Returns success.
+        Activate a component. Returns success.
         """
         if not self._set_component_state(component_type, mod_index, True):
             return False
@@ -339,7 +350,7 @@ class Ammo:
 
     def deactivate(self, component_type, mod_index):
         """
-        deactivate a component. Returns success.
+        Aeactivate a component. Returns success.
         """
         self._set_component_state(component_type, mod_index, False)
         self.changes = True
@@ -348,18 +359,17 @@ class Ammo:
 
     def delete(self, component_type, mod_index):
         """
-        deletes a mod from ammo's mod dir. Forces data reload from disk,
+        Deletes a mod from ammo's mod dir. Forces data reload from disk,
         possibly discarding unapplied changes.
         """
 
         if self.changes:
-            print("You must commit changes before deleting a mod, as this will")
+            print("Changes must be committed before deleting a component, as this will")
             print("force a data reload from disk.")
             return False
 
-
         if component_type not in ["download", "mod"]:
-            print(f"expected either 'download' or 'mod', got '{component_type}'")
+            print(f"Expected either 'download' or 'mod', got '{component_type}'")
             return False
 
         if component_type == "mod":
@@ -367,9 +377,8 @@ class Ammo:
                 # validation error
                 return False
 
-            # get the mod out of ammo's non-persistent mem.
+            # Remove the mod from Ammo then delete it.
             mod = self.mods.pop(int(mod_index))
-            # delete the mod from ammo's mod folder.
             shutil.rmtree(mod.location)
             self.commit()
         else:
@@ -385,7 +394,7 @@ class Ammo:
 
     def move(self, component_type, old_mod_index, new_mod_index):
         """
-        move a mod or plugin from old index to new index.
+        Move a mod or plugin from old index to new index.
         """
         components = None
         for index in [old_mod_index, new_mod_index]:
@@ -401,6 +410,13 @@ class Ammo:
         self.changes = True
         return True
 
+    """
+    def rename(self, component_type, component_index, new_name):
+        '''
+        Rename a download or a mod at index <component_index> to <new_name>.
+        '''
+        pass
+    """
 
     def _clean_data_dir(self):
         """
@@ -429,7 +445,7 @@ class Ammo:
 
 
     def vanilla(self):
-        print("This will disable all mods and plugins, and remove all symlinks and empty folders from your game dir.")
+        print("This will disable all mods and plugins, and remove all symlinks and empty folders from the game dir.")
         print("ammo will remember your mod load order but not your plugin load order.")
         print("These changes will take place immediately.")
         choice = input("continue? [y/n]: ")
@@ -442,6 +458,7 @@ class Ammo:
         self.save_order()
         self._clean_data_dir()
         return True
+
 
     def stage(self):
         """
@@ -461,8 +478,11 @@ class Ammo:
 
         # destination: source
         result = {}
+        # Iterate through enabled mods in order.
         for mod in [i for i in self.mods if i.enabled]:
+            # Iterate through the source files of the mod
             for src in mod.files.values():
+                # Get the sanitized full relative to the game directory.
                 corrected_name = src.split(mod.name, 1)[-1]
                 if mod.data_dir:
                     dest = os.path.join(
@@ -476,6 +496,7 @@ class Ammo:
                             'Data' + corrected_name,
                     )
                     dest = normalize(dest)
+                # Add the sanitized full path to our stage, resolving conflicts.
                 result[dest] = src
         return result
 
@@ -488,12 +509,16 @@ class Ammo:
         stage = self.stage()
         self._clean_data_dir()
 
+        all_files_success = True
         for dest, src in stage.items():
             os.makedirs(os.path.split(dest)[0], exist_ok=True)
-            os.symlink(src, dest)
-
+            try:
+                os.symlink(src, dest)
+            except FileExistsError:
+                print(f"Skipped an existing file: {os.path.split(dest)[-1]}.")
+                all_files_success = False
         self.changes = False
-        return True
+        return all_files_success
 
 
     def _exit(self):
@@ -550,6 +575,7 @@ class Ammo:
             "install": {"func": self.install, "num_args": 1},
             "move": {"func": self.move, "num_args": 3},
             "refresh": {"func": self.refresh, "num_args": 0}, # reload data from disk
+            # "rename": {"func": self.rename, "num_args": 3},
         }
 
         cmd = ""
