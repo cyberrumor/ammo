@@ -510,16 +510,23 @@ class Ammo:
         self._clean_data_dir()
 
         all_files_success = True
-        for dest, source in stage.items():
+        count = len(stage)
+        skipped_files = []
+        for index, (dest, source) in enumerate(stage.items()):
             os.makedirs(os.path.split(dest)[0], exist_ok=True)
             (name, src) = source
             try:
                 os.symlink(src, dest)
             except FileExistsError:
-                print(f"{name} skipped overwriting an unmanaged file: {dest.split(self.game_dir)[-1].lstrip('/')}.")
-                all_files_success = False
+                skipped_files.append(f"{name} skipped overwriting an unmanaged file: {dest.split(self.game_dir)[-1].lstrip('/')}.")
+            finally:
+                print(f"files processed: {index+1}/{count}", end='\r', flush=True)
+        print()
+        for skipped_file in skipped_files:
+            print(skipped_file)
         self.changes = False
-        return all_files_success
+        # Always return False so status messages persist.
+        return False
 
 
     def _exit(self):
