@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+from xml.etree import ElementTree
+import textwrap
 
 class DLC:
     def __init__(self, name):
@@ -49,12 +51,19 @@ class Mod:
         self.is_dlc = False
         self.enabled = enabled
         self.files = {}
+        self.fomod_files = {}
         self.plugins = []
 
-        # get our files
+        # If there is an Edit Scripts folder at the top level,
+        # don't put all the mod files inside Data even if there's no
+        # Data folder.
+        if os.path.exists(os.path.join(self.location, "Edit Scripts")):
+            self.data_dir = True
+
+        # Get the files, set some flags.
         for parent_dir, folders, files in os.walk(self.location):
-            # if we have a data dir, remember it.
-            if folders and "data" in [i.lower() for i in folders]:
+            # If there is a data dir, remember it.
+            if parent_dir == os.path.join(self.location, 'Data'):
                 self.data_dir = True
 
             if folders and "fomod" in [i.lower() for i in folders]:
@@ -78,12 +87,25 @@ class Mod:
 
 
     def set(self, state, ammo_plugins):
-        if self.fomod:
-            print("This is a fomod. Please manually create proper Data structure in")
-            print(f"{self.location}")
-            print("then refresh and try again.")
+        # Handle configuration of fomods
+        if self.fomod and state:
+            """
+            # find the ModuleConfig.xml
+            modconf = None
+            for parent, dirs, files in os.walk(self.location):
+                for file in files:
+                    if file.lower() == "moduleconfig.xml":
+                        modconf = os.path.join(parent, file)
+                        return self.do_fomod(modconf)
+            print("There was no ModuleConfig.xml for this fomod!")
+            """
+            print("This is a fomod!")
+            print("It will have to be configured manually.")
+            print(f"The mod files are in: '{self.location}'")
+            print("Once that is done, refresh and try again.")
             return False
 
+        # Handle activation
         self.enabled = state
         if self.enabled:
             for name in self.plugins:

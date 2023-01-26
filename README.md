@@ -1,4 +1,4 @@
-# ammo
+# AMMO
 Almost Manual Mod Organizer
 
 A Simple Terminal-Based Mod Organizer for Linux
@@ -74,6 +74,6 @@ vanilla    vanilla                                   disable all non-vanilla com
 
 # Disclaimer
 - I waive all liability. Use at your own risk.
-- This will rename your downloads to not have ****** up names.
+- This will rename your downloads when you try to install them to have sane names.
 - This will remove symlinks and empty directories from your game dir.
 
