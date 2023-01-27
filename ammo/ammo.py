@@ -663,8 +663,8 @@ if __name__ == "__main__":
     pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")
     game_dir = os.path.join(STEAM, f"common/{app_name}")
     app_data = os.path.join(STEAM, f"{pfx}/drive_c/users/steamuser/AppData/Local")
-    plugins = os.path.join(app_data, f"{app_name.replace(' ', '')}/Plugins.txt")
-    dlc = os.path.join(app_data, f"{app_name.replace(' ', '')}/DLCList.txt")
+    plugins = os.path.join(app_data, f"{app_name.replace('t 4', 't4')}/Plugins.txt")
+    dlc = os.path.join(app_data, f"{app_name.replace('t 4', 't4')}/DLCList.txt")
 
     data = os.path.join(game_dir, "Data")
     mods_dir = os.path.join(HOME, f".local/share/ammo/{app_name}/mods")
