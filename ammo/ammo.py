@@ -121,7 +121,7 @@ class Ammo:
                             parent_mod.enabled = True
 
                         for plug in self.plugins:
-                            # Enable DLC if it's already in our plugins list as enabled.
+                            # Enable DLC if it's already in the plugins list as enabled.
                             if plug.name == name:
                                 plug.enabled = True
                                 pre_existing = True
@@ -443,7 +443,7 @@ class Ammo:
 
     def vanilla(self):
         print("This will disable all mods and plugins, and remove all symlinks and empty folders from the game dir.")
-        print("ammo will remember your mod load order but not your plugin load order.")
+        print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
         choice = input("continue? [y/n]: ")
         if choice.lower() != "y":
@@ -481,6 +481,8 @@ class Ammo:
             for src in mod.files.values():
                 # Get the sanitized full relative to the game directory.
                 corrected_name = src.split(mod.name, 1)[-1]
+                # It is possible to make a mod install in the game dir instead of the data dir
+                # by setting mod.data_dir = True.
                 if mod.data_dir:
                     dest = os.path.join(
                             self.game_dir,
@@ -493,7 +495,7 @@ class Ammo:
                             'Data' + corrected_name,
                     )
                     dest = normalize(dest)
-                # Add the sanitized full path to our stage, resolving conflicts.
+                # Add the sanitized full path to the stage, resolving conflicts.
                 result[dest] = (mod.name, src)
         return result
 
@@ -651,13 +653,14 @@ if __name__ == "__main__":
                 continue
             break
     else:
-        print("Install some games to manage through steam!")
+        print("Install a game through steam!")
+        print("ammo supports Skyrim, Skyrim SE, Fallout 4, and Oblivion.")
         print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
-        print("If you were previously managing mods with ammo but uninstalled the game,")
-        print("you can find your mod files intact in ~/.local/share/ammo")
+        print("ammo stores mods in ~/.local/share/ammo")
+        print("ammo looks for mods to install in ~/Downloads")
         exit()
 
-    # create out paths
+    # create the paths
     app_name = games[choice]
     app_id = IDS[app_name]
     pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")

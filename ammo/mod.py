@@ -26,7 +26,7 @@ class Download:
     def sanitize(self):
         """
         This will make the download's name compatible with
-        our os.system(7z) call. We need this because of filenames
+        the os.system(7z) call. This is needed because of filenames
         that contain quotes.
         """
         fixed_name = self.name.replace(' ', '_')
@@ -54,11 +54,24 @@ class Mod:
         self.fomod_files = {}
         self.plugins = []
 
+        # Overrides for whether a mod should install inside Data,
+        # or inside the game dir go here.
+
         # If there is an Edit Scripts folder at the top level,
         # don't put all the mod files inside Data even if there's no
         # Data folder.
         if os.path.exists(os.path.join(self.location, "Edit Scripts")):
             self.data_dir = True
+
+        # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
+        for parent_dir, folder, files in os.walk(self.location):
+            if self.data_dir:
+                break
+            for file in files:
+                if os.path.splitext(file)[-1].lower() == ".dll" \
+                and os.path.split(parent_dir)[-1].lower() != "skse":
+                    self.data_dir = True
+                    break
 
         # Get the files, set some flags.
         for parent_dir, folders, files in os.walk(self.location):
@@ -125,7 +138,7 @@ class Mod:
         for location in self.files.values():
             corrected_location = os.path.join(location.split(self.name, 1)[-1].strip('/'), self.parent_data_dir)
             # note that we don't care if the files are the same here, just that the paths and
-            # filenames are the same. It's fine if our file comes from another mod.
+            # filenames are the same. It's fine if the file comes from another mod.
             if not os.path.exists(corrected_location):
                 print(f"unable to find expected file '{corrected_location}'")
                 return False
