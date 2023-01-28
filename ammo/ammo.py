@@ -275,27 +275,25 @@ class Ammo:
             print()
 
 
-    def help(self, *args):
+    def help(self):
         """
         prints help text.
         """
         print()
-        print("Command    | Syntax")
-        print("-------------------")
-        for k, v in sorted({
-            'activate': '  activate mod|plugin <index>               add a mod or plugin to the stage.',
-            'commit': '    commit                                    make this configuration persistent.',
-            'deactivate': 'deactivate mod|plugin <index>             remove a mod or plugin from the stage.',
-            'delete': '    delete download|mod <index>               delete a file from the filesystem.',
-            'disable': '   disable mod|plugin <index>                alias for deactivate.',
-            'enable': '    enable mod|plugin <index>                 alias for activate.',
-            'exit': '      exit                                      quit without saving changes.',
-            'help': '      help                                      show this menu.',
-            'install': '   install <index>                           extract a mod from downloads,',
-            'move': '      move mod|plugin <from_index> <to_index>   rearrange the load order.',
-            'refresh': '   refresh                                   reload all mods/plugins/downloads from disk.',
-            'vanilla': '   vanilla                                   disable all components and clean up.',
-        }.items()):
+        print("Commands")
+        print("----------------------------------------")
+        for k, v in {
+            'install <index>': '                         Extract and manage an archive from ~/Downloads.',
+            'activate mod|plugin <index>': '             Enabled components will be loaded by game.',
+            'deactivate mod|plugin <index>': '           Disabled components will not be loaded by game.',
+            'delete download|mod <index>': '             Removes specified file from the filesystem.',
+            'move mod|plugin <from_index> <to_index>': ' Larger numbers win file conflicts.',
+            'commit': '                                  Apply and save this configuration.',
+            'exit': '                                    Quit. Warns on uncommitted changes.',
+            'help': '                                    Show this menu.',
+            'refresh': '                                 Reload configuration and files from disk.',
+            'vanilla': '                                 Disable all managed components and clean up.',
+        }.items():
             print(f"{k} {v}")
         print()
         input("[Enter] to continue")
