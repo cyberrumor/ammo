@@ -252,7 +252,6 @@ class Ammo:
         """
         Outputs a list of all downloads, then mods, then plugins.
         """
-
         if len(self.downloads):
             print()
             print("Downloads")
@@ -589,7 +588,7 @@ class Ammo:
             while True:
                 os.system("clear")
                 self.print_status()
-                cmd = input(">_: ")
+                cmd = input(f"{self.name} >_: ")
                 if not cmd:
                     continue
                 cmds = cmd.split()
