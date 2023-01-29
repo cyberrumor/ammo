@@ -8,6 +8,8 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Skyrim SE
 - Oblivion
 - Fallout 4
+- Enderal
+- Enderal Special Edition
 
 # Features
 - Handles file conflicts correctly.

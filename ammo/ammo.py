@@ -8,6 +8,8 @@ IDS = {
     "Oblivion": "22330",
     "Fallout 4": "377160",
     "Skyrim": "72850",
+    "Enderal": "933480",
+    "Enderal Special Edition": "976620",
 }
 HOME = os.environ["HOME"]
 DOWNLOADS = os.path.join(HOME, "Downloads")
