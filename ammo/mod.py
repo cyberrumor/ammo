@@ -68,8 +68,8 @@ class Mod:
             if self.data_dir:
                 break
             for file in files:
-                if os.path.splitext(file)[-1].lower() == ".dll" \
-                and os.path.split(parent_dir)[-1].lower() != "plugins":
+                if os.path.splitext(file)[-1].lower() == ".dll":
+                    # This needs more robust handling.
                     self.data_dir = True
                     break
 
