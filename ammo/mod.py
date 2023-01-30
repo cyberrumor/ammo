@@ -69,7 +69,7 @@ class Mod:
                 break
             for file in files:
                 if os.path.splitext(file)[-1].lower() == ".dll" \
-                and os.path.split(parent_dir)[-1].lower() != "skse":
+                and os.path.split(parent_dir)[-1].lower() != "plugins":
                     self.data_dir = True
                     break
 

@@ -107,6 +107,11 @@ class Ammo:
                     # If the plugin has a parent mod, assign parent as that Mod.
                     # This is used to track ownership for when a mod is disabled.
                     name = line.strip('*').strip()
+
+                    # Don't manage order of manually installed mods that were deleted.
+                    if not os.path.exists(os.path.join(self.data_dir, name)):
+                        continue
+
                     parent_mod = DLC(name)
                     for mod in self.mods:
                         if name in mod.plugins:
