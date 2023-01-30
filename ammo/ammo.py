@@ -658,7 +658,9 @@ if __name__ == "__main__":
             break
     else:
         print("Install a game through steam!")
-        print("ammo supports Skyrim, Skyrim SE, Fallout 4, and Oblivion.")
+        print("ammo supports:")
+        for i in IDS:
+            print(f"- {i}")
         print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
         print("ammo stores mods in ~/.local/share/ammo")
         print("ammo looks for mods to install in ~/Downloads")
