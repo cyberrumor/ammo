@@ -38,8 +38,12 @@ class Ammo:
         """
         mods = []
         mod_folders = [i for i in os.listdir(self.mods_dir) if os.path.isdir(os.path.join(self.mods_dir, i))]
-        for mod_folder in mod_folders:
-            mod = Mod(mod_folder, os.path.join(self.mods_dir, mod_folder), self.data_dir, False)
+        for name in mod_folders:
+            mod = Mod(
+                name,
+                location = os.path.join(self.mods_dir, name),
+                parent_data_dir = self.data_dir
+            )
             mods.append(mod)
         self.mods = mods
 
@@ -209,7 +213,17 @@ class Ammo:
 
         download = self.downloads[index]
         if not download.sane:
-            download.sanitize()
+            # Sanitize the download name to guarantee compatibility with 7z syntax.
+            fixed_name = download.name.replace(' ', '_')
+            fixed_name = ''.join(
+                    [i for i in fixed_name if i.isalnum() or i in ['.', '_', '-']]
+            )
+            parent_folder = os.path.split(download.location)[0]
+            new_location = os.path.join(parent_folder, fixed_name)
+            os.rename(download.location, new_location)
+            download.location = new_location
+            download.name = fixed_name
+            download.sane = True
 
         # Get a decent name for the output folder.
         # This has to be done for a safe 7z call.
@@ -265,7 +279,7 @@ class Ammo:
             print("---------")
 
             for index, download in enumerate(self.downloads):
-                print(f"[{index}] {download.name}")
+                print(f"[{index}] {download}")
 
             print()
 
@@ -276,8 +290,7 @@ class Ammo:
                 num = f"[{priority}]     "
                 l = len(str(priority)) + 1
                 num = num[0:-l]
-                enabled = "[True]     " if component.enabled else "[False]    "
-                print(f"{num} {enabled} {component.name}")
+                print(f"{num} {component}")
             print()
 
 
@@ -332,7 +345,7 @@ class Ammo:
         return components
 
 
-    def _set_component_state(self, component_type, mod_index, state):
+    def set_component_state(self, component_type, mod_index, state):
         """
         Activate or deactivate a component.
         Returns which plugins need to be added to or removed from self.plugins.
@@ -341,23 +354,55 @@ class Ammo:
         if not components:
             print(f"There are no {component_type}s. [Enter]")
             return False
+        component = components[int(mod_index)]
 
-        self.changes = True
-        return components[int(mod_index)].set(state, self.plugins)
+        starting_state = component.enabled
+        # Handle mods
+        if isinstance(component, Mod):
+
+            # Handle configuration of fomods
+            if hasattr(component, "fomod") and component.fomod and state:
+                print("This is a fomod!")
+                print("It will have to be configured manually.")
+                print(f"The mod files are in: '{self.location}'")
+                print("Once that is done, refresh and try again.")
+                return False
+
+            component.enabled = state
+            if component.enabled:
+                # Show plugins owned by this mod
+                for name in component.plugins:
+                    if name not in [i.name for i in self.plugins]:
+                        plugin = Plugin(name, False, component)
+                        self.plugins.append(plugin)
+            else:
+                # Hide plugins owned by this mod
+                for plugin in component.associated_plugins(self.plugins):
+                    plugin.enabled = False
+
+                    if plugin in self.plugins:
+                        self.plugins.remove(plugin)
+
+        # Handle plugins
+        if isinstance(component, Plugin):
+            self.enabled = state
+
+        self.changes = starting_state != component.enabled
+        return True
 
 
     def activate(self, component_type, mod_index):
         """
         Activate a component. Returns success.
         """
-        return self._set_component_state(component_type, mod_index, True)
+        return self.set_component_state(component_type, mod_index, True)
 
 
     def deactivate(self, component_type, mod_index):
         """
         Aeactivate a component. Returns success.
         """
-        return self._set_component_state(component_type, mod_index, False)
+        return self.set_component_state(component_type, mod_index, False)
 
 
     def delete(self, component_type, mod_index):
@@ -419,7 +464,7 @@ class Ammo:
         return True
 
 
-    def _clean_data_dir(self):
+    def clean_data_dir(self):
         """
         Removes all symlinks and deletes empty folders.
         """
@@ -457,7 +502,7 @@ class Ammo:
         for mod in self.mods:
             mod.set(False, self.plugins)
         self.save_order()
-        self._clean_data_dir()
+        self.clean_data_dir()
         return True
 
 
@@ -510,7 +555,7 @@ class Ammo:
         """
         self.save_order()
         stage = self.stage()
-        self._clean_data_dir()
+        self.clean_data_dir()
 
         all_files_success = True
         count = len(stage)
