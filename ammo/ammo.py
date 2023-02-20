@@ -647,27 +647,9 @@ class UI:
                     input("[Enter]")
                     continue
 
-                # TODO: Collapse this by finding a way to dynamically assing args.
-                if command["num_args"] == 0:
-                    if "instance" in command:
-                        ret = command["func"](command["instance"])
-                    else:
-                        ret = command["func"]()
-                elif command["num_args"] == 1:
-                    if "instance" in command:
-                        ret = command["func"](command["instance"], args[0])
-                    else:
-                        ret = command["func"](args[0])
-                elif command["num_args"] == 2:
-                    if "instance" in command:
-                        ret = command["func"](command["instance"], args[0], args[1])
-                    else:
-                        ret = command["func"](args[0], args[1])
-                else:
-                    if "instance" in command:
-                        ret = command["func"](command["instance"], args[0], args[1], args[2])
-                    else:
-                        ret = command["func"](args[0], args[1], args[2])
+                if "instance" in command:
+                    args.insert(0, command["instance"])
+                ret = command["func"](*args)
                 if not ret:
                     input("[Enter]")
                     continue
