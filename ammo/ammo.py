@@ -2,6 +2,8 @@
 import os
 import shutil
 from mod import *
+import json
+import inspect
 
 IDS = {
     "Skyrim Special Edition": "489830",
@@ -15,8 +17,7 @@ HOME = os.environ["HOME"]
 DOWNLOADS = os.path.join(HOME, "Downloads")
 STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
 
-
-class Ammo:
+class Controller:
     def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir):
         self.name = app_name
         self.game_dir = game_dir
@@ -29,13 +30,8 @@ class Ammo:
         self.downloads = []
         self.mods = []
         self.plugins = []
-        self.changes = False
 
-
-    def load_mods(self):
-        """
-        Instance a  Mod class for each mod folder in ammo's mod directory.
-        """
+        # Instance a Mod class for each mod folder in the mod directory.
         mods = []
         mod_folders = [i for i in os.listdir(self.mods_dir) if os.path.isdir(os.path.join(self.mods_dir, i))]
         for name in mod_folders:
@@ -47,12 +43,8 @@ class Ammo:
             mods.append(mod)
         self.mods = mods
 
-
-    def load_mods_from_conf(self):
-        """
-        Read the conf file. If there's mods in it, put them in order.
-        Put mods that aren't listed in the conf file at the end.
-        """
+        # Read the configuration file. If there's mods in it, put them in order.
+        # Put mods that aren't listed in the conf file at the end.
         ordered_mods = []
         if not os.path.exists(self.conf):
             return
@@ -79,13 +71,9 @@ class Ammo:
                 ordered_mods.append(mod)
         self.mods = ordered_mods
 
-
-    def load_plugins(self):
-        """
-        Read the DLCList.txt and Plugins.txt files.
-        Add Plugins from these files to the list of managed plugins,
-        with attention to the order and enabled state.
-        """
+        # Read the DLCList.txt and Plugins.txt files.
+        # Add Plugins from these files to the list of managed plugins,
+        # with attention to the order and enabled state.
         # Create the plugins file if it didn't already exist.
         os.makedirs(os.path.split(self.plugin_file)[0], exist_ok=True)
         if not os.path.exists(self.plugin_file):
@@ -147,14 +135,9 @@ class Ammo:
                     if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
                         self.plugins.append(plugin)
 
-        return True
 
-
-    def load_downloads(self):
-        """
-        Populates self.downloads. Ignores downloads that have a '.part' file that
-        starts with the same name. This hides downloads that haven't completed yet.
-        """
+        # Populate self.downloads. Ignore downloads that have a '.part' file that
+        # starts with the same name. This hides downloads that haven't completed yet.
         downloads = []
         for file in os.listdir(DOWNLOADS):
             still_downloading = False
@@ -172,10 +155,25 @@ class Ammo:
                 download = Download(file, os.path.join(DOWNLOADS, file))
                 downloads.append(download)
         self.downloads = downloads
-        return True
+        self.changes = False
 
 
-    def save_order(self):
+    def __reset__(self):
+        """
+        Convenience function that reinitializes the controller instance.
+        """
+        self.__init__(
+            self.name,
+            self.game_dir,
+            self.data_dir,
+            self.conf,
+            self.dlc_file,
+            self.plugin_file,
+            self.mods_dir,
+        )
+
+
+    def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
         """
@@ -188,9 +186,9 @@ class Ammo:
         return True
 
 
-    def install(self, download_index):
+    def install(self, index):
         """
-        Extracts a Download to ammo's mod folder.
+        Extract and manage an archive from ~/Downloads.
         """
         if self.changes:
             print("commit changes to disk before installing a mod,")
@@ -202,7 +200,7 @@ class Ammo:
             return False
 
         try:
-            index = int(download_index)
+            index = int(index)
         except ValueError:
             print("expected an integer")
             return False
@@ -265,57 +263,7 @@ class Ammo:
                 filename  = os.path.join(extract_to, extracted_files[0], file)
                 shutil.move(filename, extract_to)
 
-        self._hard_refresh()
-        return True
-
-
-    def print_status(self):
-        """
-        Outputs a list of all downloads, then mods, then plugins.
-        """
-        if len(self.downloads):
-            print()
-            print("Downloads")
-            print("---------")
-
-            for index, download in enumerate(self.downloads):
-                print(f"[{index}] {download}")
-
-            print()
-
-        for index, components in enumerate([self.mods, self.plugins]):
-            print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
-            print("-----|-----------|-----")
-            for priority, component in enumerate(components):
-                num = f"[{priority}]     "
-                l = len(str(priority)) + 1
-                num = num[0:-l]
-                print(f"{num} {component}")
-            print()
-
-
-    def help(self):
-        """
-        prints help text.
-        """
-        print()
-        print("Commands")
-        print("----------------------------------------")
-        for k, v in {
-            'install <index>': '                         Extract and manage an archive from ~/Downloads.',
-            'activate mod|plugin <index>': '             Enabled components will be loaded by game.',
-            'deactivate mod|plugin <index>': '           Disabled components will not be loaded by game.',
-            'delete download|mod <index>': '             Removes specified file from the filesystem.',
-            'move mod|plugin <from_index> <to_index>': ' Larger numbers win file conflicts.',
-            'commit': '                                  Apply and save this configuration.',
-            'exit': '                                    Quit. Warns on uncommitted changes.',
-            'help': '                                    Show this menu.',
-            'refresh': '                                 Reload configuration and files from disk.',
-            'vanilla': '                                 Disable all managed components and clean up.',
-        }.items():
-            print(f"{k} {v}")
-        print()
-        input("[Enter] to continue")
+        self.__reset__()
         return True
 
 
@@ -345,7 +293,7 @@ class Ammo:
         return components
 
 
-    def set_component_state(self, component_type, mod_index, state):
+    def _set_component_state(self, component_type, mod_index, state):
         """
         Activate or deactivate a component.
         Returns which plugins need to be added to or removed from self.plugins.
@@ -385,30 +333,29 @@ class Ammo:
 
         # Handle plugins
         if isinstance(component, Plugin):
-            self.enabled = state
+            component.enabled = state
 
         self.changes = starting_state != component.enabled
         return True
 
 
-    def activate(self, component_type, mod_index):
+    def activate(self, mod_or_plugin, index):
         """
-        Activate a component. Returns success.
+        Enabled components will be loaded by game.
         """
-        return self.set_component_state(component_type, mod_index, True)
+        return self._set_component_state(mod_or_plugin, index, True)
 
 
-    def deactivate(self, component_type, mod_index):
+    def deactivate(self, mod_or_plugin, index):
         """
-        Aeactivate a component. Returns success.
+        Disabled components will not be loaded by game.
         """
-        return self.set_component_state(component_type, mod_index, False)
+        return self._set_component_state(mod_or_plugin, index, False)
 
 
-    def delete(self, component_type, mod_index):
+    def delete(self, mod_or_download, index):
         """
-        Deletes a mod from ammo's mod dir. Forces data reload from disk,
-        possibly discarding unapplied changes.
+        Removes specified file from the filesystem.
         """
 
         if self.changes:
@@ -416,11 +363,11 @@ class Ammo:
             print("force a data reload from disk.")
             return False
 
-        if component_type not in ["download", "mod"]:
+        if mod_or_download not in ["download", "mod"]:
             print(f"Expected either 'download' or 'mod', got '{component_type}'")
             return False
 
-        if component_type == "mod":
+        if mod_or_download == "mod":
             if not self.deactivate("mod", mod_index):
                 # validation error
                 return False
@@ -431,7 +378,7 @@ class Ammo:
             self.commit()
         else:
             try:
-                index = int(mod_index)
+                index = int(index)
             except ValueError:
                 print("Expected a number greater than or equal to 0")
                 return False
@@ -445,18 +392,18 @@ class Ammo:
         return True
 
 
-    def move(self, component_type, old_mod_index, new_mod_index):
+    def move(self, mod_or_plugin, from_index, to_index):
         """
-        Move a mod or plugin from old index to new index.
+        Larger numbers win file conflicts.
         """
         components = None
-        for index in [old_mod_index, new_mod_index]:
-            components = self._get_validated_components(component_type, index)
+        for index in [from_index, to_index]:
+            components = self._get_validated_components(mod_or_plugin, index)
             if not components:
                 return False
 
-        old_ind = int(old_mod_index)
-        new_ind = int(new_mod_index)
+        old_ind = int(from_index)
+        new_ind = int(to_index)
 
         component = components.pop(old_ind)
         components.insert(new_ind, component)
@@ -464,7 +411,7 @@ class Ammo:
         return True
 
 
-    def clean_data_dir(self):
+    def _clean_data_dir(self):
         """
         Removes all symlinks and deletes empty folders.
         """
@@ -491,6 +438,9 @@ class Ammo:
 
 
     def vanilla(self):
+        """
+        Disable all managed components and clean up.
+        """
         print("This will disable all mods and plugins, and remove all symlinks and empty folders from the game dir.")
         print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
@@ -501,12 +451,12 @@ class Ammo:
 
         for mod in self.mods:
             mod.set(False, self.plugins)
-        self.save_order()
-        self.clean_data_dir()
+        self._save_order()
+        self._clean_data_dir()
         return True
 
 
-    def stage(self):
+    def _stage(self):
         """
         Returns a dict containing the final symlinks that will be installed.
         """
@@ -551,11 +501,11 @@ class Ammo:
 
     def commit(self):
         """
-        Makes changes persist on disk.
+        Apply and save this configuration.
         """
-        self.save_order()
-        stage = self.stage()
-        self.clean_data_dir()
+        self._save_order()
+        stage = self._stage()
+        self._clean_data_dir()
 
         all_files_success = True
         count = len(stage)
@@ -577,70 +527,110 @@ class Ammo:
         return False
 
 
-    def _exit(self):
-        if self.changes:
-            print("There are unsaved changes!")
-            answer = input("quit anyway? [y/n]: ").lower()
-            if answer == "y":
-                exit()
-            return True
-        exit()
-
-
-    def _hard_refresh(self):
-        self.downloads = []
-        self.mods = []
-        self.plugins = []
-
-        self.load_mods()
-        self.load_mods_from_conf()
-        self.load_plugins()
-        self.load_downloads()
-        self.changes = False
-
-        return True
-
-
     def refresh(self):
+        """
+        Reload configuration and files from disk.
+        """
         if self.changes:
             print("There are unsaved changes!")
             print("refreshing reloads data from disk.")
             answer = input("reload data from disk and lose unsaved changes? [y/n]: ").lower()
             if answer == "y":
-                self._hard_refresh()
+                self.__reset__()
                 return True
             return False
-        self._hard_refresh()
+
+        self.__reset__()
+
         return True
 
 
-    def run(self):
-        self._hard_refresh()
+class UI:
+    def __init__(self, controller):
+        self.controller = controller
 
         # get a map of commands to functions and the amount of args they expect
-        self.command = {
-            # cmd: (method, len(args))
-            "activate": {"func": self.activate, "num_args": 2},
-            "vanilla": {"func": self.vanilla, "num_args": 0},
-            "commit": {"func": self.commit, "num_args": 0},
-            "deactivate": {"func": self.deactivate, "num_args": 2},
-            "delete": {"func": self.delete, "num_args": 2},
-            "disable": {"func": self.deactivate, "num_args": 2}, # alias to deactivate
-            "enable": {"func": self.activate, "num_args": 2}, # alias to activate
-            "exit": {"func": self._exit, "num_args": 0},
-            "help": {"func": self.help, "num_args": 0},
-            "install": {"func": self.install, "num_args": 1},
-            "move": {"func": self.move, "num_args": 3},
-            "refresh": {"func": self.refresh, "num_args": 0}, # reload data from disk
+        self.command = {}
+
+        for name, func in inspect.getmembers(self.controller.__class__, predicate=inspect.isfunction):
+            if name.startswith('_'):
+                continue
+
+            self.command[name] = {
+                "func": func,
+                "args": [f'<{i}>' for i in inspect.signature(func).parameters][1:],
+                "num_args": len(inspect.signature(func).parameters) - 1,
+                "doc": str(func.__doc__).strip(),
+                "instance": self.controller,
+            }
+
+        # Add methods of this UI class that will be available regardless of the controller.
+        self.command['help'] = {
+            "func": self.help,
+            "args": [],
+            "num_args": 0,
+            "doc": str(self.help.__doc__).strip(),
         }
 
-        cmd = ""
+        self.command['exit'] = {
+            "func": self.exit,
+            "args": [],
+            "num_args": 0,
+            "doc": str(self.exit.__doc__).strip(),
+        }
+
+    def help(self):
+        """
+        Show this menu.
+        """
+        for k, v in sorted(self.command.items()):
+            print(f"{k} {' '.join(i for i in v['args'])} {v['doc']}")
+
+    def exit(self):
+        """
+        Quit. Prompts if there are changes.
+        """
+        do_quit = True
+        if self.controller.changes:
+            do_quit = input("There are unapplied changes. Quit? [y/n]: ").lower() == 'y'
+        if do_quit:
+            exit()
+        return True
+
+
+    def print_status(self):
+        """
+        Outputs a list of all downloads, then mods, then plugins.
+        """
+        if len(self.controller.downloads):
+            print()
+            print("Downloads")
+            print("---------")
+
+            for index, download in enumerate(self.controller.downloads):
+                print(f"[{index}] {download}")
+
+            print()
+
+        for index, components in enumerate([self.controller.mods, self.controller.plugins]):
+            print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
+            print("-----|-----------|-----")
+            for priority, component in enumerate(components):
+                num = f"[{priority}]     "
+                l = len(str(priority)) + 1
+                num = num[0:-l]
+                print(f"{num} {component}")
+            print()
+
+
+    def run(self):
+        cmd: str = ""
 
         try:
             while True:
                 os.system("clear")
                 self.print_status()
-                cmd = input(f"{self.name} >_: ")
+                cmd = input(f"{self.controller.name} >_: ")
                 if not cmd:
                     continue
                 cmds = cmd.split()
@@ -656,15 +646,28 @@ class Ammo:
                     print(f"{func} expected {command['num_args']} arg(s) but received {len(args)}")
                     input("[Enter]")
                     continue
-                if command["num_args"] == 0:
-                    ret = command["func"]()
-                elif command["num_args"] == 1:
-                    ret = command["func"](args[0])
-                elif command["num_args"] == 2:
-                    ret = command["func"](args[0], args[1])
-                else:
-                    ret = command["func"](args[0], args[1], args[2])
 
+                # TODO: Collapse this by finding a way to dynamically assing args.
+                if command["num_args"] == 0:
+                    if "instance" in command:
+                        ret = command["func"](command["instance"])
+                    else:
+                        ret = command["func"]()
+                elif command["num_args"] == 1:
+                    if "instance" in command:
+                        ret = command["func"](command["instance"], args[0])
+                    else:
+                        ret = command["func"](args[0])
+                elif command["num_args"] == 2:
+                    if "instance" in command:
+                        ret = command["func"](command["instance"], args[0], args[1])
+                    else:
+                        ret = command["func"](args[0], args[1])
+                else:
+                    if "instance" in command:
+                        ret = command["func"](command["instance"], args[0], args[1], args[2])
+                    else:
+                        ret = command["func"](args[0], args[1], args[2])
                 if not ret:
                     input("[Enter]")
                     continue
@@ -732,6 +735,7 @@ if __name__ == "__main__":
             os.makedirs(directory)
 
     # Create an instance of Ammo and run it.
-    ammo = Ammo(app_name, game_dir, data, conf, dlc, plugins, mods_dir)
-    exit(ammo.run())
+    controller = Controller(app_name, game_dir, data, conf, dlc, plugins, mods_dir)
+    ui = UI(controller)
+    exit(ui.run())
 
