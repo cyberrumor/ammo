@@ -15,23 +15,21 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Handles file conflicts correctly.
 - Deactivating a mod auto-hides its plugins.
 - Ability to manage load order of mods and plugins.
-- Ability to install mods from ~/Downloads folder.
+- Ability to install mod archives from ~/Downloads folder.
 - Ability to delete downloads and installed mods.
 - Ability to return to vanilla game state easily.
+- Can install mods that other mod organizers can not, for example:
+  - SKSE
+  - Both parts of SSE Engine Fixes
 
 # Limitations
-- No fomod installer (you can manage them once configured manually).
-- No dependency checking.
-- No automated load order handling.
-- No external tool integration.
+- No fomod installer (you can manage fomods once configured manually).
+- No dependency checking or automated load order handling.
 - Manual downloads only.
 
 # Planned Features
 - Morrowind support.
-- Automated testing.
 - FOMOD installer.
-- Launcher for .exe files anywhere inside the game folder.
-- Select multiple files at once for activation, deactivation, or deletion.
 
 # Dependencies
 - Linux version of Steam, Proton.
@@ -53,16 +51,16 @@ sudo cp bin/ammo /usr/local/bin
 At any time from the interactive shell, you can type `help` to show this menu:
 
 ```
-install <index>                          Extract and manage an archive from ~/Downloads.
-activate mod|plugin <index>              Enabled components will be loaded by game.
-deactivate mod|plugin <index>            Disabled components will not be loaded by game.
-delete download|mod <index>              Removes specified file from the filesystem.
-move mod|plugin <from_index> <to_index>  Larger numbers win file conflicts.
-commit                                   Apply and save this configuration.
-exit                                     Quit. Warns on uncommitted changes.
-help                                     Show this menu.
-refresh                                  Reload configuration and files from disk.
-vanilla                                  Disable all managed components and clean up.
+activate   mod|plugin <index>                 Enabled components will be loaded by game.
+commit                                        Apply and save this configuration.
+deactivate mod|plugin <index>                 Disabled components will not be loaded by game.
+delete     mod|download <index>               Removes specified file from the filesystem.
+exit                                          Quit. Prompts if there are changes.
+help                                          Show this menu.
+install    <index>                            Extract and manage an archive from ~/Downloads.
+move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
+refresh                                       Reload configuration and files from disk.
+vanilla                                       Disable all managed components and clean up.
 ```
 
 # Usage with non-obvious mods like FOMODs
@@ -76,6 +74,6 @@ vanilla                                  Disable all managed components and clea
 
 # Disclaimer
 - I waive all liability. Use at your own risk.
-- This will rename your downloads when you try to install them to have sane names.
+- When you install a file from ~/Downloads, the filename may be sanitized.
 - This will remove symlinks and empty directories from your game dir.
 
