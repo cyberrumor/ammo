@@ -18,18 +18,19 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Ability to install mod archives from ~/Downloads folder.
 - Ability to delete downloads and installed mods.
 - Ability to return to vanilla game state easily.
+- FOMOD install wizard.
 - Can install mods that other mod organizers can not, for example:
   - SKSE
   - Both parts of SSE Engine Fixes
 
 # Limitations
-- No fomod installer (you can manage fomods once configured manually).
 - No dependency checking or automated load order handling.
 - Manual downloads only.
+- FOMOD install wizard is considered "beta", there are likely bugs that need to be ironed out.
 
 # Planned Features
 - Morrowind support.
-- FOMOD installer.
+- More robust FOMOD install wizard.
 
 # Dependencies
 - Linux version of Steam, Proton.
