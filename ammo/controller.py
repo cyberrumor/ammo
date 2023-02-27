@@ -357,18 +357,32 @@ class Controller:
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
                         plug_dict["name"] = plugin_name
-                        plug_dict["description"] = plugin.find("description").text.lstrip('/')
+                        plug_dict["description"] = plugin.find("description").text.strip()
                         plug_dict["flags"] = {}
                         # Automatically mark the first option as selected when a selection is required.
-                        plug_dict["selected"] = (steps[step_name]["type"] == "SelectExactlyOne") \
-                                and plugin_index == 0
+                        plug_dict["selected"] = (steps[step_name]["type"] in [
+                                    "SelectExactlyOne",
+                                    "SelectAtLeastOne"
+                                ]) and plugin_index == 0
 
                         # Interpret on/off as true/false
-                        for flag in plugin.find("conditionFlags"):
-                            plug_dict["flags"][flag.get("name")] = flag.text == "On"
+                        if plugin.find("conditionFlags"):
+                            for flag in plugin.find("conditionFlags"):
+                                plug_dict["flags"][flag.get("name")] = flag.text == "On"
+                            plug_dict["conditional"] = True
+
+                        else:
+                            # There were no conditional flags, so this was an unconditional install.
+                            plug_dict["conditional"] = False
+
+                        plug_dict["files"] = []
+                        plugin_files = plugin.find("files")
+                        if plugin_files:
+                            for i in plugin_files:
+                                plug_dict["files"].append(i)
+
                         plugins.append(plug_dict)
-                        # plugins[plugin_name]["dependencies"] = {}
-                        # TODO: handle dependencies.
+
         return steps
 
 

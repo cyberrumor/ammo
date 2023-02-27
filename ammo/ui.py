@@ -196,50 +196,68 @@ class UI:
             if "SelectExactlyOne" == page["type"]:
                 for i in range(len(page["plugins"])):
                     page["plugins"][i]["selected"] = (i == selection)
+            elif "SelectAtMostOne" == page["type"]:
+                for i in range(len(page["plugins"])):
+                    page["plugins"][i]["selected"] = False
+                page["plugins"][selection]["selected"] = val
             else:
                 page["plugins"][selection]["selected"] = val
+
+
+        # Determine which files need to be installed.
+        to_install = []
+        if required_files:
+            to_install.append(required_files)
+
+        # Unconditional file installs. If these were selected, install them.
+        unconditionals = []
+        for step in steps:
+            for plugin in steps[step]["plugins"]:
+                if plugin["selected"] and not plugin["conditional"]:
+                    unconditionals.append(plugin["files"])
+        for unconditional in unconditionals:
+            to_install.append(unconditional)
 
         # Consolidate the flags.
         flags = {}
         for step in steps.values():
             for plugin in step["plugins"]:
                 if plugin["selected"]:
-                    for flag in plugin["flags"]:
-                        flags[flag] = plugin["flags"][flag]
-
-        to_install = []
-        # include required files
-        if required_files:
-            #for i in required_files:
-            #    to_install.append(i)
-            to_install.append(required_files)
+                    if plugin["flags"]:
+                        for flag in plugin["flags"]:
+                            flags[flag] = plugin["flags"][flag]
 
         # include conditional file installs based on the user choice
-        for pattern in fomod_installer_root_node.find("conditionalFileInstalls").find("patterns"):
-            dependencies = pattern.find("dependencies")
-            dep_op = dependencies.get("operator")
-            if dep_op:
-                dep_op = dep_op.lower()
-            expected_flags = {}
-            for xml_flag in dependencies:
-                expected_flags[xml_flag.get("flag")] = xml_flag.get("value") == "On"
+        patterns = []
+        conditionals = fomod_installer_root_node.find("conditionalFileInstalls")
+        if conditionals:
+            patterns = conditionals.find("patterns")
+        if patterns:
+            for pattern in patterns:
+                dependencies = pattern.find("dependencies")
+                dep_op = dependencies.get("operator")
+                if dep_op:
+                    dep_op = dep_op.lower()
+                expected_flags = {}
+                for xml_flag in dependencies:
+                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") == "On"
 
-            match = False
-            for k, v in expected_flags.items():
-                if k in flags:
-                    if flags[k] != v:
-                        if dep_op == "and":
-                            # Mismatched flag. Skip.
-                            match = False
-                            break
-                        # if dep_op is "or", we can try the rest of these.
-                        continue
-                    # A single match.
-                    match = True
+                match = False
+                for k, v in expected_flags.items():
+                    if k in flags:
+                        if flags[k] != v:
+                            if dep_op == "and":
+                                # Mismatched flag. Skip this plugin.
+                                match = False
+                                break
+                            # if dep_op is "or", we can try the rest of these.
+                            continue
+                        # A single match.
+                        match = True
 
-            if match:
-                # We have all the necessary flags for this plugin in our configured options.
-                to_install.append(pattern.find("files"))
+                if match:
+                    # We have all the necessary flags for this plugin in our configured options.
+                    to_install.append(pattern.find("files"))
 
         # Let the controller stage the chosen files and copy them to the mod's local Data dir.
         self.controller._init_fomod_chosen_files(index, to_install)
