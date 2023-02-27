@@ -91,7 +91,7 @@ class Mod:
                     self.plugins.append(file)
 
         # if this is a configured fomod, don't install anything above the "Data" folder.
-        if self.fomod and self.data_dir:
+        if self.fomod:
             self.files.clear()
             for parent_dir, folders, files in os.walk(os.path.join(self.location, "Data")):
                 for file in files:

@@ -319,6 +319,11 @@ class Controller:
             except FileNotFoundError:
                 pass
 
+            # disable this mod and commit to prevent polluting the data dir
+            self.deactivate("mod", index)
+            self.commit()
+            self.__reset__()
+
         # Parse the fomod installer.
         try:
             tree = ElementTree.parse(mod.modconf)

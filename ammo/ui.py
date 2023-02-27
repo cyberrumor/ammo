@@ -150,6 +150,7 @@ class UI:
 
             if "exit" == selection:
                 print("Bailed from configuring fomod.")
+                self.controller.__reset__()
                 return False
 
             if "next" == selection:
