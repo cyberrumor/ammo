@@ -358,7 +358,10 @@ class Controller:
                     steps[step_name]["type"] = group.get("type")
                     steps[step_name]["plugins"] = []
                     plugins = steps[step_name]["plugins"]
-                    for plugin_index, plugin in enumerate(group.find("plugins")):
+                    group_of_plugins = group.find("plugins")
+                    if not group_of_plugins:
+                        continue
+                    for plugin_index, plugin in enumerate(group_of_plugins):
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
                         plug_dict["name"] = plugin_name
