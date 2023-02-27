@@ -54,6 +54,7 @@ At any time from the interactive shell, you can type `help` to show this menu:
 ```
 activate   mod|plugin <index>                 Enabled components will be loaded by game.
 commit                                        Apply and save this configuration.
+configure  <index>                            Configure a fomod.
 deactivate mod|plugin <index>                 Disabled components will not be loaded by game.
 delete     mod|download <index>               Removes specified file from the filesystem.
 exit                                          Quit. Prompts if there are changes.
@@ -64,14 +65,17 @@ refresh                                       Reload configuration and files fro
 vanilla                                       Disable all managed components and clean up.
 ```
 
-# Usage with non-obvious mods like FOMODs
+# Usage with Fomods
 - Download the mod to your ~/Downloads folder.
-- Launch ammo and install the mod with `install <download index>`. Close ammo.
-- check ~/.local/share/ammo/your_game_name/mods/your_mod_name
-- Inside that dir, create a `Data` folder.
-- Move the contents of the folders of your choice inside the new Data folder.
-- Delete all the folders besides the Data folder.
-- Launch ammo, activate the mod and commit.
+- install the mod with `install <index>`.
+- Select configuration options with `configure <index>`.
+- Follow the install wizard.
+  - You can use 'next' and 'back' to change pages.
+  - You can select an option with <index>
+  - Attempting to advance past the last page with 'next' will complete the configuration.
+- Activate your mod with `activate mod <index>`
+- Activate any associated plugins with `activate plugin <index>`
+- `commit` to make changes persist.
 
 # Disclaimer
 - I waive all liability. Use at your own risk.
