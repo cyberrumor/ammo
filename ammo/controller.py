@@ -570,8 +570,8 @@ class Controller:
             print("Not cleaned.")
             return False
 
-        for mod in self.mods:
-            mod.set(False, self.plugins)
+        for mod in range(len(self.mods)):
+            self._set_component_state("mod", mod, False)
         self._save_order()
         self._clean_data_dir()
         return True

@@ -90,6 +90,13 @@ class Mod:
                 and (parent_dir == self.location or parent_dir == os.path.join(self.location, 'Data')):
                     self.plugins.append(file)
 
+        # if this is a configured fomod, don't install anything above the "Data" folder.
+        if self.fomod and self.data_dir:
+            self.files.clear()
+            for parent_dir, folders, files in os.walk(os.path.join(self.location, "Data")):
+                for file in files:
+                    self.files[file] = os.path.join(parent_dir, file)
+
 
     def __str__(self):
         return f'{"[True]     " if self.enabled else "[False]    "}{self.name}'
