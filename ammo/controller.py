@@ -2,6 +2,7 @@
 import os
 import shutil
 from mod import *
+from xml.etree import ElementTree
 
 class Controller:
     def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir, downloads_dir):
@@ -281,6 +282,141 @@ class Controller:
         return components
 
 
+    def _fomod_validated(self, index):
+        """
+        Returns false if there is an issue preventing fomod configuration.
+        Otherwise, returns the root node of the parsed ModuleConfig.xml.
+        """
+        components = self._get_validated_components("mod", index)
+        if not components:
+            print(f"Invalid index.")
+            return False
+
+        mod = components[int(index)]
+        if not mod.fomod:
+            print("'configure' was called on something other than a fomod. Aborting.")
+            return False
+
+        if not mod.modconf:
+            print("Unable to find ModuleConfig.xml for this fomod.")
+            print("Please configure manually in:")
+            print(mod.location)
+            print("Once there is a data dir inside that folder with the desired files in place,")
+            print("refresh and try again.")
+            return False
+
+        # If there is already a Data dir in the mod folder, warn that this is the point of no return.
+        if mod.data_dir:
+            print("This has been configured previously.")
+            choice = input("Discard previous configuration and continue? [y/n]: ").lower() == "y"
+            if not choice:
+                print("No changes made.")
+                return False
+
+            # Clean up previous configuration.
+            try:
+                shutil.rmtree(os.path.join(mod.location, "Data"))
+            except FileNotFoundError:
+                pass
+
+        # Parse the fomod installer.
+        try:
+            tree = ElementTree.parse(mod.modconf)
+            root = tree.getroot()
+        except:
+            print("This mod's ModuleConfig.xml is malformed.")
+            print("Please configure manually, refresh, and try again.")
+            return False
+
+        return root
+
+
+    def _fomod_required_files(self, fomod_installer_root_node):
+        """
+        get a list of files that are always required.
+        """
+        return fomod_installer_root_node.find("requiredInstallFiles")
+
+
+    def _fomod_install_steps(self, fomod_installer_root_node):
+        """
+        get a native data type (dict) representing this fomod's install stpes.
+        """
+        module_name = fomod_installer_root_node.find("moduleName").text
+        steps = {}
+        # Find all the install steps
+        for step in fomod_installer_root_node.find("installSteps"):
+            for optional_file_groups in step:
+                for group in optional_file_groups:
+                    step_name = group.get("name")
+                    steps[step_name] = {}
+                    steps[step_name]["type"] = group.get("type")
+                    steps[step_name]["plugins"] = []
+                    plugins = steps[step_name]["plugins"]
+                    for plugin_index, plugin in enumerate(group.find("plugins")):
+                        plug_dict = {}
+                        plugin_name = plugin.get("name").strip()
+                        plug_dict["name"] = plugin_name
+                        plug_dict["description"] = plugin.find("description").text.lstrip('/')
+                        plug_dict["flags"] = {}
+                        # Automatically mark the first option as selected when a selection is required.
+                        plug_dict["selected"] = (steps[step_name]["type"] == "SelectExactlyOne") \
+                                and plugin_index == 0
+
+                        # Interpret on/off as true/false
+                        for flag in plugin.find("conditionFlags"):
+                            plug_dict["flags"][flag.get("name")] = flag.text == "On"
+                        plugins.append(plug_dict)
+                        # plugins[plugin_name]["dependencies"] = {}
+                        # TODO: handle dependencies.
+        return steps
+
+
+    def _init_fomod_chosen_files(self, index, to_install):
+        """
+        Copy the chosen files 'to_install' from given mod at 'index'
+        to that mod's Data folder.
+        """
+        mod = self.mods[int(index)]
+        data = os.path.join(mod.location, "Data")
+
+        # delete the old configuration if it exists
+        try:
+            shutil.rmtree(data)
+        except:
+            pass
+
+        os.makedirs(data, exist_ok=True)
+
+        stage = {}
+        for node in to_install:
+            for loc in node:
+                # convert the 'source' folder form the xml into a full path
+                source = os.path.join(mod.location, loc.get("source"))
+                # get the 'destination' folder form the xml. This path is relative to Data.
+                destination = loc.get("destination")
+                for parent_path, folders, files in os.walk(source):
+                    rel_dest_path = parent_path.split(source)[-1].lstrip('/')
+
+                    for folder in folders:
+                        rel_folder_path = os.path.join(rel_dest_path, folder)
+                        full_folder_path = os.path.join(data, rel_folder_path)
+                        os.makedirs(full_folder_path, exist_ok=True)
+
+                    for file in files:
+                        src = os.path.join(parent_path, file)
+                        dest = os.path.join(os.path.join(data, rel_dest_path), file)
+                        stage[dest] = src
+
+        # install the new files
+        for k, v in stage.items():
+            shutil.copy(v, k)
+
+        mod.data_dir = True
+
+        return True
+
+
     def _set_component_state(self, component_type, mod_index, state):
         """
         Activate or deactivate a component.
@@ -297,11 +433,9 @@ class Controller:
         if isinstance(component, Mod):
 
             # Handle configuration of fomods
-            if hasattr(component, "fomod") and component.fomod and state:
-                print("This is a fomod!")
-                print("It will have to be configured manually.")
-                print(f"The mod files are in: '{self.location}'")
-                print("Once that is done, refresh and try again.")
+            if hasattr(component, "fomod") and component.fomod and state and not component.data_dir:
+                print("Fomods must be configured before they can be enabled.")
+                print(f"Please run 'configure {mod_index}', refresh, and try again.")
                 return False
 
             component.enabled = state
@@ -443,22 +577,24 @@ class Controller:
         return True
 
 
+
+    def _normalize(self, destination, dest_prefix):
+        """
+        Prevent folders with the same name but different case from being created.
+        """
+        path, file = os.path.split(destination)
+        local_path = path.split(dest_prefix)[-1].lower()
+        for i in ['Data', 'DynDOLOD', 'Plugins', 'SKSE', 'Edit Scripts', 'Docs', 'Scripts', 'Source']:
+            local_path = local_path.replace(i.lower(), i)
+        new_dest = os.path.join(dest_prefix, local_path.lstrip('/'))
+        result = os.path.join(new_dest, file)
+        return result
+
+
     def _stage(self):
         """
         Returns a dict containing the final symlinks that will be installed.
         """
-        def normalize(destination):
-            """
-            Prevent folders with the same name but different case from being created.
-            """
-            path, file = os.path.split(destination)
-            local_path = path.split(self.game_dir)[-1].lower()
-            for i in ['Data', 'DynDOLOD', 'Plugins', 'SKSE', 'Edit Scripts', 'Docs', 'Scripts', 'Source']:
-                local_path = local_path.replace(i.lower(), i)
-            new_dest = os.path.join(self.game_dir, local_path.lstrip('/'))
-            result = os.path.join(new_dest, file)
-            return result
-
         # destination: (mod_name, source)
         result = {}
         # Iterate through enabled mods in order.
@@ -474,13 +610,13 @@ class Controller:
                             self.game_dir,
                             corrected_name.replace('/data', '/Data').lstrip('/')
                     )
-                    dest = normalize(dest)
+                    dest = self._normalize(dest, self.game_dir)
                 else:
                     dest = os.path.join(
                             self.game_dir,
                             'Data' + corrected_name,
                     )
-                    dest = normalize(dest)
+                    dest = self._normalize(dest, self.game_dir)
                 # Add the sanitized full path to the stage, resolving conflicts.
                 result[dest] = (mod.name, src)
         return result

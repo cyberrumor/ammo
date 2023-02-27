@@ -36,6 +36,14 @@ class UI:
             "num_args": 0,
             "doc": str(self.exit.__doc__).strip(),
         }
+
+        self.command['configure'] = {
+            "func": self.configure,
+            "args": ["index"],
+            "num_args": 1,
+            "doc": str(self.configure.__doc__).strip(),
+        }
+
     def help(self):
         """
         Show this menu.
@@ -67,17 +75,179 @@ class UI:
             print(f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}")
 
 
-
-
     def exit(self):
         """
         Quit. Prompts if there are changes.
         """
         do_quit = True
         if self.controller.changes:
-            do_quit = input("There are unapplied changes. Quit? [y/n]: ").lower() == 'y'
+            do_quit = input("There are unapplied changes. Quit? [y/n]: ").lower() == "y"
         if do_quit:
             exit()
+        return True
+
+
+    def configure(self, index):
+        """
+        Configure a fomod.
+        """
+        # This has to run a hard refresh for now, so warn if there are uncommitted changes
+        if self.controller.changes:
+            print("can't configure fomod when there are unsaved changes.")
+            print("Please run 'commit' and try again.")
+            return False
+
+        fomod_installer_root_node = self.controller._fomod_validated(index)
+        if not fomod_installer_root_node:
+            return False
+
+        required_files = self.controller._fomod_required_files(fomod_installer_root_node)
+        module_name = fomod_installer_root_node.find("moduleName").text
+        steps = self.controller._fomod_install_steps(fomod_installer_root_node)
+        pages = list(steps.keys())
+        page_index = 0
+
+        command_dict = {
+            "<index>": "     Choose an option.",
+            "info <index>": "Show the description for the selected option.",
+            "exit": "        Abandon configuration of this fomod.",
+            "next": "        Advance to the next page of the installer.",
+            "back": "        Return to the previous page of the installer.",
+        }
+
+        while True:
+            info = False
+            os.system("clear")
+            page = steps[pages[page_index]]
+
+            print(module_name)
+            print('-----------------')
+            print(f"Page {page_index + 1} / {len(pages)}: {pages[page_index]}")
+            print()
+
+            print(" ### | Selected | Option Name")
+            print("-----|----------|------------")
+            for i, p in enumerate(page["plugins"]):
+                num = f"[{i}]     "
+                l = len(str(i)) + 1
+                num = num[0:-1]
+                enabled = "[True]     " if p['selected'] else "[False]    "
+                print(f"{num} {enabled} {p['name']}")
+            print()
+            selection = input(f"{page['type']} >_: ").lower()
+
+            if (not selection) or (selection not in command_dict and selection.isalpha()):
+                print()
+                for k, v in command_dict.items():
+                    print(f"{k} {v}")
+                print()
+                input("[Enter]")
+                continue
+
+            # Set a flag for 'info' command. This is so the index validation can be recycled.
+            if selection.split() and "info" == selection.split()[0]:
+                info = True
+
+            if "exit" == selection:
+                print("Bailed from configuring fomod.")
+                return False
+
+            if "next" == selection:
+                page_index += 1
+                if page_index >= len(pages):
+                    break
+                continue
+
+            if "back" == selection:
+                page_index -= 1
+                if page_index < 0:
+                    page_index = 0
+                    print("Can't go back from here.")
+                    input("[Enter]")
+                continue
+
+            # Convert selection to int and validate.
+            try:
+                if selection.split():
+                    selection = selection[-1]
+
+                selection = int(selection)
+                if selection not in range(len(page["plugins"])):
+                    print(f"Expected 0 through {len(page['plugins']) - 1} (inclusive)")
+                    input("[Enter]")
+                    continue
+
+            except ValueError:
+                print(f"Expected 0 through {len(page['plugins']) - 1} (inclusive)")
+                input("[Enter]")
+                continue
+
+            if info:
+                # Selection was valid argument for 'info' command.
+                print()
+                print(page["plugins"][selection]["description"])
+                print()
+                input("[Enter]")
+                continue
+
+            # Selection was a valid index command.
+            # toggle the 'selected' switch on appropriate plugins.
+            val = not page["plugins"][selection]["selected"]
+            if "SelectExactlyOne" == page["type"]:
+                for i in range(len(page["plugins"])):
+                    page["plugins"][i]["selected"] = (i == selection)
+            else:
+                page["plugins"][selection]["selected"] = val
+
+        # Consolidate the flags.
+        flags = {}
+        for step in steps.values():
+            for plugin in step["plugins"]:
+                if plugin["selected"]:
+                    for flag in plugin["flags"]:
+                        flags[flag] = plugin["flags"][flag]
+
+        to_install = []
+        # include required files
+        if required_files:
+            #for i in required_files:
+            #    to_install.append(i)
+            to_install.append(required_files)
+
+        # include conditional file installs based on the user choice
+        for pattern in fomod_installer_root_node.find("conditionalFileInstalls").find("patterns"):
+            dependencies = pattern.find("dependencies")
+            dep_op = dependencies.get("operator")
+            if dep_op:
+                dep_op = dep_op.lower()
+            expected_flags = {}
+            for xml_flag in dependencies:
+                expected_flags[xml_flag.get("flag")] = xml_flag.get("value") == "On"
+
+            match = False
+            for k, v in expected_flags.items():
+                if k in flags:
+                    if flags[k] != v:
+                        if dep_op == "and":
+                            # Mismatched flag. Skip.
+                            match = False
+                            break
+                        # if dep_op is "or", we can try the rest of these.
+                        continue
+                    # A single match.
+                    match = True
+
+            if match:
+                # We have all the necessary flags for this plugin in our configured options.
+                to_install.append(pattern.find("files"))
+
+        # Let the controller stage the chosen files and copy them to the mod's local Data dir.
+        self.controller._init_fomod_chosen_files(index, to_install)
+
+        # If _init_fomod_chosen_files can rebuild the "files" property of the mod,
+        # resetting the controller and preventing configuration when there are unsaved changes
+        # will no longer be required.
+        self.controller.__reset__()
         return True
 
 

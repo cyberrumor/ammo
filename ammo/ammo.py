@@ -2,6 +2,7 @@
 from ui import UI
 from controller import Controller
 import os
+import sys
 
 IDS = {
     "Skyrim Special Edition": "489830",

@@ -35,14 +35,14 @@ class Mod:
     location: str
     parent_data_dir: str
 
+    modconf: str = ""
+
     data_dir: bool = False
     fomod: bool = False
     is_dlc: bool = False
     enabled: bool = False
 
     files: dict[str] = field(default_factory=dict)
-    fomod_files: dict[str] = field(default_factory=dict)
-
     plugins: list[str] = field(default_factory=list)
 
 
@@ -74,6 +74,14 @@ class Mod:
 
             if folders and "fomod" in [i.lower() for i in folders]:
                 self.fomod = True
+                # find the ModuleConfig.xml if it exists.
+                for parent, dirs, files in os.walk(self.location):
+                    for file in files:
+                        if file.lower() == "moduleconfig.xml":
+                            self.modconf = os.path.join(parent, file)
+                            break
+                    if self.modconf:
+                        break
 
             for file in files:
                 self.files[file] = os.path.join(parent_dir, file)
