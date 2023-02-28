@@ -27,6 +27,8 @@ A Simple Terminal-Based Mod Organizer for Linux
 - No dependency checking or automated load order handling.
 - Manual downloads only.
 - FOMOD install wizard is considered "beta", there are likely bugs that need to be ironed out.
+- If the FOMOD needs to put things _above_ the game's Data dir, the FOMOD will require
+  manual configuration.
 
 # Planned Features
 - Morrowind support.
@@ -64,18 +66,6 @@ move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
 refresh                                       Reload configuration and files from disk.
 vanilla                                       Disable all managed components and clean up.
 ```
-
-# Usage with Fomods
-- Download the mod to your ~/Downloads folder.
-- install the mod with `install <index>`.
-- Select configuration options with `configure <index>`.
-- Follow the install wizard.
-  - You can use 'next' and 'back' to change pages.
-  - You can select an option with <index>
-  - Attempting to advance past the last page with 'next' will complete the configuration.
-- Activate your mod with `activate mod <index>`
-- Activate any associated plugins with `activate plugin <index>`
-- `commit` to make changes persist.
 
 # Disclaimer
 - I waive all liability. Use at your own risk.
