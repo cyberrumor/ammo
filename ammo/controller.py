@@ -373,10 +373,11 @@ class Controller:
                                     "SelectAtLeastOne"
                                 ]) and plugin_index == 0
 
-                        # Interpret on/off as true/false
+                        # Interpret on/off or 1/0 as true/false
                         if plugin.find("conditionFlags"):
                             for flag in plugin.find("conditionFlags"):
-                                plug_dict["flags"][flag.get("name")] = flag.text == "On"
+                                # People use arbitrary flags here. Most commonly "On" or "1".
+                                plug_dict["flags"][flag.get("name")] = flag.text in ["On", "1"]
                             plug_dict["conditional"] = True
 
                         else:
@@ -414,7 +415,10 @@ class Controller:
         for node in to_install:
             for loc in node:
                 # convert the 'source' folder form the xml into a full path
-                source = os.path.join(mod.location, loc.get("source"))
+                s = loc.get("source")
+                source = mod.location
+                for i in s.split('\\'):
+                    source = os.path.join(source, i)
                 # get the 'destination' folder form the xml. This path is relative to Data.
                 destination = loc.get("destination")
                 for parent_path, folders, files in os.walk(source):

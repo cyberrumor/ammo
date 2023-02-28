@@ -111,8 +111,8 @@ class UI:
             "<index>": "     Choose an option.",
             "info <index>": "Show the description for the selected option.",
             "exit": "        Abandon configuration of this fomod.",
-            "next": "        Advance to the next page of the installer.",
-            "back": "        Return to the previous page of the installer.",
+            "n": "           Next page of the installer or complete installation.",
+            "b": "           Back. Return to the previous page of the installer.",
         }
 
         while True:
@@ -153,13 +153,13 @@ class UI:
                 self.controller.__reset__()
                 return False
 
-            if "next" == selection:
+            if "n" == selection:
                 page_index += 1
                 if page_index >= len(pages):
                     break
                 continue
 
-            if "back" == selection:
+            if "b" == selection:
                 page_index -= 1
                 if page_index < 0:
                     page_index = 0
@@ -224,9 +224,10 @@ class UI:
         for step in steps.values():
             for plugin in step["plugins"]:
                 if plugin["selected"]:
-                    if plugin["flags"]:
-                        for flag in plugin["flags"]:
-                            flags[flag] = plugin["flags"][flag]
+                    if not plugin["flags"]:
+                        continue
+                    for flag in plugin["flags"]:
+                        flags[flag] = plugin["flags"][flag]
 
         # include conditional file installs based on the user choice
         patterns = []
@@ -241,9 +242,10 @@ class UI:
                     dep_op = dep_op.lower()
                 expected_flags = {}
                 for xml_flag in dependencies:
-                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") == "On"
+                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
 
                 match = False
+
                 for k, v in expected_flags.items():
                     if k in flags:
                         if flags[k] != v:
@@ -255,10 +257,15 @@ class UI:
                             continue
                         # A single match.
                         match = True
-
                 if match:
                     # We have all the necessary flags for this plugin in our configured options.
-                    to_install.append(pattern.find("files"))
+                    list_of_folders = pattern.find("files")
+                    if list_of_folders:
+                        to_install.append(list_of_folders)
+
+        if not to_install:
+            print("The configured options failed to map to installable components!")
+            return False
 
         # Let the controller stage the chosen files and copy them to the mod's local Data dir.
         self.controller._init_fomod_chosen_files(index, to_install)
