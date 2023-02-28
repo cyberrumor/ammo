@@ -420,7 +420,11 @@ class Controller:
                 for i in s.split('\\'):
                     source = os.path.join(source, i)
                 # get the 'destination' folder form the xml. This path is relative to Data.
-                destination = loc.get("destination")
+                destination = ""
+                d = loc.get("destination")
+                for i in d.split('\\'):
+                    destination = os.path.join(destination, i)
+
                 for parent_path, folders, files in os.walk(source):
                     rel_dest_path = parent_path.split(source)[-1].lstrip('/')
 
