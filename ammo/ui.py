@@ -79,13 +79,10 @@ class UI:
         """
         Quit. Prompts if there are changes.
         """
-        do_quit = True
         if self.controller.changes:
-            do_quit = input("There are unapplied changes. Quit? [y/n]: ").lower() == "y"
-        if do_quit:
-            exit()
-        return True
-
+            if input("There are unapplied changes. Quit? [y/n]: ").lower() != "y":
+                return True
+        exit()
 
     def configure(self, index):
         """
@@ -97,8 +94,7 @@ class UI:
             print("Please run 'commit' and try again.")
             return False
 
-        fomod_installer_root_node = self.controller._fomod_validated(index)
-        if not fomod_installer_root_node:
+        if not (fomod_installer_root_node := self.controller._fomod_validated(index)):
             return False
 
         required_files = self.controller._fomod_required_files(fomod_installer_root_node)
@@ -231,8 +227,7 @@ class UI:
 
         # include conditional file installs based on the user choice
         patterns = []
-        conditionals = fomod_installer_root_node.find("conditionalFileInstalls")
-        if conditionals:
+        if (conditionals := fomod_installer_root_node.find("conditionalFileInstalls")):
             patterns = conditionals.find("patterns")
         if patterns:
             for pattern in patterns:
@@ -308,16 +303,14 @@ class UI:
             while True:
                 os.system("clear")
                 self.print_status()
-                cmd = input(f"{self.controller.name} >_: ")
-                if not cmd:
+                if not (cmd := input(f"{self.controller.name} >_: ")):
                     continue
                 cmds = cmd.split()
                 args = []
                 func = cmds[0]
                 if len(cmds) > 1:
                     args = cmds[1:]
-                command = self.command.get(func, None)
-                if not command:
+                if not (command := self.command.get(func, None)):
                     print(f"unknown command {cmd}")
                     self.help()
                     input("[Enter]")
@@ -329,8 +322,7 @@ class UI:
 
                 if "instance" in command:
                     args.insert(0, command["instance"])
-                ret = command["func"](*args)
-                if not ret:
+                if not (ret := command["func"](*args)):
                     input("[Enter]")
                     continue
 

@@ -18,11 +18,20 @@ STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
 
 if __name__ == "__main__":
     # game selection
-    games = os.listdir(os.path.join(STEAM, "common"))
-    games = [game for game in games if game in IDS]
+    games = [game for game in os.listdir(os.path.join(STEAM, "common")) if game in IDS]
+    if not games:
+        print("Install a game through steam!")
+        print("ammo supports:")
+        for i in IDS:
+            print(f"- {i}")
+        print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
+        print("ammo stores mods in ~/.local/share/ammo")
+        print("ammo looks for mods to install in ~/Downloads")
+        exit()
+
     if len(games) == 1:
         choice = 0
-    elif len(games) > 1:
+    else:
         while True:
             choice = None
             print("Index   |   Game")
@@ -40,15 +49,6 @@ if __name__ == "__main__":
                 print(f"Expected integer 0 through {len(games) - 1} (inclusive)")
                 continue
             break
-    else:
-        print("Install a game through steam!")
-        print("ammo supports:")
-        for i in IDS:
-            print(f"- {i}")
-        print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
-        print("ammo stores mods in ~/.local/share/ammo")
-        print("ammo looks for mods to install in ~/Downloads")
-        exit()
 
     # create the paths
     app_name = games[choice]
@@ -65,10 +65,9 @@ if __name__ == "__main__":
     conf = os.path.join(conf_dir, "ammo.conf")
 
     # Create expected directories if they don't alrady exist.
-    expected_dirs = [mods_dir, conf_dir]
-    for directory in expected_dirs:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    for expected_dir in [mods_dir, conf_dir]:
+        if not os.path.exists(expected_dir):
+            os.makedirs(expected_dir)
 
     # Create an instance of the controller.
     controller = Controller(app_name, game_dir, data, conf, dlc, plugins, mods_dir, DOWNLOADS)

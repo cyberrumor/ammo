@@ -103,12 +103,7 @@ class Mod:
 
 
     def associated_plugins(self, plugins):
-        owned = []
-        for file in self.files:
-            for plugin in plugins:
-                if file == plugin.name:
-                    owned.append(plugin)
-        return owned
+        return [plugin for plugin in plugins for file in self.files if file == plugin.name]
 
 
     def files_in_place(self):

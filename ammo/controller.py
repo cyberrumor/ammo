@@ -287,8 +287,7 @@ class Controller:
         Returns false if there is an issue preventing fomod configuration.
         Otherwise, returns the root node of the parsed ModuleConfig.xml.
         """
-        components = self._get_validated_components("mod", index)
-        if not components:
+        if not (components := self._get_validated_components("mod", index)):
             print(f"Invalid index.")
             return False
 
@@ -358,8 +357,7 @@ class Controller:
                     steps[step_name]["type"] = group.get("type")
                     steps[step_name]["plugins"] = []
                     plugins = steps[step_name]["plugins"]
-                    group_of_plugins = group.find("plugins")
-                    if not group_of_plugins:
+                    if not (group_of_plugins := group.find("plugins")):
                         continue
                     for plugin_index, plugin in enumerate(group_of_plugins):
                         plug_dict = {}
@@ -374,8 +372,8 @@ class Controller:
                                 ]) and plugin_index == 0
 
                         # Interpret on/off or 1/0 as true/false
-                        if plugin.find("conditionFlags"):
-                            for flag in plugin.find("conditionFlags"):
+                        if (conditional_flags := plugin.find("conditionFlags")):
+                            for flag in conditional_flags:
                                 # People use arbitrary flags here. Most commonly "On" or "1".
                                 plug_dict["flags"][flag.get("name")] = flag.text in ["On", "1"]
                             plug_dict["conditional"] = True
@@ -385,8 +383,7 @@ class Controller:
                             plug_dict["conditional"] = False
 
                         plug_dict["files"] = []
-                        plugin_files = plugin.find("files")
-                        if plugin_files:
+                        if (plugin_files := plugin.find("files")):
                             for i in plugin_files:
                                 plug_dict["files"].append(i)
 
@@ -452,8 +449,7 @@ class Controller:
         Activate or deactivate a component.
         Returns which plugins need to be added to or removed from self.plugins.
         """
-        components = self._get_validated_components(component_type, mod_index)
-        if not components:
+        if not (components := self._get_validated_components(component_type, mod_index)):
             print(f"There are no {component_type}s. [Enter]")
             return False
         component = components[int(mod_index)]
@@ -595,8 +591,7 @@ class Controller:
         print("This will disable all mods and plugins, and remove all symlinks and empty folders from the game dir.")
         print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
-        choice = input("continue? [y/n]: ")
-        if choice.lower() != "y":
+        if input("continue? [y/n]").lower() != "y":
             print("Not cleaned.")
             return False
 
@@ -687,8 +682,7 @@ class Controller:
         if self.changes:
             print("There are unsaved changes!")
             print("refreshing reloads data from disk.")
-            answer = input("reload data from disk and lose unsaved changes? [y/n]: ").lower()
-            if answer == "y":
+            if input("reload data from disk and lose unsaved changes? [y/n]: ").lower() == "y":
                 self.__reset__()
                 return True
             return False
