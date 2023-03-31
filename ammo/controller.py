@@ -347,7 +347,6 @@ class Controller:
         """
         get a native data type (dict) representing this fomod's install stpes.
         """
-        module_name = fomod_installer_root_node.find("moduleName").text
         steps = {}
         # Find all the install steps
         for step in fomod_installer_root_node.find("installSteps"):
