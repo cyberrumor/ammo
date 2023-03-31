@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import shutil
-from mod import *
 from xml.etree import ElementTree
+from mod import Mod, Download, Plugin, DLC
 
 class Controller:
     def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir, downloads_dir):
@@ -185,7 +185,7 @@ class Controller:
             return False
 
         if not self.downloads:
-            print(f"{DOWNLOADS} has no eligible files.")
+            print(f"{self.downloads_dir} has no eligible files.")
             return False
 
         try:
@@ -218,7 +218,7 @@ class Controller:
             [i for i in os.path.splitext(download.name)[0] if i.isalnum() or i == '_']
         ).strip('_')
         if not output_folder:
-            output_folder = os.path.splittext(download.name)[0]
+            output_folder = os.path.splitext(download.name)[0]
 
         extract_to = os.path.join(self.mods_dir, output_folder)
         extracted_files = []
@@ -270,9 +270,9 @@ class Controller:
             print(f"Expected 'plugin' or 'mod', got arg {component_type}")
             return False
         components = self.plugins if component_type == "plugin" else self.mods
-        if not len(components):
+        if len(components) == 0:
             print(f"Install mods to '{self.mods_dir}' to manage them with ammo.")
-            print(f"To see plugins, the mods they belong to must be activated.")
+            print("To see plugins, the mods they belong to must be activated.")
             return False
 
         if index > len(components) - 1:
@@ -288,7 +288,7 @@ class Controller:
         Otherwise, returns the root node of the parsed ModuleConfig.xml.
         """
         if not (components := self._get_validated_components("mod", index)):
-            print(f"Invalid index.")
+            print("Invalid index.")
             return False
 
         mod = components[int(index)]
@@ -304,7 +304,8 @@ class Controller:
             print("refresh and try again.")
             return False
 
-        # If there is already a Data dir in the mod folder, warn that this is the point of no return.
+        # If there is already a Data dir in the mod folder,
+        # warn that this is the point of no return.
         if mod.data_dir:
             print("This has been configured previously.")
             choice = input("Discard previous configuration and continue? [y/n]: ").lower() == "y"
@@ -365,7 +366,8 @@ class Controller:
                         plug_dict["name"] = plugin_name
                         plug_dict["description"] = plugin.find("description").text.strip()
                         plug_dict["flags"] = {}
-                        # Automatically mark the first option as selected when a selection is required.
+                        # Automatically mark the first option as selected when a selection
+                        # is required.
                         plug_dict["selected"] = (steps[step_name]["type"] in [
                                     "SelectExactlyOne",
                                     "SelectAtLeastOne"
@@ -511,7 +513,7 @@ class Controller:
             return False
 
         if mod_or_download not in ["download", "mod"]:
-            print(f"Expected either 'download' or 'mod', got '{component_type}'")
+            print(f"Expected either 'download' or 'mod', got '{mod_or_download}'")
             return False
 
         if mod_or_download == "mod":
@@ -563,7 +565,7 @@ class Controller:
         Removes all symlinks and deletes empty folders.
         """
         # remove symlinks
-        for dirpath, dirnames, filenames in os.walk(self.game_dir):
+        for dirpath, _dirnames, filenames in os.walk(self.game_dir):
             for file in filenames:
                 full_path = os.path.join(dirpath, file)
                 if os.path.islink(full_path):
@@ -572,7 +574,7 @@ class Controller:
 
         # remove empty directories
         def remove_empty_dirs(path):
-            for dirpath, dirnames, filenames in list(os.walk(path, topdown=False)):
+            for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
                 for dirname in dirnames:
                     try:
                         os.rmdir(os.path.realpath(os.path.join(dirpath, dirname)))
@@ -588,7 +590,8 @@ class Controller:
         """
         Disable all managed components and clean up.
         """
-        print("This will disable all mods and plugins, and remove all symlinks and empty folders from the game dir.")
+        print("This will disable all mods and plugins, and remove all symlinks and \
+                empty folders from the game dir.")
         print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
         if input("continue? [y/n]").lower() != "y":
@@ -609,7 +612,15 @@ class Controller:
         """
         path, file = os.path.split(destination)
         local_path = path.split(dest_prefix)[-1].lower()
-        for i in ['Data', 'DynDOLOD', 'Plugins', 'SKSE', 'Edit Scripts', 'Docs', 'Scripts', 'Source']:
+        for i in [
+                'Data',
+                'DynDOLOD',
+                'Plugins',
+                'SKSE',
+                'Edit Scripts',
+                'Docs',
+                'Scripts',
+                'Source']:
             local_path = local_path.replace(i.lower(), i)
         new_dest = os.path.join(dest_prefix, local_path.lstrip('/'))
         result = os.path.join(new_dest, file)
@@ -655,7 +666,6 @@ class Controller:
         stage = self._stage()
         self._clean_data_dir()
 
-        all_files_success = True
         count = len(stage)
         skipped_files = []
         for index, (dest, source) in enumerate(stage.items()):
@@ -664,7 +674,8 @@ class Controller:
             try:
                 os.symlink(src, dest)
             except FileExistsError:
-                skipped_files.append(f"{name} skipped overwriting an unmanaged file: {dest.split(self.game_dir)[-1].lstrip('/')}.")
+                skipped_files.append(f"{name} skipped overwriting an unmanaged file: \
+                        {dest.split(self.game_dir)[-1].lstrip('/')}.")
             finally:
                 print(f"files processed: {index+1}/{count}", end='\r', flush=True)
         print()

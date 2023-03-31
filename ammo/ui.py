@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import inspect
 import os
+import sys
 
 class UI:
     def __init__(self, controller):
@@ -9,7 +10,9 @@ class UI:
         # get a map of commands to functions and the amount of args they expect
         self.command = {}
 
-        for name, func in inspect.getmembers(self.controller.__class__, predicate=inspect.isfunction):
+        for name, func in inspect.getmembers(
+                self.controller.__class__,
+                predicate=inspect.isfunction):
             # Only map "public" methods
             if name.startswith('_'):
                 continue
@@ -67,8 +70,8 @@ class UI:
             column_doc.append(v['doc'])
 
 
-        pad_cmd = max([len(i) for i in column_cmd]) + 1
-        pad_arg = max([len(i) for i in column_arg]) + 1
+        pad_cmd = max((len(i) for i in column_cmd)) + 1
+        pad_arg = max((len(i) for i in column_arg)) + 1
         # pad_doc = max([len(i) for i in column_doc]) + 1
 
         for cmd, arg, doc in zip(column_cmd, column_arg, column_doc):
@@ -82,7 +85,7 @@ class UI:
         if self.controller.changes:
             if input("There are unapplied changes. Quit? [y/n]: ").lower() != "y":
                 return True
-        exit()
+        sys.exit(0)
 
     def configure(self, index):
         """
@@ -192,7 +195,7 @@ class UI:
             val = not page["plugins"][selection]["selected"]
             if "SelectExactlyOne" == page["type"]:
                 for i in range(len(page["plugins"])):
-                    page["plugins"][i]["selected"] = (i == selection)
+                    page["plugins"][i]["selected"] = i == selection
             elif "SelectAtMostOne" == page["type"]:
                 for i in range(len(page["plugins"])):
                     page["plugins"][i]["selected"] = False
@@ -331,6 +334,6 @@ class UI:
                 print()
                 print("There were unsaved changes! Please run 'commit' before exiting.")
                 print()
-            exit()
+            sys.exit(0)
 
 

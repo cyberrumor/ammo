@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from ui import UI
-from controller import Controller
 import os
 import sys
+from ui import UI
+from controller import Controller
 
 IDS = {
     "Skyrim Special Edition": "489830",
@@ -27,21 +27,21 @@ if __name__ == "__main__":
         print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
         print("ammo stores mods in ~/.local/share/ammo")
         print("ammo looks for mods to install in ~/Downloads")
-        exit()
+        sys.exit(1)
 
     if len(games) == 1:
-        choice = 0
+        CHOICE = 0
     else:
         while True:
-            choice = None
+            CHOICE = None
             print("Index   |   Game")
             print("----------------")
             for index, game in enumerate(games):
                 print(f"[{index}]         {game}")
-            choice = input("Index of game to manage: ")
+            CHOICE = input("Index of game to manage: ")
             try:
-                choice = int(choice)
-                assert choice in range(len(games))
+                CHOICE = int(CHOICE)
+                assert CHOICE in range(len(games))
             except ValueError:
                 print(f"Expected integer 0 through {len(games) - 1} (inclusive)")
                 continue
@@ -51,7 +51,7 @@ if __name__ == "__main__":
             break
 
     # create the paths
-    app_name = games[choice]
+    app_name = games[CHOICE]
     app_id = IDS[app_name]
     pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")
     game_dir = os.path.join(STEAM, f"common/{app_name}")
@@ -73,6 +73,6 @@ if __name__ == "__main__":
     controller = Controller(app_name, game_dir, data, conf, dlc, plugins, mods_dir, DOWNLOADS)
     # Run the UI against the controller.
     ui = UI(controller)
-    exit(ui.repl())
+    sys.exit(ui.repl())
 
 

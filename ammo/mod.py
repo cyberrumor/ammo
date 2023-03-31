@@ -22,7 +22,7 @@ class Download:
     sane: bool = False
 
     def __post_init__(self):
-        if all([(i.isalnum() or i in ['.', '_', '-']) for i in self.name]):
+        if all(((i.isalnum() or i in ['.', '_', '-']) for i in self.name)):
             self.sane = True
 
     def __str__(self):
@@ -57,7 +57,7 @@ class Mod:
             self.data_dir = True
 
         # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
-        for parent_dir, folder, files in os.walk(self.location):
+        for parent_dir, _folder, files in os.walk(self.location):
             if self.data_dir:
                 break
             for file in files:
@@ -75,7 +75,7 @@ class Mod:
             if folders and "fomod" in [i.lower() for i in folders]:
                 self.fomod = True
                 # find the ModuleConfig.xml if it exists.
-                for parent, dirs, files in os.walk(self.location):
+                for parent, _dirs, files in os.walk(self.location):
                     for file in files:
                         if file.lower() == "moduleconfig.xml":
                             self.modconf = os.path.join(parent, file)
@@ -87,7 +87,8 @@ class Mod:
                 self.files[file] = os.path.join(parent_dir, file)
                 if os.path.splitext(file)[-1] in ['.esp', '.esl', '.esm'] \
                 and file not in self.plugins \
-                and (parent_dir == self.location or parent_dir == os.path.join(self.location, 'Data')):
+                and (parent_dir == self.location \
+                or parent_dir == os.path.join(self.location, 'Data')):
                     self.plugins.append(file)
 
         # if this is a configured fomod, don't install anything above the "Data" folder.
@@ -108,7 +109,10 @@ class Mod:
 
     def files_in_place(self):
         for location in self.files.values():
-            corrected_location = os.path.join(location.split(self.name, 1)[-1].strip('/'), self.parent_data_dir)
+            corrected_location = os.path.join(
+                    location.split(self.name, 1)[-1].strip('/'),
+                    self.parent_data_dir
+            )
             # note that we don't care if the files are the same here, just that the paths and
             # filenames are the same. It's fine if the file comes from another mod.
             if not os.path.exists(corrected_location):
