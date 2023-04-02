@@ -6,6 +6,7 @@ from mod import Mod, Download, Plugin, DLC
 
 class Controller:
     def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir, downloads_dir):
+        self.changes = False
         self.name = app_name
         self.game_dir = game_dir
         self.data_dir = data_dir
