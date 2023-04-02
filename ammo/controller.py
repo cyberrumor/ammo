@@ -15,7 +15,6 @@ class Controller:
         self.plugin_file = plugin_file
         self.mods_dir = mods_dir
         self.downloads_dir = downloads_dir
-
         self.downloads = []
         self.mods = []
         self.plugins = []
@@ -35,30 +34,28 @@ class Controller:
         # Read the configuration file. If there's mods in it, put them in order.
         # Put mods that aren't listed in the conf file at the end.
         ordered_mods = []
-        if not os.path.exists(self.conf):
-            return
+        if os.path.exists(self.conf):
+            with open(self.conf, "r") as file:
+                for line in file:
+                    if line.startswith('#'):
+                        continue
+                    name = line.strip('*').strip()
+                    enabled = False
+                    if line.startswith('*'):
+                        enabled = True
 
-        with open(self.conf, "r") as file:
-            for line in file:
-                if line.startswith('#'):
-                    continue
-                name = line.strip('*').strip()
-                enabled = False
-                if line.startswith('*'):
-                    enabled = True
+                    if name not in [i.name for i in self.mods]:
+                        continue
 
-                if name not in [i.name for i in self.mods]:
-                    continue
-
-                for mod in self.mods:
-                    if mod.name == name:
-                        mod.enabled = enabled
-                        ordered_mods.append(mod)
-                        break
-        for mod in self.mods:
-            if mod not in ordered_mods:
-                ordered_mods.append(mod)
-        self.mods = ordered_mods
+                    for mod in self.mods:
+                        if mod.name == name:
+                            mod.enabled = enabled
+                            ordered_mods.append(mod)
+                            break
+            for mod in self.mods:
+                if mod not in ordered_mods:
+                    ordered_mods.append(mod)
+            self.mods = ordered_mods
 
         # Read the DLCList.txt and Plugins.txt files.
         # Add Plugins from these files to the list of managed plugins,
