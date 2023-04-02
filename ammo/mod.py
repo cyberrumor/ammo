@@ -56,16 +56,6 @@ class Mod:
         if os.path.exists(os.path.join(self.location, "Edit Scripts")):
             self.data_dir = True
 
-        # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
-        for parent_dir, _folder, files in os.walk(self.location):
-            if self.data_dir:
-                break
-            for file in files:
-                if os.path.splitext(file)[-1].lower() == ".dll":
-                    # This needs more robust handling.
-                    self.data_dir = True
-                    break
-
         # Get the files, set some flags.
         for parent_dir, folders, files in os.walk(self.location):
             # If there is a data dir, remember it.
@@ -83,6 +73,7 @@ class Mod:
                     if self.modconf:
                         break
 
+            # Find plugin in the Data folder or top level and add them to self.plugins.
             for file in files:
                 self.files[file] = os.path.join(parent_dir, file)
                 if os.path.splitext(file)[-1] in ['.esp', '.esl', '.esm'] \
@@ -97,6 +88,20 @@ class Mod:
             for parent_dir, folders, files in os.walk(os.path.join(self.location, "Data")):
                 for file in files:
                     self.files[file] = os.path.join(parent_dir, file)
+
+        else:
+            # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
+            # Don't do this to fomods because they might put things in a different location,
+            # then associate them with SKSE/Plugins in the 'destination' directive.
+            for parent_dir, _folder, files in os.walk(self.location):
+                if self.data_dir:
+                    break
+                for file in files:
+                    if os.path.splitext(file)[-1].lower() == ".dll":
+                        # This needs more robust handling.
+                        self.data_dir = True
+                        break
+
 
 
     def __str__(self):

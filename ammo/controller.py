@@ -400,10 +400,7 @@ class Controller:
         data = os.path.join(mod.location, "Data")
 
         # delete the old configuration if it exists
-        try:
-            shutil.rmtree(data)
-        except:
-            pass
+        shutil.rmtree(data, ignore_errors=True)
 
         os.makedirs(data, exist_ok=True)
 
@@ -412,34 +409,26 @@ class Controller:
             for loc in node:
                 # convert the 'source' folder form the xml into a full path
                 s = loc.get("source")
-                source = mod.location
+                full_source = mod.location
                 for i in s.split('\\'):
-                    source = os.path.join(source, i)
+                    full_source = os.path.join(full_source, i)
                 # get the 'destination' folder form the xml. This path is relative to Data.
                 destination = ""
                 d = loc.get("destination")
                 for i in d.split('\\'):
                     destination = os.path.join(destination, i)
 
-                for parent_path, folders, files in os.walk(source):
-                    rel_dest_path = parent_path.split(source)[-1].lstrip('/')
-
-                    for folder in folders:
-                        rel_folder_path = os.path.join(rel_dest_path, folder)
-                        full_folder_path = os.path.join(data, rel_folder_path)
-                        os.makedirs(full_folder_path, exist_ok=True)
-
-                    for file in files:
-                        src = os.path.join(parent_path, file)
-                        dest = os.path.join(os.path.join(data, rel_dest_path), file)
-                        stage[dest] = src
+                full_destination = os.path.join(
+                        os.path.join(mod.location, "Data"),
+                        destination
+                )
+                stage[full_destination] = full_source
 
         # install the new files
         for k, v in stage.items():
-            shutil.copy(v, k)
+            shutil.copytree(v, k, dirs_exist_ok=True)
 
         mod.data_dir = True
-
         return True
 
 
