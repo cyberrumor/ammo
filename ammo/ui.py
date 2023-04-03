@@ -115,7 +115,8 @@ class UI:
         }
 
         while True:
-            # Evaluate the flags to determine which steps to show.
+            # Evaluate the flags every loop to ensure the visible pages and selected options
+            # are always up to date. This will ensure the proper files are chosen later as well.
             flags = {}
             for step in steps.values():
                 for plugin in step["plugins"]:
@@ -152,6 +153,7 @@ class UI:
                     # We have all the necessary flags for this page to be shown.
                     visible_pages.append(page)
 
+            # Only exit loop after determining which flags are set and pages are shown.
             if page_index >= len(visible_pages):
                 break
 
@@ -260,16 +262,43 @@ class UI:
         if required_files:
             to_install.append(required_files)
 
-        # Unconditional file installs. If these were selected, install them.
-        unconditionals = []
+        # Normal files. If these were selected, install them unless flags disqualify.
+        normal_files = []
         for step in steps:
             for plugin in steps[step]["plugins"]:
-                if plugin["selected"] and not plugin["conditional"]:
-                    unconditionals.append(plugin["files"])
-        for unconditional in unconditionals:
-            to_install.append(unconditional)
+                if plugin["selected"]:
+                    if plugin["conditional"]:
+                        # conditional normal file
+                        match = False
+                        expected_flags = plugin["flags"]
+                        for k, v in expected_flags.items():
+                            if k in flags:
+                                if flags[k] != v:
+                                    if expected_flags["operator"] == "and":
+                                        # Mismatched flag, skip this plugin.
+                                        match = False
+                                        break
+                                    # if dep_op is "or", we can try the rest of these.
+                                    continue
+                                # A single match.
+                                match = True
+                        if match:
+                            normal_files.append(plugin["files"])
+                    else:
+                        # unconditional file install
+                        normal_files.append(plugin["files"])
 
-        # include conditional file installs based on the user choice
+        # flatten chosen files into one dimensional list.
+        for file in normal_files:
+            if isinstance(file, list):
+                for f in file:
+                    to_install.append(f)
+            else:
+                to_install.append(file)
+
+        # include conditional file installs based on the user choice. These are different from
+        # the normal_files with conditions because these conditions are set after all of the install
+        # steps instead of inside each install step.
         patterns = []
         if (conditionals := fomod_installer_root_node.find("conditionalFileInstalls")):
             patterns = conditionals.find("patterns")

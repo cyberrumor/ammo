@@ -420,31 +420,46 @@ class Controller:
         stage = {}
         for node in to_install:
             pre_stage = {}
-            for loc in node:
-                # convert the 'source' folder form the xml into a full path
-                s = loc.get("source")
-                full_source = mod.location
-                for i in s.split('\\'):
-                    full_source = os.path.join(full_source, i)
-                # get the 'destination' folder form the xml. This path is relative to Data.
-                destination = ""
-                d = loc.get("destination")
-                for i in d.split('\\'):
-                    destination = os.path.join(destination, i)
 
-                full_destination = os.path.join(
-                        os.path.join(mod.location, "Data"),
-                        destination
-                )
-                pre_stage[full_source] = full_destination
+            # convert the 'source' folder form the xml into a full path
+            s = node.get("source")
+            full_source = mod.location
+            for i in s.split('\\'):
+                # i requires case-sensitivity correction because mod authors might have
+                # said a resource was at "00 Core/Meshes" in ModuleConfig.xml when the actual
+                # file itself might be "00 Core/meshes".
+                folder = i
+                for file in os.listdir(full_source):
+                    if file.lower() == i.lower():
+                        folder = file
+                        break
+                full_source = os.path.join(full_source, folder)
 
-            for k, v in pre_stage.items():
-                for parent_dir, folders, files in os.walk(k):
-                    for file in files:
-                        source = os.path.join(parent_dir, file)
-                        local_parent_dir = parent_dir.split(k)[-1].strip('/')
-                        destination = os.path.join(os.path.join(v, local_parent_dir), file)
-                        stage[destination] = source
+            # get the 'destination' folder form the xml. This path is relative to Data.
+            destination = ""
+            d = node.get("destination")
+            for i in d.split('\\'):
+                # TODO: normalize capitalization of i here
+                destination = os.path.join(destination, i)
+
+            full_destination = os.path.join(
+                    os.path.join(mod.location, "Data"),
+                    destination
+            )
+            pre_stage[full_source] = full_destination
+
+            for dest, src in pre_stage.items():
+                if os.path.isdir(dest):
+                    # Handle directories
+                    for parent_dir, folders, files in os.walk(dest):
+                        for file in files:
+                            source = os.path.join(parent_dir, file)
+                            local_parent_dir = parent_dir.split(dest)[-1].strip('/')
+                            destination = os.path.join(os.path.join(src, local_parent_dir), file)
+                            stage[destination] = source
+                else:
+                    # Handle files
+                    stage[src] = dest
 
         # install the new files
         for k, v in stage.items():
