@@ -219,6 +219,10 @@ class Controller:
             output_folder = os.path.splitext(download.name)[0]
 
         extract_to = os.path.join(self.mods_dir, output_folder)
+        if os.path.exists(extract_to):
+            print("This mod already exists. To reinstall, you must first delete the mod.")
+            return False
+
         extracted_files = []
         try:
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
