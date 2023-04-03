@@ -354,6 +354,20 @@ class Controller:
                     steps[step_name] = {}
                     steps[step_name]["type"] = group.get("type")
                     steps[step_name]["plugins"] = []
+                    steps[step_name]["visible"] = {}
+
+                    # Collect this step's visibility conditions. Associate it with
+                    # the group instead of the step. This is inefficient but fits
+                    # into the "each step is a page" paradigm better.
+                    if (visible := step.find("visible")):
+                        if (dependencies := visible.find("dependencies")):
+                            dep_op = dependencies.get("operator")
+                            if dep_op:
+                                dep_op = dep_op.lower()
+                            steps[step_name]["visible"]["operator"] = dep_op
+                            for xml_flag in dependencies:
+                                steps[step_name]["visible"][xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
+
                     plugins = steps[step_name]["plugins"]
                     if not (group_of_plugins := group.find("plugins")):
                         continue
@@ -401,11 +415,11 @@ class Controller:
 
         # delete the old configuration if it exists
         shutil.rmtree(data, ignore_errors=True)
-
         os.makedirs(data, exist_ok=True)
 
         stage = {}
         for node in to_install:
+            pre_stage = {}
             for loc in node:
                 # convert the 'source' folder form the xml into a full path
                 s = loc.get("source")
@@ -422,11 +436,20 @@ class Controller:
                         os.path.join(mod.location, "Data"),
                         destination
                 )
-                stage[full_destination] = full_source
+                pre_stage[full_source] = full_destination
+
+            for k, v in pre_stage.items():
+                for parent_dir, folders, files in os.walk(k):
+                    for file in files:
+                        source = os.path.join(parent_dir, file)
+                        local_parent_dir = parent_dir.split(k)[-1].strip('/')
+                        destination = os.path.join(os.path.join(v, local_parent_dir), file)
+                        stage[destination] = source
 
         # install the new files
         for k, v in stage.items():
-            shutil.copytree(v, k, dirs_exist_ok=True)
+            os.makedirs(k.rsplit('/', 1)[0], exist_ok=True)
+            shutil.copy(v, k)
 
         mod.data_dir = True
         return True

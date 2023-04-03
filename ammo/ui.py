@@ -114,7 +114,22 @@ class UI:
             "b": "           Back. Return to the previous page of the installer.",
         }
 
+        flags = {}
+
         while True:
+
+            # Evaluate the flags to determine which steps to show.
+            for step in steps.values():
+                for plugin in step["plugins"]:
+                    if plugin["selected"]:
+                        if not plugin["flags"]:
+                            continue
+                        for flag in plugin["flags"]:
+                            flags[flag] = plugin["flags"][flag]
+
+            if page_index >= len(pages):
+                break
+
             info = False
             os.system("clear")
             page = steps[pages[page_index]]
@@ -154,8 +169,6 @@ class UI:
 
             if "n" == selection:
                 page_index += 1
-                if page_index >= len(pages):
-                    break
                 continue
 
             if "b" == selection:
@@ -203,7 +216,6 @@ class UI:
             else:
                 page["plugins"][selection]["selected"] = val
 
-
         # Determine which files need to be installed.
         to_install = []
         if required_files:
@@ -217,16 +229,6 @@ class UI:
                     unconditionals.append(plugin["files"])
         for unconditional in unconditionals:
             to_install.append(unconditional)
-
-        # Consolidate the flags.
-        flags = {}
-        for step in steps.values():
-            for plugin in step["plugins"]:
-                if plugin["selected"]:
-                    if not plugin["flags"]:
-                        continue
-                    for flag in plugin["flags"]:
-                        flags[flag] = plugin["flags"][flag]
 
         # include conditional file installs based on the user choice
         patterns = []
