@@ -93,15 +93,15 @@ class Mod:
             # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
             # Don't do this to fomods because they might put things in a different location,
             # then associate them with SKSE/Plugins in the 'destination' directive.
-            for parent_dir, _folder, files in os.walk(self.location):
+            for parent_dir, folders, files in os.walk(self.location):
                 if self.data_dir:
                     break
                 for file in files:
                     if os.path.splitext(file)[-1].lower() == ".dll":
                         # This needs more robust handling.
-                        self.data_dir = True
-                        break
-
+                        if "skse/plugins" not in parent_dir.lower():
+                            self.data_dir = True
+                            break
 
 
     def __str__(self):
