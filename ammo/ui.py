@@ -115,8 +115,8 @@ class UI:
         }
 
         while True:
-            flags = {}
             # Evaluate the flags to determine which steps to show.
+            flags = {}
             for step in steps.values():
                 for plugin in step["plugins"]:
                     if plugin["selected"]:
@@ -125,13 +125,39 @@ class UI:
                         for flag in plugin["flags"]:
                             flags[flag] = plugin["flags"][flag]
 
-            if page_index >= len(pages):
+            # Determine which steps should be visible
+            visible_pages = []
+            for page in pages:
+                match = False
+                expected_flags = steps[page]["visible"]
+
+                if not expected_flags:
+                    # No requirements for this page to be shown
+                    visible_pages.append(page)
+                    continue
+
+                for k, v in expected_flags.items():
+                    if k in flags:
+                        all_unspecified = False
+                        if flags[k] != v:
+                            if expected_flags["operator"] == "and":
+                                # Mismatched flag. Skip this plugin.
+                                match = False
+                                break
+                            # if dep_op is "or", we can try the rest of these.
+                            continue
+                        # A single match.
+                        match = True
+                if match:
+                    # We have all the necessary flags for this page to be shown.
+                    visible_pages.append(page)
+
+            if page_index >= len(visible_pages):
                 break
 
             info = False
             os.system("clear")
-            page = steps[pages[page_index]]
-
+            page = steps[visible_pages[page_index]]
 
             """
             print("Visibility flags:")
@@ -148,7 +174,7 @@ class UI:
 
             print(module_name)
             print('-----------------')
-            print(f"Page {page_index + 1} / {len(pages)}: {pages[page_index]}")
+            print(f"Page {page_index + 1} / {len(visible_pages)}: {visible_pages[page_index]}")
             print()
 
             print(" ### | Selected | Option Name")
@@ -257,6 +283,15 @@ class UI:
                 for xml_flag in dependencies:
                     expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
 
+                list_of_folders = pattern.find("files")
+                if not list_of_folders:
+                    # can't find files for this, no point in checking whether to include.
+                    continue
+
+                if not expected_flags:
+                    # No requirements for these files to be used.
+                    to_install.append(list_of_folders)
+
                 match = False
 
                 for k, v in expected_flags.items():
@@ -272,9 +307,7 @@ class UI:
                         match = True
                 if match:
                     # We have all the necessary flags for this plugin in our configured options.
-                    list_of_folders = pattern.find("files")
-                    if list_of_folders:
-                        to_install.append(list_of_folders)
+                    to_install.append(list_of_folders)
 
         if not to_install:
             print("The configured options failed to map to installable components!")
