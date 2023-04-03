@@ -114,10 +114,8 @@ class UI:
             "b": "           Back. Return to the previous page of the installer.",
         }
 
-        flags = {}
-
         while True:
-
+            flags = {}
             # Evaluate the flags to determine which steps to show.
             for step in steps.values():
                 for plugin in step["plugins"]:
@@ -133,6 +131,20 @@ class UI:
             info = False
             os.system("clear")
             page = steps[pages[page_index]]
+
+
+            """
+            print("Visibility flags:")
+            for k, v in page["visible"].items():
+                print(f"{k}: {v}")
+
+            print()
+
+            print("Current flags:")
+            for k, v in flags.items():
+                print(f"{k}: {v}")
+            print()
+            """
 
             print(module_name)
             print('-----------------')
@@ -205,6 +217,7 @@ class UI:
 
             # Selection was a valid index command.
             # toggle the 'selected' switch on appropriate plugins.
+            # Whenever a plugin is unselected, re-assess all flags.
             val = not page["plugins"][selection]["selected"]
             if "SelectExactlyOne" == page["type"]:
                 for i in range(len(page["plugins"])):
