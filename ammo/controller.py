@@ -308,7 +308,7 @@ class Controller:
 
         # If there is already a Data dir in the mod folder,
         # warn that this is the point of no return.
-        if mod.data_dir:
+        if mod.has_data_dir:
             print("This has been configured previously.")
             choice = input("Discard previous configuration and continue? [y/n]: ").lower() == "y"
             if not choice:
@@ -470,7 +470,7 @@ class Controller:
             os.makedirs(k.rsplit('/', 1)[0], exist_ok=True)
             shutil.copy(v, k)
 
-        mod.data_dir = True
+        mod.has_data_dir = True
         return True
 
 
@@ -489,7 +489,7 @@ class Controller:
         if isinstance(component, Mod):
 
             # Handle configuration of fomods
-            if hasattr(component, "fomod") and component.fomod and state and not component.data_dir:
+            if hasattr(component, "fomod") and component.fomod and state and not component.has_data_dir:
                 print("Fomods must be configured before they can be enabled.")
                 print(f"Please run 'configure {mod_index}', refresh, and try again.")
                 return False
@@ -668,8 +668,8 @@ class Controller:
                 # Get the sanitized full relative to the game directory.
                 corrected_name = src.split(mod.name, 1)[-1]
                 # It is possible to make a mod install in the game dir instead of the data dir
-                # by setting mod.data_dir = True.
-                if mod.data_dir:
+                # by setting mod.has_data_dir = True.
+                if mod.has_data_dir:
                     dest = os.path.join(
                             self.game_dir,
                             corrected_name.replace('/data', '/Data').lstrip('/')

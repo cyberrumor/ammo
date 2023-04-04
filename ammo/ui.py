@@ -260,7 +260,12 @@ class UI:
         # Determine which files need to be installed.
         to_install = []
         if required_files:
-            to_install.append(required_files)
+            for file in required_files:
+                if isinstance(file, list):
+                    for f in file:
+                        to_install.append(f)
+                else:
+                    to_install.append(file)
 
         # Normal files. If these were selected, install them unless flags disqualify.
         normal_files = []

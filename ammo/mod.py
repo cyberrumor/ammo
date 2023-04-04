@@ -37,7 +37,7 @@ class Mod:
 
     modconf: str = ""
 
-    data_dir: bool = False
+    has_data_dir: bool = False
     fomod: bool = False
     is_dlc: bool = False
     enabled: bool = False
@@ -54,7 +54,7 @@ class Mod:
         # don't put all the mod files inside Data even if there's no
         # Data folder.
         if os.path.exists(os.path.join(self.location, "Edit Scripts")):
-            self.data_dir = True
+            self.has_data_dir = True
 
         # Get the files, set some flags.
         for parent_dir, folders, files in os.walk(self.location):
@@ -63,7 +63,7 @@ class Mod:
                 os.path.join(self.location, 'Data'),
                 os.path.join(self.location, 'data'),
             ]:
-                self.data_dir = True
+                self.has_data_dir = True
 
             if folders and "fomod" in [i.lower() for i in folders]:
                 self.fomod = True
@@ -97,13 +97,13 @@ class Mod:
             # Don't do this to fomods because they might put things in a different location,
             # then associate them with SKSE/Plugins in the 'destination' directive.
             for parent_dir, folders, files in os.walk(self.location):
-                if self.data_dir:
+                if self.has_data_dir:
                     break
                 for file in files:
                     if os.path.splitext(file)[-1].lower() == ".dll":
                         # This needs more robust handling.
                         if "se/plugins" not in parent_dir.lower():
-                            self.data_dir = True
+                            self.has_data_dir = True
                             break
 
     def __str__(self):
