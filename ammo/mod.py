@@ -59,7 +59,10 @@ class Mod:
         # Get the files, set some flags.
         for parent_dir, folders, files in os.walk(self.location):
             # If there is a data dir, remember it.
-            if parent_dir == os.path.join(self.location, 'Data'):
+            if parent_dir in [
+                os.path.join(self.location, 'Data'),
+                os.path.join(self.location, 'data'),
+            ]:
                 self.data_dir = True
 
             if folders and "fomod" in [i.lower() for i in folders]:
@@ -99,10 +102,9 @@ class Mod:
                 for file in files:
                     if os.path.splitext(file)[-1].lower() == ".dll":
                         # This needs more robust handling.
-                        if "skse/plugins" not in parent_dir.lower():
+                        if "se/plugins" not in parent_dir.lower():
                             self.data_dir = True
                             break
-
 
     def __str__(self):
         return f'{"[True]     " if self.enabled else "[False]    "}{self.name}'
