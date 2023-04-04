@@ -256,12 +256,14 @@ class UI:
                 page["plugins"][selection]["selected"] = val
             else:
                 page["plugins"][selection]["selected"] = val
+            # END MAIN INPUT WHILE LOOP
+
 
         # Determine which files need to be installed.
         to_install = []
         if required_files:
             for file in required_files:
-                if isinstance(file, list):
+                if file.tag == 'files':
                     for f in file:
                         to_install.append(f)
                 else:
@@ -288,18 +290,12 @@ class UI:
                                 # A single match.
                                 match = True
                         if match:
-                            normal_files.append(plugin["files"])
+                            for folder in plugin["files"]:
+                                to_install.append(folder)
                     else:
                         # unconditional file install
-                        normal_files.append(plugin["files"])
-
-        # flatten chosen files into one dimensional list.
-        for file in normal_files:
-            if isinstance(file, list):
-                for f in file:
-                    to_install.append(f)
-            else:
-                to_install.append(file)
+                        for folder in plugin["files"]:
+                            to_install.append(folder)
 
         # include conditional file installs based on the user choice. These are different from
         # the normal_files with conditions because these conditions are set after all of the install
@@ -317,17 +313,17 @@ class UI:
                 for xml_flag in dependencies:
                     expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
 
-                list_of_folders = pattern.find("files")
-                if not list_of_folders:
+                xml_files = pattern.find("files")
+                if not xml_files:
                     # can't find files for this, no point in checking whether to include.
                     continue
 
                 if not expected_flags:
                     # No requirements for these files to be used.
-                    to_install.append(list_of_folders)
+                    for folder in to_install:
+                        to_install.append(folder)
 
                 match = False
-
                 for k, v in expected_flags.items():
                     if k in flags:
                         if flags[k] != v:
@@ -341,7 +337,8 @@ class UI:
                         match = True
                 if match:
                     # We have all the necessary flags for this plugin in our configured options.
-                    to_install.append(list_of_folders)
+                    for folder in xml_files:
+                        to_install.append(folder)
 
         if not to_install:
             print("The configured options failed to map to installable components!")
