@@ -379,11 +379,10 @@ class Controller:
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
                         plug_dict["name"] = plugin_name
-                        if (description := plugin.find("description")) and description.text:
+                        if (description := plugin.find("description")) and description:
                             plug_dict["description"] = description.text.strip()
                         else:
                             plug_dict["description"] = "No description for this plugin was provided"
-                        plug_dict["description"] = plugin.find("description").text.strip()
                         plug_dict["flags"] = {}
                         # Automatically mark the first option as selected when a selection
                         # is required.
