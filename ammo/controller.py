@@ -695,8 +695,13 @@ class Controller:
         for mod in [i for i in self.mods if i.enabled]:
             # Iterate through the source files of the mod
             for src in mod.files.values():
-                # Get the sanitized full relative to the game directory.
+                # Get the sanitized full path relative to the game directory.
                 corrected_name = src.split(mod.name, 1)[-1]
+
+                # Don't install fomod folders.
+                if "fomod" in corrected_name.lower():
+                    continue
+
                 # It is possible to make a mod install in the game dir instead of the data dir
                 # by setting mod.has_data_dir = True.
                 if mod.has_data_dir:
@@ -704,15 +709,15 @@ class Controller:
                         self.game_dir,
                         corrected_name.replace("/data", "/Data").lstrip("/"),
                     )
-                    dest = self._normalize(dest, self.game_dir)
                 else:
                     dest = os.path.join(
                         self.game_dir,
                         "Data" + corrected_name,
                     )
-                    dest = self._normalize(dest, self.game_dir)
                 # Add the sanitized full path to the stage, resolving conflicts.
+                dest = self._normalize(dest, self.game_dir)
                 result[dest] = (mod.name, src)
+
         return result
 
     def commit(self):

@@ -66,7 +66,6 @@ class Mod:
                 self.has_data_dir = True
 
             if folders and "fomod" in [i.lower() for i in folders]:
-                self.fomod = True
                 # find the ModuleConfig.xml if it exists.
                 for parent, _dirs, files in os.walk(self.location):
                     for file in files:
@@ -74,6 +73,7 @@ class Mod:
                             self.modconf = os.path.join(parent, file)
                             break
                     if self.modconf:
+                        self.fomod = True
                         break
 
             # Find plugin in the Data folder or top level and add them to self.plugins.

@@ -122,9 +122,8 @@ class UI:
 
         def is_match(flags, expected_flags):
             """
-            Parse the expected flags and flags. If the operator is "or",
-            require only one match, but still check for failing "and."
-            If the operator is "and", require all successes.
+            Compare actual flags with the flags we expected to determine whether
+            the plugin associated with expected_flags should be included.
             """
             match = False
             for k, v in expected_flags.items():
