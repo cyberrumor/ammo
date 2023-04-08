@@ -126,7 +126,7 @@ class UI:
             for k, v in expected_flags.items():
                 if k in flags:
                     if flags[k] != v:
-                        if expected_flags["operator"] == "and":
+                        if "operator" in expected_flags and expected_flags["operator"] == "and":
                             # Mismatched flag. Skip this plugin.
                             return False
                         # if dep_op is "or" (or undefined), we can try the rest of these.

@@ -354,6 +354,12 @@ class Controller:
         for step in fomod_installer_root_node.find("installSteps"):
             for optional_file_groups in step:
                 for group in optional_file_groups:
+
+                    if not (group_of_plugins := group.find("plugins")):
+                        # This step has no configurable plugins.
+                        # Skip the false positive.
+                        continue
+
                     step_name = group.get("name")
                     steps[step_name] = {}
                     steps[step_name]["type"] = group.get("type")
@@ -373,8 +379,6 @@ class Controller:
                                 steps[step_name]["visible"][xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
 
                     plugins = steps[step_name]["plugins"]
-                    if not (group_of_plugins := group.find("plugins")):
-                        continue
                     for plugin_index, plugin in enumerate(group_of_plugins):
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
