@@ -4,8 +4,19 @@ import shutil
 from xml.etree import ElementTree
 from mod import Mod, Download, Plugin, DLC
 
+
 class Controller:
-    def __init__(self, app_name, game_dir, data_dir, conf, dlc_file, plugin_file, mods_dir, downloads_dir):
+    def __init__(
+        self,
+        app_name,
+        game_dir,
+        data_dir,
+        conf,
+        dlc_file,
+        plugin_file,
+        mods_dir,
+        downloads_dir,
+    ):
         self.changes = False
         self.name = app_name
         self.game_dir = game_dir
@@ -21,12 +32,16 @@ class Controller:
 
         # Instance a Mod class for each mod folder in the mod directory.
         mods = []
-        mod_folders = [i for i in os.listdir(self.mods_dir) if os.path.isdir(os.path.join(self.mods_dir, i))]
+        mod_folders = [
+            i
+            for i in os.listdir(self.mods_dir)
+            if os.path.isdir(os.path.join(self.mods_dir, i))
+        ]
         for name in mod_folders:
             mod = Mod(
                 name,
-                location = os.path.join(self.mods_dir, name),
-                parent_data_dir = self.data_dir
+                location=os.path.join(self.mods_dir, name),
+                parent_data_dir=self.data_dir,
             )
             mods.append(mod)
         self.mods = mods
@@ -37,11 +52,11 @@ class Controller:
         if os.path.exists(self.conf):
             with open(self.conf, "r") as file:
                 for line in file:
-                    if line.startswith('#'):
+                    if line.startswith("#"):
                         continue
-                    name = line.strip('*').strip()
+                    name = line.strip("*").strip()
                     enabled = False
-                    if line.startswith('*'):
+                    if line.startswith("*"):
                         enabled = True
 
                     if name not in [i.name for i in self.mods]:
@@ -78,13 +93,13 @@ class Controller:
                     if not line.strip():
                         continue
                     # Comments
-                    if line.startswith('#'):
+                    if line.startswith("#"):
                         continue
 
                     # Initially assign all plugin parents as a DLC.
                     # If the plugin has a parent mod, assign parent as that Mod.
                     # This is used to track ownership for when a mod is disabled.
-                    name = line.strip('*').strip()
+                    name = line.strip("*").strip()
 
                     # Don't manage order of manually installed mods that were deleted.
                     if not os.path.exists(os.path.join(self.data_dir, name)):
@@ -98,7 +113,7 @@ class Controller:
 
                     enabled = False
                     pre_existing = False
-                    if line.startswith('*'):
+                    if line.startswith("*"):
                         enabled = True
                         # Attempt to enable the parent mod,
                         # Only do this if all that mod's files are present.
@@ -118,9 +133,10 @@ class Controller:
 
                     plugin = Plugin(name, enabled, parent_mod)
                     # Only manage plugins belonging to enabled mods.
-                    if parent_mod.enabled and plugin.name not in [i.name for i in self.plugins]:
+                    if parent_mod.enabled and plugin.name not in [
+                        i.name for i in self.plugins
+                    ]:
                         self.plugins.append(plugin)
-
 
         # Populate self.downloads. Ignore downloads that have a '.part' file that
         # starts with the same name. This hides downloads that haven't completed yet.
@@ -129,9 +145,9 @@ class Controller:
             still_downloading = False
             if any([file.endswith(ext) for ext in [".rar", ".zip", ".7z"]]):
                 for other_file in [
-                    i for i in os.listdir(self.downloads_dir) if i.startswith(
-                        os.path.splitext(file)[0]
-                    )
+                    i
+                    for i in os.listdir(self.downloads_dir)
+                    if i.startswith(os.path.splitext(file)[0])
                 ]:
                     if other_file.lower().endswith(".part"):
                         still_downloading = True
@@ -142,7 +158,6 @@ class Controller:
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
-
 
     def __reset__(self):
         """
@@ -159,7 +174,6 @@ class Controller:
             self.downloads_dir,
         )
 
-
     def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
@@ -171,7 +185,6 @@ class Controller:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
         return True
-
 
     def install(self, index):
         """
@@ -199,9 +212,9 @@ class Controller:
         download = self.downloads[index]
         if not download.sane:
             # Sanitize the download name to guarantee compatibility with 7z syntax.
-            fixed_name = download.name.replace(' ', '_')
-            fixed_name = ''.join(
-                    [i for i in fixed_name if i.isalnum() or i in ['.', '_', '-']]
+            fixed_name = download.name.replace(" ", "_")
+            fixed_name = "".join(
+                [i for i in fixed_name if i.isalnum() or i in [".", "_", "-"]]
             )
             parent_folder = os.path.split(download.location)[0]
             new_location = os.path.join(parent_folder, fixed_name)
@@ -212,15 +225,17 @@ class Controller:
 
         # Get a decent name for the output folder.
         # This has to be done for a safe 7z call.
-        output_folder = ''.join(
-            [i for i in os.path.splitext(download.name)[0] if i.isalnum() or i == '_']
-        ).strip('_')
+        output_folder = "".join(
+            [i for i in os.path.splitext(download.name)[0] if i.isalnum() or i == "_"]
+        ).strip("_")
         if not output_folder:
             output_folder = os.path.splitext(download.name)[0]
 
         extract_to = os.path.join(self.mods_dir, output_folder)
         if os.path.exists(extract_to):
-            print("This mod already exists. To reinstall, you must first delete the mod.")
+            print(
+                "This mod already exists. To reinstall, you must first delete the mod."
+            )
             return False
 
         extracted_files = []
@@ -231,32 +246,34 @@ class Controller:
             print("There was an issue extracting files. Is this a real archive?")
             return False
 
-        if len(extracted_files) == 1 \
-        and extracted_files[0].lower() not in [
-            'data',
-            'skse',
-            'bashtags',
-            'docs',
-            'meshes',
-            'textures',
-            'animations',
-            'interface',
-            'misc',
-            'shaders',
-            'sounds',
-            'voices',
-        ] \
-        and not os.path.splitext(extracted_files[0])[-1] in ['.esp', '.esl', '.esm']:
+        if (
+            len(extracted_files) == 1
+            and extracted_files[0].lower()
+            not in [
+                "data",
+                "skse",
+                "bashtags",
+                "docs",
+                "meshes",
+                "textures",
+                "animations",
+                "interface",
+                "misc",
+                "shaders",
+                "sounds",
+                "voices",
+            ]
+            and not os.path.splitext(extracted_files[0])[-1] in [".esp", ".esl", ".esm"]
+        ):
             # It is reasonable to conclude an extra directory can be eliminated.
             # This is needed for mods like skse that have a version directory
             # between the mod's root folder and the Data folder.
             for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
-                filename  = os.path.join(extract_to, extracted_files[0], file)
+                filename = os.path.join(extract_to, extracted_files[0], file)
                 shutil.move(filename, extract_to)
 
         self.__reset__()
         return True
-
 
     def _get_validated_components(self, component_type, mod_index):
         index = None
@@ -283,7 +300,6 @@ class Controller:
 
         return components
 
-
     def _fomod_validated(self, index):
         """
         Returns false if there is an issue preventing fomod configuration.
@@ -302,7 +318,9 @@ class Controller:
             print("Unable to find ModuleConfig.xml for this fomod.")
             print("Please configure manually in:")
             print(mod.location)
-            print("Once there is a data dir inside that folder with the desired files in place,")
+            print(
+                "Once there is a data dir inside that folder with the desired files in place,"
+            )
             print("refresh and try again.")
             return False
 
@@ -310,7 +328,10 @@ class Controller:
         # warn that this is the point of no return.
         if mod.has_data_dir:
             print("This has been configured previously.")
-            choice = input("Discard previous configuration and continue? [y/n]: ").lower() == "y"
+            choice = (
+                input("Discard previous configuration and continue? [y/n]: ").lower()
+                == "y"
+            )
             if not choice:
                 print("No changes made.")
                 return False
@@ -337,13 +358,11 @@ class Controller:
 
         return root
 
-
     def _fomod_required_files(self, fomod_installer_root_node):
         """
         get a list of files that are always required.
         """
         return fomod_installer_root_node.find("requiredInstallFiles")
-
 
     def _fomod_install_steps(self, fomod_installer_root_node):
         """
@@ -354,7 +373,6 @@ class Controller:
         for step in fomod_installer_root_node.find("installSteps"):
             for optional_file_groups in step:
                 for group in optional_file_groups:
-
                     if not (group_of_plugins := group.find("plugins")):
                         # This step has no configurable plugins.
                         # Skip the false positive.
@@ -369,14 +387,16 @@ class Controller:
                     # Collect this step's visibility conditions. Associate it with
                     # the group instead of the step. This is inefficient but fits
                     # into the "each step is a page" paradigm better.
-                    if (visible := step.find("visible")):
-                        if (dependencies := visible.find("dependencies")):
+                    if visible := step.find("visible"):
+                        if dependencies := visible.find("dependencies"):
                             dep_op = dependencies.get("operator")
                             if dep_op:
                                 dep_op = dep_op.lower()
                             steps[step_name]["visible"]["operator"] = dep_op
                             for xml_flag in dependencies:
-                                steps[step_name]["visible"][xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
+                                steps[step_name]["visible"][
+                                    xml_flag.get("flag")
+                                ] = xml_flag.get("value") in ["On", "1"]
 
                     plugins = steps[step_name]["plugins"]
                     for plugin_index, plugin in enumerate(group_of_plugins):
@@ -386,20 +406,25 @@ class Controller:
                         if (description := plugin.find("description")) and description:
                             plug_dict["description"] = description.text.strip()
                         else:
-                            plug_dict["description"] = "No description for this plugin was provided"
+                            plug_dict[
+                                "description"
+                            ] = "No description for this plugin was provided"
                         plug_dict["flags"] = {}
                         # Automatically mark the first option as selected when a selection
                         # is required.
-                        plug_dict["selected"] = (steps[step_name]["type"] in [
-                                    "SelectExactlyOne",
-                                    "SelectAtLeastOne"
-                                ]) and plugin_index == 0
+                        plug_dict["selected"] = (
+                            steps[step_name]["type"]
+                            in ["SelectExactlyOne", "SelectAtLeastOne"]
+                        ) and plugin_index == 0
 
                         # Interpret on/off or 1/0 as true/false
-                        if (conditional_flags := plugin.find("conditionFlags")):
+                        if conditional_flags := plugin.find("conditionFlags"):
                             for flag in conditional_flags:
                                 # People use arbitrary flags here. Most commonly "On" or "1".
-                                plug_dict["flags"][flag.get("name")] = flag.text in ["On", "1"]
+                                plug_dict["flags"][flag.get("name")] = flag.text in [
+                                    "On",
+                                    "1",
+                                ]
                             plug_dict["conditional"] = True
 
                         else:
@@ -407,14 +432,13 @@ class Controller:
                             plug_dict["conditional"] = False
 
                         plug_dict["files"] = []
-                        if (plugin_files := plugin.find("files")):
+                        if plugin_files := plugin.find("files"):
                             for i in plugin_files:
                                 plug_dict["files"].append(i)
 
                         plugins.append(plug_dict)
 
         return steps
-
 
     def _init_fomod_chosen_files(self, index, to_install):
         """
@@ -435,7 +459,7 @@ class Controller:
             # convert the 'source' folder form the xml into a full path
             s = node.get("source")
             full_source = mod.location
-            for i in s.split('\\'):
+            for i in s.split("\\"):
                 # i requires case-sensitivity correction because mod authors might have
                 # said a resource was at "00 Core/Meshes" in ModuleConfig.xml when the actual
                 # file itself might be "00 Core/meshes".
@@ -449,13 +473,12 @@ class Controller:
             # get the 'destination' folder form the xml. This path is relative to Data.
             destination = ""
             d = node.get("destination")
-            for i in d.split('\\'):
+            for i in d.split("\\"):
                 # TODO: normalize capitalization of i here
                 destination = os.path.join(destination, i)
 
             full_destination = os.path.join(
-                    os.path.join(mod.location, "Data"),
-                    destination
+                os.path.join(mod.location, "Data"), destination
             )
             pre_stage[full_source] = full_destination
 
@@ -465,8 +488,10 @@ class Controller:
                     for parent_dir, folders, files in os.walk(dest):
                         for file in files:
                             source = os.path.join(parent_dir, file)
-                            local_parent_dir = parent_dir.split(dest)[-1].strip('/')
-                            destination = os.path.join(os.path.join(src, local_parent_dir), file)
+                            local_parent_dir = parent_dir.split(dest)[-1].strip("/")
+                            destination = os.path.join(
+                                os.path.join(src, local_parent_dir), file
+                            )
                             stage[destination] = source
                 else:
                     # Handle files
@@ -474,19 +499,20 @@ class Controller:
 
         # install the new files
         for k, v in stage.items():
-            os.makedirs(k.rsplit('/', 1)[0], exist_ok=True)
+            os.makedirs(k.rsplit("/", 1)[0], exist_ok=True)
             shutil.copy(v, k)
 
         mod.has_data_dir = True
         return True
-
 
     def _set_component_state(self, component_type, mod_index, state):
         """
         Activate or deactivate a component.
         Returns which plugins need to be added to or removed from self.plugins.
         """
-        if not (components := self._get_validated_components(component_type, mod_index)):
+        if not (
+            components := self._get_validated_components(component_type, mod_index)
+        ):
             print(f"There are no {component_type}s. [Enter]")
             return False
         component = components[int(mod_index)]
@@ -494,9 +520,13 @@ class Controller:
         starting_state = component.enabled
         # Handle mods
         if isinstance(component, Mod):
-
             # Handle configuration of fomods
-            if hasattr(component, "fomod") and component.fomod and state and not component.has_data_dir:
+            if (
+                hasattr(component, "fomod")
+                and component.fomod
+                and state
+                and not component.has_data_dir
+            ):
                 print("Fomods must be configured before they can be enabled.")
                 print(f"Please run 'configure {mod_index}', refresh, and try again.")
                 return False
@@ -523,22 +553,19 @@ class Controller:
         self.changes = starting_state != component.enabled
         return True
 
-
-    def activate(self, mod_or_plugin: Mod|Plugin, index):
+    def activate(self, mod_or_plugin: Mod | Plugin, index):
         """
         Enabled components will be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, True)
 
-
-    def deactivate(self, mod_or_plugin: Mod|Plugin, index):
+    def deactivate(self, mod_or_plugin: Mod | Plugin, index):
         """
         Disabled components will not be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, False)
 
-
-    def delete(self, mod_or_download: Mod|Download, index):
+    def delete(self, mod_or_download: Mod | Download, index):
         """
         Removes specified file from the filesystem.
         """
@@ -575,7 +602,6 @@ class Controller:
                 return False
         return True
 
-
     def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index):
         """
         Larger numbers win file conflicts.
@@ -594,7 +620,6 @@ class Controller:
         self.changes = True
         return True
 
-
     def _clean_data_dir(self):
         """
         Removes all symlinks and deletes empty folders.
@@ -605,7 +630,6 @@ class Controller:
                 full_path = os.path.join(dirpath, file)
                 if os.path.islink(full_path):
                     os.unlink(full_path)
-
 
         # remove empty directories
         def remove_empty_dirs(path):
@@ -620,13 +644,14 @@ class Controller:
         remove_empty_dirs(self.game_dir)
         return True
 
-
     def vanilla(self):
         """
         Disable all managed components and clean up.
         """
-        print("This will disable all mods and plugins, and remove all symlinks and \
-                empty folders from the game dir.")
+        print(
+            "This will disable all mods and plugins, and remove all symlinks and \
+                empty folders from the game dir."
+        )
         print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
         if input("continue? [y/n]").lower() != "y":
@@ -639,8 +664,6 @@ class Controller:
         self._clean_data_dir()
         return True
 
-
-
     def _normalize(self, destination, dest_prefix):
         """
         Prevent folders with the same name but different case from being created.
@@ -648,19 +671,19 @@ class Controller:
         path, file = os.path.split(destination)
         local_path = path.split(dest_prefix)[-1].lower()
         for i in [
-                'Data',
-                'DynDOLOD',
-                'Plugins',
-                'SKSE',
-                'Edit Scripts',
-                'Docs',
-                'Scripts',
-                'Source']:
+            "Data",
+            "DynDOLOD",
+            "Plugins",
+            "SKSE",
+            "Edit Scripts",
+            "Docs",
+            "Scripts",
+            "Source",
+        ]:
             local_path = local_path.replace(i.lower(), i)
-        new_dest = os.path.join(dest_prefix, local_path.lstrip('/'))
+        new_dest = os.path.join(dest_prefix, local_path.lstrip("/"))
         result = os.path.join(new_dest, file)
         return result
-
 
     def _stage(self):
         """
@@ -678,20 +701,19 @@ class Controller:
                 # by setting mod.has_data_dir = True.
                 if mod.has_data_dir:
                     dest = os.path.join(
-                            self.game_dir,
-                            corrected_name.replace('/data', '/Data').lstrip('/')
+                        self.game_dir,
+                        corrected_name.replace("/data", "/Data").lstrip("/"),
                     )
                     dest = self._normalize(dest, self.game_dir)
                 else:
                     dest = os.path.join(
-                            self.game_dir,
-                            'Data' + corrected_name,
+                        self.game_dir,
+                        "Data" + corrected_name,
                     )
                     dest = self._normalize(dest, self.game_dir)
                 # Add the sanitized full path to the stage, resolving conflicts.
                 result[dest] = (mod.name, src)
         return result
-
 
     def commit(self):
         """
@@ -709,17 +731,18 @@ class Controller:
             try:
                 os.symlink(src, dest)
             except FileExistsError:
-                skipped_files.append(f"{name} skipped overwriting an unmanaged file: \
-                        {dest.split(self.game_dir)[-1].lstrip('/')}.")
+                skipped_files.append(
+                    f"{name} skipped overwriting an unmanaged file: \
+                        {dest.split(self.game_dir)[-1].lstrip('/')}."
+                )
             finally:
-                print(f"files processed: {index+1}/{count}", end='\r', flush=True)
+                print(f"files processed: {index+1}/{count}", end="\r", flush=True)
         print()
         for skipped_file in skipped_files:
             print(skipped_file)
         self.changes = False
         # Always return False so status messages persist.
         return False
-
 
     def refresh(self):
         """
@@ -728,7 +751,10 @@ class Controller:
         if self.changes:
             print("There are unsaved changes!")
             print("refreshing reloads data from disk.")
-            if input("reload data from disk and lose unsaved changes? [y/n]: ").lower() == "y":
+            if (
+                input("reload data from disk and lose unsaved changes? [y/n]: ").lower()
+                == "y"
+            ):
                 self.__reset__()
                 return True
             return False
@@ -736,5 +762,3 @@ class Controller:
         self.__reset__()
 
         return True
-
-

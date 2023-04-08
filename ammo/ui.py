@@ -3,6 +3,7 @@ import inspect
 import os
 import sys
 
+
 class UI:
     def __init__(self, controller):
         self.controller = controller
@@ -11,10 +12,10 @@ class UI:
         self.command = {}
 
         for name, func in inspect.getmembers(
-                self.controller.__class__,
-                predicate=inspect.isfunction):
+            self.controller.__class__, predicate=inspect.isfunction
+        ):
             # Only map "public" methods
-            if name.startswith('_'):
+            if name.startswith("_"):
                 continue
 
             self.command[name] = {
@@ -26,21 +27,21 @@ class UI:
             }
 
         # Add methods of this UI class that will be available regardless of the controller.
-        self.command['help'] = {
+        self.command["help"] = {
             "func": self.help,
             "args": [],
             "num_args": 0,
             "doc": str(self.help.__doc__).strip(),
         }
 
-        self.command['exit'] = {
+        self.command["exit"] = {
             "func": self.exit,
             "args": [],
             "num_args": 0,
             "doc": str(self.exit.__doc__).strip(),
         }
 
-        self.command['configure'] = {
+        self.command["configure"] = {
             "func": self.configure,
             "args": ["index"],
             "num_args": 1,
@@ -61,22 +62,24 @@ class UI:
             anno = v["func"].__annotations__
             for arg in args:
                 if arg in anno:
-                    params.append(str(anno[arg]).lower().replace("mod.", "").replace(" | ", "|"))
+                    params.append(
+                        str(anno[arg]).lower().replace("mod.", "").replace(" | ", "|")
+                    )
                 else:
                     params.append(f"<{arg}>")
             # print(f"{k} {' '.join(params)} {v['doc']}")
             column_cmd.append(k)
-            column_arg.append(' '.join(params))
-            column_doc.append(v['doc'])
-
+            column_arg.append(" ".join(params))
+            column_doc.append(v["doc"])
 
         pad_cmd = max((len(i) for i in column_cmd)) + 1
         pad_arg = max((len(i) for i in column_arg)) + 1
         # pad_doc = max([len(i) for i in column_doc]) + 1
 
         for cmd, arg, doc in zip(column_cmd, column_arg, column_doc):
-            print(f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}")
-
+            print(
+                f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}"
+            )
 
     def exit(self):
         """
@@ -101,7 +104,9 @@ class UI:
         if not (fomod_installer_root_node := self.controller._fomod_validated(index)):
             return False
 
-        required_files = self.controller._fomod_required_files(fomod_installer_root_node)
+        required_files = self.controller._fomod_required_files(
+            fomod_installer_root_node
+        )
         module_name = fomod_installer_root_node.find("moduleName").text
         steps = self.controller._fomod_install_steps(fomod_installer_root_node)
         pages = list(steps.keys())
@@ -115,7 +120,6 @@ class UI:
             "b": "           Back. Return to the previous page of the installer.",
         }
 
-
         def is_match(flags, expected_flags):
             """
             Parse the expected flags and flags. If the operator is "or",
@@ -126,7 +130,10 @@ class UI:
             for k, v in expected_flags.items():
                 if k in flags:
                     if flags[k] != v:
-                        if "operator" in expected_flags and expected_flags["operator"] == "and":
+                        if (
+                            "operator" in expected_flags
+                            and expected_flags["operator"] == "and"
+                        ):
                             # Mismatched flag. Skip this plugin.
                             return False
                         # if dep_op is "or" (or undefined), we can try the rest of these.
@@ -134,7 +141,6 @@ class UI:
                     # A single match.
                     match = True
             return match
-
 
         while True:
             # Evaluate the flags every loop to ensure the visible pages and selected options
@@ -170,8 +176,10 @@ class UI:
             page = steps[visible_pages[page_index]]
 
             print(module_name)
-            print('-----------------')
-            print(f"Page {page_index + 1} / {len(visible_pages)}: {visible_pages[page_index]}")
+            print("-----------------")
+            print(
+                f"Page {page_index + 1} / {len(visible_pages)}: {visible_pages[page_index]}"
+            )
             print()
 
             print(" ### | Selected | Option Name")
@@ -179,12 +187,14 @@ class UI:
             for i, p in enumerate(page["plugins"]):
                 num = f"[{i}]     "
                 num = num[0:-1]
-                enabled = "[True]     " if p['selected'] else "[False]    "
+                enabled = "[True]     " if p["selected"] else "[False]    "
                 print(f"{num} {enabled} {p['name']}")
             print()
             selection = input(f"{page['type']} >_: ").lower()
 
-            if (not selection) or (selection not in command_dict and selection.isalpha()):
+            if (not selection) or (
+                selection not in command_dict and selection.isalpha()
+            ):
                 print()
                 for k, v in command_dict.items():
                     print(f"{k} {v}")
@@ -252,12 +262,11 @@ class UI:
                 page["plugins"][selection]["selected"] = val
             # END MAIN INPUT WHILE LOOP
 
-
         # Determine which files need to be installed.
         to_install = []
         if required_files:
             for file in required_files:
-                if file.tag == 'files':
+                if file.tag == "files":
                     for f in file:
                         to_install.append(f)
                 else:
@@ -283,7 +292,7 @@ class UI:
         # the normal_files with conditions because these conditions are set after all of the install
         # steps instead of inside each install step.
         patterns = []
-        if (conditionals := fomod_installer_root_node.find("conditionalFileInstalls")):
+        if conditionals := fomod_installer_root_node.find("conditionalFileInstalls"):
             patterns = conditionals.find("patterns")
         if patterns:
             for pattern in patterns:
@@ -293,7 +302,10 @@ class UI:
                     dep_op = dep_op.lower()
                 expected_flags = {"operator": dep_op}
                 for xml_flag in dependencies:
-                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
+                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
+                        "On",
+                        "1",
+                    ]
 
                 # xml_files is a list of folders. The folder objects contain the paths.
                 xml_files = pattern.find("files")
@@ -323,7 +335,6 @@ class UI:
         self.controller.__reset__()
         return True
 
-
     def print_status(self):
         """
         Outputs a list of all downloads, then mods, then plugins.
@@ -338,7 +349,9 @@ class UI:
 
             print()
 
-        for index, components in enumerate([self.controller.mods, self.controller.plugins]):
+        for index, components in enumerate(
+            [self.controller.mods, self.controller.plugins]
+        ):
             print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
             print("-----|-----------|-----")
             for priority, component in enumerate(components):
@@ -347,7 +360,6 @@ class UI:
                 num = num[0:-l]
                 print(f"{num} {component}")
             print()
-
 
     def repl(self):
         cmd: str = ""
@@ -373,7 +385,9 @@ class UI:
                     continue
 
                 if command["num_args"] != len(args):
-                    print(f"{func} expected {command['num_args']} arg(s) but received {len(args)}")
+                    print(
+                        f"{func} expected {command['num_args']} arg(s) but received {len(args)}"
+                    )
                     input("[Enter]")
                     continue
 
@@ -392,5 +406,3 @@ class UI:
                 print("There were unsaved changes! Please run 'commit' before exiting.")
                 print()
             sys.exit(0)
-
-

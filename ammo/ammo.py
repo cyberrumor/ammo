@@ -70,9 +70,9 @@ if __name__ == "__main__":
             os.makedirs(expected_dir)
 
     # Create an instance of the controller.
-    controller = Controller(app_name, game_dir, data, conf, dlc, plugins, mods_dir, DOWNLOADS)
+    controller = Controller(
+        app_name, game_dir, data, conf, dlc, plugins, mods_dir, DOWNLOADS
+    )
     # Run the UI against the controller.
     ui = UI(controller)
     sys.exit(ui.repl())
-
-
