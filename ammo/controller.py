@@ -143,7 +143,7 @@ class Controller:
         downloads = []
         for file in os.listdir(self.downloads_dir):
             still_downloading = False
-            if any([file.endswith(ext) for ext in [".rar", ".zip", ".7z"]]):
+            if any((file.endswith(ext) for ext in (".rar", ".zip", ".7z"))):
                 for other_file in [
                     i
                     for i in os.listdir(self.downloads_dir)
@@ -474,18 +474,26 @@ class Controller:
             destination = ""
             d = node.get("destination")
             for i in d.split("\\"):
-                # TODO: normalize capitalization of i here
                 destination = os.path.join(destination, i)
 
             full_destination = os.path.join(
                 os.path.join(mod.location, "Data"), destination
             )
+
+            # Normalize the capitalization of folder names
+            full_destination = self._normalize(
+                full_destination, os.path.join(mod.location, "Data")
+            )
+
+            # Handle the mod's file conflicts that are caused by itself.
+            # There's technically a priority clause in the fomod spec that
+            # isn't implemented here yet.
             pre_stage[full_source] = full_destination
 
             for dest, src in pre_stage.items():
                 if os.path.isdir(dest):
                     # Handle directories
-                    for parent_dir, folders, files in os.walk(dest):
+                    for parent_dir, _folders, files in os.walk(dest):
                         for file in files:
                             source = os.path.join(parent_dir, file)
                             local_parent_dir = parent_dir.split(dest)[-1].strip("/")
