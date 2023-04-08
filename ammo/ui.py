@@ -91,6 +91,7 @@ class UI:
         """
         Configure a fomod.
         """
+
         # This has to run a hard refresh for now, so warn if there are uncommitted changes
         if self.controller.changes:
             print("can't configure fomod when there are unsaved changes.")
@@ -114,6 +115,27 @@ class UI:
             "b": "           Back. Return to the previous page of the installer.",
         }
 
+
+        def is_match(flags, expected_flags):
+            """
+            Parse the expected flags and flags. If the operator is "or",
+            require only one match, but still check for failing "and."
+            If the operator is "and", require all successes.
+            """
+            match = False
+            for k, v in expected_flags.items():
+                if k in flags:
+                    if flags[k] != v:
+                        if expected_flags["operator"] == "and":
+                            # Mismatched flag. Skip this plugin.
+                            return False
+                        # if dep_op is "or" (or undefined), we can try the rest of these.
+                        continue
+                    # A single match.
+                    match = True
+            return match
+
+
         while True:
             # Evaluate the flags every loop to ensure the visible pages and selected options
             # are always up to date. This will ensure the proper files are chosen later as well.
@@ -129,7 +151,6 @@ class UI:
             # Determine which steps should be visible
             visible_pages = []
             for page in pages:
-                match = False
                 expected_flags = steps[page]["visible"]
 
                 if not expected_flags:
@@ -137,20 +158,7 @@ class UI:
                     visible_pages.append(page)
                     continue
 
-                for k, v in expected_flags.items():
-                    if k in flags:
-                        all_unspecified = False
-                        if flags[k] != v:
-                            if expected_flags["operator"] == "and":
-                                # Mismatched flag. Skip this plugin.
-                                match = False
-                                break
-                            # if dep_op is "or", we can try the rest of these.
-                            continue
-                        # A single match.
-                        match = True
-                if match:
-                    # We have all the necessary flags for this page to be shown.
+                if is_match(flags, expected_flags):
                     visible_pages.append(page)
 
             # Only exit loop after determining which flags are set and pages are shown.
@@ -161,19 +169,6 @@ class UI:
             os.system("clear")
             page = steps[visible_pages[page_index]]
 
-            """
-            print("Visibility flags:")
-            for k, v in page["visible"].items():
-                print(f"{k}: {v}")
-
-            print()
-
-            print("Current flags:")
-            for k, v in flags.items():
-                print(f"{k}: {v}")
-            print()
-            """
-
             print(module_name)
             print('-----------------')
             print(f"Page {page_index + 1} / {len(visible_pages)}: {visible_pages[page_index]}")
@@ -183,7 +178,6 @@ class UI:
             print("-----|----------|------------")
             for i, p in enumerate(page["plugins"]):
                 num = f"[{i}]     "
-                l = len(str(i)) + 1
                 num = num[0:-1]
                 enabled = "[True]     " if p['selected'] else "[False]    "
                 print(f"{num} {enabled} {p['name']}")
@@ -270,26 +264,14 @@ class UI:
                     to_install.append(file)
 
         # Normal files. If these were selected, install them unless flags disqualify.
-        normal_files = []
         for step in steps:
             for plugin in steps[step]["plugins"]:
                 if plugin["selected"]:
                     if plugin["conditional"]:
                         # conditional normal file
-                        match = False
                         expected_flags = plugin["flags"]
-                        for k, v in expected_flags.items():
-                            if k in flags:
-                                if flags[k] != v:
-                                    if expected_flags["operator"] == "and":
-                                        # Mismatched flag, skip this plugin.
-                                        match = False
-                                        break
-                                    # if dep_op is "or", we can try the rest of these.
-                                    continue
-                                # A single match.
-                                match = True
-                        if match:
+
+                        if is_match(flags, expected_flags):
                             for folder in plugin["files"]:
                                 to_install.append(folder)
                     else:
@@ -309,10 +291,11 @@ class UI:
                 dep_op = dependencies.get("operator")
                 if dep_op:
                     dep_op = dep_op.lower()
-                expected_flags = {}
+                expected_flags = {"operator": dep_op}
                 for xml_flag in dependencies:
                     expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in ["On", "1"]
 
+                # xml_files is a list of folders. The folder objects contain the paths.
                 xml_files = pattern.find("files")
                 if not xml_files:
                     # can't find files for this, no point in checking whether to include.
@@ -320,23 +303,10 @@ class UI:
 
                 if not expected_flags:
                     # No requirements for these files to be used.
-                    for folder in to_install:
+                    for folder in xml_files:
                         to_install.append(folder)
 
-                match = False
-                for k, v in expected_flags.items():
-                    if k in flags:
-                        if flags[k] != v:
-                            if dep_op == "and":
-                                # Mismatched flag. Skip this plugin.
-                                match = False
-                                break
-                            # if dep_op is "or", we can try the rest of these.
-                            continue
-                        # A single match.
-                        match = True
-                if match:
-                    # We have all the necessary flags for this plugin in our configured options.
+                if is_match(flags, expected_flags):
                     for folder in xml_files:
                         to_install.append(folder)
 
@@ -385,18 +355,23 @@ class UI:
             while True:
                 os.system("clear")
                 self.print_status()
+
                 if not (cmd := input(f"{self.controller.name} >_: ")):
                     continue
+
                 cmds = cmd.split()
                 args = []
                 func = cmds[0]
+
                 if len(cmds) > 1:
                     args = cmds[1:]
+
                 if not (command := self.command.get(func, None)):
                     print(f"unknown command {cmd}")
                     self.help()
                     input("[Enter]")
                     continue
+
                 if command["num_args"] != len(args):
                     print(f"{func} expected {command['num_args']} arg(s) but received {len(args)}")
                     input("[Enter]")
@@ -404,7 +379,10 @@ class UI:
 
                 if "instance" in command:
                     args.insert(0, command["instance"])
-                if not (ret := command["func"](*args)):
+
+                if not command["func"](*args):
+                    # Functions that fail return False. This input() call allows the user
+                    # to see the error before their screen is cleared.
                     input("[Enter]")
                     continue
 
