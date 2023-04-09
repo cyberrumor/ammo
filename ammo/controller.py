@@ -521,7 +521,7 @@ class Controller:
         if not (
             components := self._get_validated_components(component_type, mod_index)
         ):
-            print(f"There are no {component_type}s. [Enter]")
+            print(f"Unable to find that {component_type}.")
             return False
         component = components[int(mod_index)]
 
@@ -596,11 +596,18 @@ class Controller:
             shutil.rmtree(mod.location)
             self.commit()
         else:
+            if not self.downloads:
+                print("There are no downloads to delete.")
+                return False
+            error_message = f"Expected a number between 0 and {len(self.downloads) - 1} (inclusive)."
             try:
                 index = int(index)
-            except ValueError:
-                print("Expected a number greater than or equal to 0")
+                assert index >= 0
+                assert index <= len(self.downloads) - 1
+            except (ValueError, AssertionError):
+                print(error_message)
                 return False
+
             name = self.downloads[index].name
             try:
                 os.remove(self.downloads[index].location)
