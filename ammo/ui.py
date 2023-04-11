@@ -368,7 +368,7 @@ class UI:
 
             for index, download in enumerate(self.controller.downloads):
                 match = True
-                download_keywords = download.replace("_", " ").replace("-", " ").lower().split()
+                download_keywords = download.name.replace("_", " ").replace("-", " ").lower().split()
 
                 for keyword in self.keywords:
                     match = False
