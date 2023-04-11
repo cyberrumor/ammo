@@ -41,11 +41,22 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 # Installation Instructions
 ```
+cd /path/to/desired/install/location
 git clone https://github.com/cyberrumor/ammo
 cd ammo
 echo "$PWD/ammo/ammo.py" >> bin/ammo
 sudo cp bin/ammo /usr/local/bin
 ```
+
+# Updating Instructions
+```
+cd /path/to/ammo/installation/directory
+git pull
+```
+If you have mods that were previously misbehaving and are wondering whether you need to
+reinstall them to benefit from the update, you don't. However, patch notes will specify
+whether re-running a fomod install wizard could resolve issues. If this is the case,
+you may want to run `configure <index>` on misbehaving fomods.
 
 # Usage Instructions
 
@@ -60,6 +71,7 @@ configure  <index>                            Configure a fomod.
 deactivate mod|plugin <index>                 Disabled components will not be loaded by game.
 delete     mod|download <index>               Removes specified file from the filesystem.
 exit                                          Quit. Prompts if there are changes.
+find       [<keyword> ...]                    Show only components with any keyword. `find` without args resets.
 help                                          Show this menu.
 install    <index>                            Extract and manage an archive from ~/Downloads.
 move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
