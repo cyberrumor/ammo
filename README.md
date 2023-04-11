@@ -22,17 +22,14 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Can install mods that other mod organizers can not, for example:
   - SKSE
   - Both parts of SSE Engine Fixes
+- Fuzzy "find" command easily displays relevant resources.
 
 # Limitations
 - No dependency checking or automated load order handling.
 - Manual downloads only.
-- FOMOD install wizard is considered "beta", there are likely bugs that need to be ironed out.
+- FOMOD install wizard is in beta. Please report any bugs you encounter.
 - If the FOMOD needs to put things _above_ the game's Data dir, the FOMOD will require
   manual configuration.
-
-# Planned Features
-- Morrowind support.
-- More robust FOMOD install wizard.
 
 # Dependencies
 - Linux version of Steam, Proton.
