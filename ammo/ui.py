@@ -7,6 +7,7 @@ import sys
 class UI:
     def __init__(self, controller):
         self.controller = controller
+        self.keywords = []
 
         # get a map of commands to functions and the amount of args they expect
         self.command = {}
@@ -48,6 +49,25 @@ class UI:
             "doc": str(self.configure.__doc__).strip(),
         }
 
+        self.command["find"] = {
+            "func": self.find,
+            "args": ["keyword"],
+            "num_args": -1,
+            "doc": str(self.find.__doc__).strip(),
+        }
+
+
+    def find(self, *args):
+        """
+        Show only components with any keyword. `find` without args resets.
+        """
+        if not args:
+            self.keywords = []
+            return True
+        self.keywords = args
+        return True
+
+
     def help(self):
         """
         Show this menu.
@@ -66,7 +86,10 @@ class UI:
                         str(anno[arg]).lower().replace("mod.", "").replace(" | ", "|")
                     )
                 else:
-                    params.append(f"<{arg}>")
+                    if v["num_args"] < 0:
+                        params.append(f"[<{arg}> ...]")
+                    else:
+                        params.append(f"<{arg}>")
             # print(f"{k} {' '.join(params)} {v['doc']}")
             column_cmd.append(k)
             column_arg.append(" ".join(params))
@@ -344,7 +367,17 @@ class UI:
             print("---------")
 
             for index, download in enumerate(self.controller.downloads):
-                print(f"[{index}] {download}")
+                match = True
+                download_keywords = download.replace("_", " ").replace("-", " ").lower().split()
+
+                for keyword in self.keywords:
+                    match = False
+                    if any((download_keyword.count(keyword.lower()) for download_keyword in download_keywords)):
+                        match = True
+                        break
+
+                if match:
+                    print(f"[{index}] {download}")
 
             print()
 
@@ -354,10 +387,19 @@ class UI:
             print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
             print("-----|-----------|-----")
             for priority, component in enumerate(components):
-                num = f"[{priority}]     "
-                l = len(str(priority)) + 1
-                num = num[0:-l]
-                print(f"{num} {component}")
+                match = True
+                component_keywords = component.name.replace("_", " ").replace("-", " ").lower().split()
+
+                for keyword in self.keywords:
+                    match = False
+                    if any((component_keyword.count(keyword.lower()) for component_keyword in component_keywords)):
+                        match = True
+                        break
+                if match:
+                    num = f"[{priority}]     "
+                    l = len(str(priority)) + 1
+                    num = num[0:-l]
+                    print(f"{num} {component}")
             print()
 
     def repl(self):
@@ -383,12 +425,13 @@ class UI:
                     input("[Enter]")
                     continue
 
-                if command["num_args"] != len(args):
-                    print(
-                        f"{func} expected {command['num_args']} arg(s) but received {len(args)}"
-                    )
-                    input("[Enter]")
-                    continue
+                if command["num_args"] >=0:
+                    if command["num_args"] != len(args):
+                        print(
+                            f"{func} expected {command['num_args']} arg(s) but received {len(args)}"
+                        )
+                        input("[Enter]")
+                        continue
 
                 if "instance" in command:
                     args.insert(0, command["instance"])
