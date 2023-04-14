@@ -56,7 +56,6 @@ class UI:
             "doc": str(self.find.__doc__).strip(),
         }
 
-
     def find(self, *args):
         """
         Show only components with any keyword. `find` without args resets.
@@ -66,7 +65,6 @@ class UI:
             return True
         self.keywords = args
         return True
-
 
     def help(self):
         """
@@ -368,11 +366,18 @@ class UI:
 
             for index, download in enumerate(self.controller.downloads):
                 match = True
-                download_keywords = download.name.replace("_", " ").replace("-", " ").lower().split()
+                download_keywords = (
+                    download.name.replace("_", " ").replace("-", " ").lower().split()
+                )
 
                 for keyword in self.keywords:
                     match = False
-                    if any((download_keyword.count(keyword.lower()) for download_keyword in download_keywords)):
+                    if any(
+                        (
+                            download_keyword.count(keyword.lower())
+                            for download_keyword in download_keywords
+                        )
+                    ):
                         match = True
                         break
 
@@ -388,11 +393,18 @@ class UI:
             print("-----|-----------|-----")
             for priority, component in enumerate(components):
                 match = True
-                component_keywords = component.name.replace("_", " ").replace("-", " ").lower().split()
+                component_keywords = (
+                    component.name.replace("_", " ").replace("-", " ").lower().split()
+                )
 
                 for keyword in self.keywords:
                     match = False
-                    if any((component_keyword.count(keyword.lower()) for component_keyword in component_keywords)):
+                    if any(
+                        (
+                            component_keyword.count(keyword.lower())
+                            for component_keyword in component_keywords
+                        )
+                    ):
                         match = True
                         break
                 if match:
@@ -425,7 +437,7 @@ class UI:
                     input("[Enter]")
                     continue
 
-                if command["num_args"] >=0:
+                if command["num_args"] >= 0:
                     if command["num_args"] != len(args):
                         print(
                             f"{func} expected {command['num_args']} arg(s) but received {len(args)}"

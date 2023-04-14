@@ -30,8 +30,13 @@ class Controller:
         self.mods = []
         self.plugins = []
 
+        # Create required directories for testing. Harmless if exists.
+        os.makedirs(self.mods_dir, exist_ok=True)
+        os.makedirs(self.data_dir, exist_ok=True)
+
         # Instance a Mod class for each mod folder in the mod directory.
         mods = []
+        os.makedirs(self.mods_dir, exist_ok=True)
         mod_folders = [
             i
             for i in os.listdir(self.mods_dir)
@@ -147,7 +152,7 @@ class Controller:
                 for other_file in [
                     i
                     for i in os.listdir(self.downloads_dir)
-                    if i.rsplit('-')[-1].strip(".part") in file
+                    if i.rsplit("-")[-1].strip(".part") in file
                 ]:
                     if other_file.lower().endswith(".part"):
                         still_downloading = True
@@ -643,7 +648,7 @@ class Controller:
         for dirpath, _dirnames, filenames in os.walk(self.game_dir):
             for file in filenames:
                 full_path = os.path.join(dirpath, file)
-                if os.path.islink(full_path): # or os.stat(full_path)[3] > 1:
+                if os.path.islink(full_path):  # or os.stat(full_path)[3] > 1:
                     os.unlink(full_path)
 
         # remove empty directories
