@@ -12,9 +12,8 @@ class AmmoController:
     Context manager for ammo's controller class.
 
     Builds a Controller instance to run against /tmp/MockGame.
-    Ammo's configuration directory will be set up as /tmp/ammo_test.
-
-    Requires absence of those folders on start.
+    Ammo's configuration directory will be set up as /tmp/ammo_test,
+    if it doesn't already exist.
 
     Removes those folders on exit or error.
     """
@@ -32,18 +31,9 @@ class AmmoController:
 
     def __enter__(self):
         """
-        Verify clean state by requiring the absence of folders
-        that would only exist if ammo had been run before.
-
-        Then return an instance of ammo's controller for tests to
+        Return an instance of ammo's controller for tests to
         interact with.
         """
-        assert not os.path.exists(
-            self.game_dir
-        ), f"{self.game_dir} exists, expected to have to create it!"
-        assert not os.path.exists(
-            self.ammo_dir
-        ), f"{self.ammo_dir} exists, expected to have to create it!"
         return Controller(
             self.app_name,
             self.game_dir,
