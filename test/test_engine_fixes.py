@@ -13,6 +13,7 @@ DLL_FILES = [
     "tbbmalloc.dll",
 ]
 
+
 def test_install_script_extender_plugin():
     """
     Tests that installing script extender plugins causes

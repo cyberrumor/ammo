@@ -44,16 +44,16 @@ def test_controller_on_preconfigured_game():
         # Launch the second instance of ammo against this configuration.
         with AmmoController() as controller:
             # check mods are the same
-            assert (
-                [i.name for i in controller.mods] == mods
-            ), "Mods didn't load correctly on subsequent session"
+            assert [
+                i.name for i in controller.mods
+            ] == mods, "Mods didn't load correctly on subsequent session"
 
             # check downloads are the same
-            assert (
-                [i.name for i in controller.downloads] == downloads
-            ), "Downloads didn't load correctly on subsequent session"
+            assert [
+                i.name for i in controller.downloads
+            ] == downloads, "Downloads didn't load correctly on subsequent session"
 
             # check plugins are the same
-            assert (
-                [i.name for i in controller.plugins] == plugins
-            ), "Plugins didn't load correctly on subsequent session"
+            assert [
+                i.name for i in controller.plugins
+            ] == plugins, "Plugins didn't load correctly on subsequent session"
