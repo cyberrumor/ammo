@@ -14,7 +14,7 @@ FILES = [
 def test_install_script_extender():
     """
     Tests that installing a script extender causes files
-    to extract where we expect.
+    to extract to expected locations.
     """
     mod_extracts_files(MOD, FILES)
 
@@ -22,6 +22,6 @@ def test_install_script_extender():
 def test_activate_script_extender():
     """
     Tests that activating a script extender causes files
-    to exist in the game dir where we expect.
+    to exist in expected locations.
     """
     mod_installs_files(MOD, FILES)

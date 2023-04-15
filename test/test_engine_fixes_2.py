@@ -8,17 +8,16 @@ FILES = [
     "tbbmalloc.dll",
 ]
 
-def test_install_script_extender():
+def test_install_dll_mod():
     """
-    Tests that installing a script extender causes files
-    to extract where we expect.
+    Tests that custom DLLs extract to expected location.
     """
     mod_extracts_files(MOD, FILES)
 
 
-def test_activate_script_extender():
+def test_activate_dll_mod():
     """
-    Tests that activating a script extender causes files
-    to exist in the game dir where we expect.
+    Tests that activating a custom DLL mod causes files
+    to exist in the expected location.
     """
     mod_installs_files(MOD, FILES)

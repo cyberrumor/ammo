@@ -32,7 +32,7 @@ class AmmoController:
 
     def __enter__(self):
         """
-        Verify we have a clean state by requiring the absence of folders
+        Verify clean state by requiring the absence of folders
         that would only exist if ammo had been run before.
 
         Then return an instance of ammo's controller for tests to
@@ -58,7 +58,7 @@ class AmmoController:
     def __exit__(self, *args, **kwargs):
         """
         Remove all the files and folders associated with our mock
-        ammo instance. This ensures we don't rely on a state
+        ammo instance. This ensures no reliance on a state
         created by a previous test.
         """
         # remove symlinks
@@ -123,6 +123,11 @@ def mod_installs_files(mod_name, files):
         controller.install(mod_index_download)
 
         controller.activate("mod", 0)
+
+        # activate any plugins this mod has
+        for plugin in range(len(controller.plugins)):
+            controller.activate("plugin", plugin)
+
         controller.commit()
 
         for file in files:
@@ -137,3 +142,7 @@ def mod_installs_files(mod_name, files):
                 print(f"expected: {expected_file}")
 
                 raise FileNotFoundError(expected_file)
+
+            # Catch any broken symlinks.
+            assert os.path.exists(os.readlink(expected_file)), \
+                f"Detected broken symlink: {expected_file}"

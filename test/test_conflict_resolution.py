@@ -26,7 +26,7 @@ def test_duplicate_plugin():
             mod_index = [i.name for i in controller.mods].index(mod_name)
 
             controller.activate("mod", mod_index)
-            # Ensure we have only 1 esp.
+            # Ensure there is only one esp
             assert len(controller.plugins) == 1
             controller.commit()
             assert len(controller.plugins) == 1

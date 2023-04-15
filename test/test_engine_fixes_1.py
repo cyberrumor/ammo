@@ -10,17 +10,17 @@ INSTALLED_FILES = [
     "Data/SKSE/Plugins/mock_fixes.dll"
 ]
 
-def test_install_script_extender():
+def test_install_script_extender_plugin():
     """
-    Tests that installing a script extender causes files
-    to extract where we expect.
+    Tests that installing script extender plugins causes
+    files to the expected location.
     """
     mod_extracts_files(MOD, EXTRACT_FILES)
 
 
-def test_activate_script_extender():
+def test_activate_script_extender_plugin():
     """
-    Tests that activating a script extender causes files
-    to exist in the game dir where we expect.
+    Tests that activating script extender plugins causes
+    files to exist in the expected location.
     """
     mod_installs_files(MOD, INSTALLED_FILES)
