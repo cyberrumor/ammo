@@ -107,6 +107,8 @@ def mod_extracts_files(mod_name, files):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
 
+                print(f"expected: {expected_file}")
+
                 raise FileNotFoundError(expected_file)
 
 
@@ -131,5 +133,7 @@ def mod_installs_files(mod_name, files):
                 for parent_dir, folders, actual_files in os.walk(controller.game_dir):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
+
+                print(f"expected: {expected_file}")
 
                 raise FileNotFoundError(expected_file)
