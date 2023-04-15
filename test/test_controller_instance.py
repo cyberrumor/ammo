@@ -3,27 +3,51 @@ import os
 from common import AmmoController, install_everything
 
 
-def test_controller_fixture():
+def test_controller_first_launch():
     """
     Sanity check the ammo_controller fixture, that it creates
     the game directory and properly removes it.
     """
     with AmmoController() as controller:
+        game_dir = controller.game_dir
         assert os.path.exists(
-            controller.game_dir
+            game_dir
         ), "game_dir did not exist after the controller started."
+
+        data_dir = controller.data_dir
         assert os.path.exists(
-            controller.data_dir
+            data_dir
         ), "data_dir did not exist after the controller started."
+
+        downloads_dir = controller.downloads_dir
         assert os.path.exists(
-            controller.downloads_dir
+            downloads_dir
         ), "downloads_dir did not exist after the controller started."
+
+        conf_dir = os.path.split(controller.conf)[0]
         assert os.path.exists(
-            os.path.split(controller.conf)[0]
+            conf_dir
         ), "ammo_dir did not exist after the controller started."
 
+    assert not os.path.exists(
+        game_dir
+    ), "game_dir was not removed after context manager closed"
 
-def test_controller_on_preconfigured_game():
+    assert not os.path.exists(
+        data_dir
+    ), "data dir was not removed after context manager closed"
+
+    assert os.path.exists(
+        downloads_dir
+    ), "downloads_dir was deleted after context manager closed.\
+        It would be a good time to `git checkout Downloads`"
+
+    assert not os.path.exists(
+        conf_dir
+    ), "ammo_dir existed after the context manager closed."
+
+
+def test_controller_subsequent_launch():
     """
     Ensure ammo behaves correctly when launched against a game
     that already has mods installed, Plugins.txt populated with
