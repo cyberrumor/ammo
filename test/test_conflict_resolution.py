@@ -2,8 +2,8 @@
 import os
 from common import AmmoController
 
-MOD_1 = "mock_conflict_1.7z"
-MOD_2 = "mock_conflict_2.7z"
+MOD_1 = "conflict_1.7z"
+MOD_2 = "conflict_2.7z"
 
 FILES = [
     "Data/textures/mock_texture.nif",
