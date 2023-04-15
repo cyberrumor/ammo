@@ -179,6 +179,7 @@ class Controller:
             self.downloads_dir,
         )
 
+
     def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
@@ -190,6 +191,404 @@ class Controller:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
         return True
+
+
+    def _get_validated_components(self, component_type, mod_index):
+        index = None
+        try:
+            index = int(mod_index)
+            if index < 0:
+                raise ValueError
+        except ValueError:
+            print("Expected a number greater than or equal to 0")
+            return False
+
+        if component_type not in ["plugin", "mod"]:
+            print(f"Expected 'plugin' or 'mod', got arg {component_type}")
+            return False
+        components = self.plugins if component_type == "plugin" else self.mods
+        if len(components) == 0:
+            print(f"Install mods to '{self.mods_dir}' to manage them with ammo.")
+            print("To see plugins, the mods they belong to must be activated.")
+            return False
+
+        if index > len(components) - 1:
+            print(f"Expected int 0 through {len(components) - 1} (inclusive)")
+            return False
+
+        return components
+
+
+    def _fomod_validated(self, index):
+        """
+        Returns false if there is an issue preventing fomod configuration.
+        Otherwise, returns the root node of the parsed ModuleConfig.xml.
+        """
+        if not (components := self._get_validated_components("mod", index)):
+            print("Invalid index.")
+            return False
+
+        mod = components[int(index)]
+        if not mod.fomod:
+            print("'configure' was called on something other than a fomod. Aborting.")
+            return False
+
+        if not mod.modconf:
+            print("Unable to find ModuleConfig.xml for this fomod.")
+            print("Please configure manually in:")
+            print(mod.location)
+            print(
+                "Once there is a data dir inside that folder with the desired files in place,"
+            )
+            print("refresh and try again.")
+            return False
+
+        # If there is already a Data dir in the mod folder,
+        # warn that this is the point of no return.
+        if mod.has_data_dir:
+            print("This has been configured previously.")
+            choice = (
+                input("Discard previous configuration and continue? [y/n]: ").lower()
+                == "y"
+            )
+            if not choice:
+                print("No changes made.")
+                return False
+
+            # Clean up previous configuration.
+            try:
+                shutil.rmtree(os.path.join(mod.location, "Data"))
+            except FileNotFoundError:
+                pass
+
+            # disable this mod and commit to prevent polluting the data dir
+            self.deactivate("mod", index)
+            self.commit()
+            self.__reset__()
+
+        # Parse the fomod installer.
+        try:
+            tree = ElementTree.parse(mod.modconf)
+            root = tree.getroot()
+        except:
+            print("This mod's ModuleConfig.xml is malformed.")
+            print("Please configure manually, refresh, and try again.")
+            return False
+
+        return root
+
+
+    def _fomod_required_files(self, fomod_installer_root_node):
+        """
+        get a list of files that are always required.
+        """
+        return fomod_installer_root_node.find("requiredInstallFiles")
+
+
+    def _fomod_install_steps(self, fomod_installer_root_node):
+        """
+        get a native data type (dict) representing this fomod's install stpes.
+        """
+        steps = {}
+        # Find all the install steps
+        for step in fomod_installer_root_node.find("installSteps"):
+            for optional_file_groups in step:
+                for group in optional_file_groups:
+                    if not (group_of_plugins := group.find("plugins")):
+                        # This step has no configurable plugins.
+                        # Skip the false positive.
+                        continue
+
+                    step_name = group.get("name")
+                    steps[step_name] = {}
+                    steps[step_name]["type"] = group.get("type")
+                    steps[step_name]["plugins"] = []
+                    steps[step_name]["visible"] = {}
+
+                    # Collect this step's visibility conditions. Associate it with
+                    # the group instead of the step. This is inefficient but fits
+                    # into the "each step is a page" paradigm better.
+                    if visible := step.find("visible"):
+                        if dependencies := visible.find("dependencies"):
+                            dep_op = dependencies.get("operator")
+                            if dep_op:
+                                dep_op = dep_op.lower()
+                            steps[step_name]["visible"]["operator"] = dep_op
+                            for xml_flag in dependencies:
+                                steps[step_name]["visible"][
+                                    xml_flag.get("flag")
+                                ] = xml_flag.get("value") in ["On", "1"]
+
+                    plugins = steps[step_name]["plugins"]
+                    for plugin_index, plugin in enumerate(group_of_plugins):
+                        plug_dict = {}
+                        plugin_name = plugin.get("name").strip()
+                        plug_dict["name"] = plugin_name
+                        if (description := plugin.find("description")) and description:
+                            plug_dict["description"] = description.text.strip()
+                        else:
+                            plug_dict[
+                                "description"
+                            ] = "No description for this plugin was provided"
+                        plug_dict["flags"] = {}
+                        # Automatically mark the first option as selected when a selection
+                        # is required.
+                        plug_dict["selected"] = (
+                            steps[step_name]["type"]
+                            in ["SelectExactlyOne", "SelectAtLeastOne"]
+                        ) and plugin_index == 0
+
+                        # Interpret on/off or 1/0 as true/false
+                        if conditional_flags := plugin.find("conditionFlags"):
+                            for flag in conditional_flags:
+                                # People use arbitrary flags here. Most commonly "On" or "1".
+                                plug_dict["flags"][flag.get("name")] = flag.text in [
+                                    "On",
+                                    "1",
+                                ]
+                            plug_dict["conditional"] = True
+
+                        else:
+                            # There were no conditional flags, so this was an unconditional install.
+                            plug_dict["conditional"] = False
+
+                        plug_dict["files"] = []
+                        if plugin_files := plugin.find("files"):
+                            for i in plugin_files:
+                                plug_dict["files"].append(i)
+
+                        plugins.append(plug_dict)
+
+        return steps
+
+
+    def _init_fomod_chosen_files(self, index, to_install):
+        """
+        Copy the chosen files 'to_install' from given mod at 'index'
+        to that mod's Data folder.
+        """
+        mod = self.mods[int(index)]
+        data = os.path.join(mod.location, "Data")
+
+        # delete the old configuration if it exists
+        shutil.rmtree(data, ignore_errors=True)
+        os.makedirs(data, exist_ok=True)
+
+        stage = {}
+        for node in to_install:
+            pre_stage = {}
+
+            # convert the 'source' folder form the xml into a full path
+            s = node.get("source")
+            full_source = mod.location
+            for i in s.split("\\"):
+                # i requires case-sensitivity correction because mod authors might have
+                # said a resource was at "00 Core/Meshes" in ModuleConfig.xml when the actual
+                # file itself might be "00 Core/meshes".
+                folder = i
+                for file in os.listdir(full_source):
+                    if file.lower() == i.lower():
+                        folder = file
+                        break
+                full_source = os.path.join(full_source, folder)
+
+            # get the 'destination' folder form the xml. This path is relative to Data.
+            destination = ""
+            d = node.get("destination")
+            for i in d.split("\\"):
+                destination = os.path.join(destination, i)
+
+            full_destination = os.path.join(
+                os.path.join(mod.location, "Data"), destination
+            )
+
+            # Normalize the capitalization of folder names
+            full_destination = self._normalize(
+                full_destination, os.path.join(mod.location, "Data")
+            )
+
+            # Handle the mod's file conflicts that are caused by itself.
+            # There's technically a priority clause in the fomod spec that
+            # isn't implemented here yet.
+            pre_stage[full_source] = full_destination
+
+            for dest, src in pre_stage.items():
+                if os.path.isdir(dest):
+                    # Handle directories
+                    for parent_dir, _folders, files in os.walk(dest):
+                        for file in files:
+                            source = os.path.join(parent_dir, file)
+                            local_parent_dir = parent_dir.split(dest)[-1].strip("/")
+                            destination = os.path.join(
+                                os.path.join(src, local_parent_dir), file
+                            )
+                            stage[destination] = source
+                else:
+                    # Handle files
+                    stage[src] = dest
+
+        # install the new files
+        for k, v in stage.items():
+            os.makedirs(k.rsplit("/", 1)[0], exist_ok=True)
+            shutil.copy(v, k)
+
+        mod.has_data_dir = True
+        return True
+
+
+    def _set_component_state(self, component_type, mod_index, state):
+        """
+        Activate or deactivate a component.
+        Returns which plugins need to be added to or removed from self.plugins.
+        """
+        if not (
+            components := self._get_validated_components(component_type, mod_index)
+        ):
+            print(f"Unable to find that {component_type}.")
+            return False
+        component = components[int(mod_index)]
+
+        starting_state = component.enabled
+        # Handle mods
+        if isinstance(component, Mod):
+            # Handle configuration of fomods
+            if (
+                hasattr(component, "fomod")
+                and component.fomod
+                and state
+                and not component.has_data_dir
+            ):
+                print("Fomods must be configured before they can be enabled.")
+                print(f"Please run 'configure {mod_index}', refresh, and try again.")
+                return False
+
+            component.enabled = state
+            if component.enabled:
+                # Show plugins owned by this mod
+                for name in component.plugins:
+                    if name not in [i.name for i in self.plugins]:
+                        plugin = Plugin(name, False, component)
+                        self.plugins.append(plugin)
+            else:
+                # Hide plugins owned by this mod
+                for plugin in component.associated_plugins(self.plugins):
+                    plugin.enabled = False
+
+                    if plugin in self.plugins:
+                        self.plugins.remove(plugin)
+
+        # Handle plugins
+        if isinstance(component, Plugin):
+            component.enabled = state
+
+        self.changes = starting_state != component.enabled
+        return True
+
+
+    def _normalize(self, destination, dest_prefix):
+        """
+        Prevent folders with the same name but different case from being created.
+        """
+        path, file = os.path.split(destination)
+        local_path = path.split(dest_prefix)[-1].lower()
+        for i in [
+            "Data",
+            "DynDOLOD",
+            "Plugins",
+            "SKSE",
+            "Edit Scripts",
+            "Docs",
+            "Scripts",
+            "Source",
+        ]:
+            local_path = local_path.replace(i.lower(), i)
+        new_dest = os.path.join(dest_prefix, local_path.lstrip("/"))
+        result = os.path.join(new_dest, file)
+        return result
+
+
+    def _stage(self):
+        """
+        Returns a dict containing the final symlinks that will be installed.
+        """
+        # destination: (mod_name, source)
+        result = {}
+        # Iterate through enabled mods in order.
+        for mod in [i for i in self.mods if i.enabled]:
+            # Iterate through the source files of the mod
+            for src in mod.files.values():
+                # Get the sanitized full path relative to the game directory.
+                corrected_name = src.split(mod.name, 1)[-1]
+
+                # Don't install fomod folders.
+                if "fomod" in corrected_name.lower():
+                    continue
+
+                # It is possible to make a mod install in the game dir instead of the data dir
+                # by setting mod.has_data_dir = True.
+                if mod.has_data_dir:
+                    dest = os.path.join(
+                        self.game_dir,
+                        corrected_name.replace("/data", "/Data").lstrip("/"),
+                    )
+                else:
+                    dest = os.path.join(
+                        self.game_dir,
+                        "Data" + corrected_name,
+                    )
+                # Add the sanitized full path to the stage, resolving conflicts.
+                dest = self._normalize(dest, self.game_dir)
+                result[dest] = (mod.name, src)
+
+        return result
+
+
+    def _clean_data_dir(self):
+        """
+        Removes all symlinks and deletes empty folders.
+        """
+        # remove symlinks
+        for dirpath, _dirnames, filenames in os.walk(self.game_dir):
+            for file in filenames:
+                full_path = os.path.join(dirpath, file)
+                if os.path.islink(full_path):  # or os.stat(full_path)[3] > 1:
+                    os.unlink(full_path)
+
+        # remove empty directories
+        def remove_empty_dirs(path):
+            for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
+                for dirname in dirnames:
+                    try:
+                        os.rmdir(os.path.realpath(os.path.join(dirpath, dirname)))
+                    except OSError:
+                        # directory wasn't empty, ignore this
+                        pass
+
+        remove_empty_dirs(self.game_dir)
+        return True
+
+
+    def _is_match(self, flags, expected_flags):
+        """
+        Compare actual flags with the flags we expected to determine whether
+        the plugin associated with expected_flags should be included.
+        """
+        match = False
+        for k, v in expected_flags.items():
+            if k in flags:
+                if flags[k] != v:
+                    if (
+                        "operator" in expected_flags
+                        and expected_flags["operator"] == "and"
+                    ):
+                        # Mismatched flag. Skip this plugin.
+                        return False
+                    # if dep_op is "or" (or undefined), we can try the rest of these.
+                    continue
+                # A single match.
+                match = True
+        return match
+
 
     def install(self, index):
         """
@@ -280,291 +679,231 @@ class Controller:
         self.__reset__()
         return True
 
-    def _get_validated_components(self, component_type, mod_index):
-        index = None
-        try:
-            index = int(mod_index)
-            if index < 0:
-                raise ValueError
-        except ValueError:
-            print("Expected a number greater than or equal to 0")
-            return False
 
-        if component_type not in ["plugin", "mod"]:
-            print(f"Expected 'plugin' or 'mod', got arg {component_type}")
-            return False
-        components = self.plugins if component_type == "plugin" else self.mods
-        if len(components) == 0:
-            print(f"Install mods to '{self.mods_dir}' to manage them with ammo.")
-            print("To see plugins, the mods they belong to must be activated.")
-            return False
-
-        if index > len(components) - 1:
-            print(f"Expected int 0 through {len(components) - 1} (inclusive)")
-            return False
-
-        return components
-
-    def _fomod_validated(self, index):
+    def configure(self, index):
         """
-        Returns false if there is an issue preventing fomod configuration.
-        Otherwise, returns the root node of the parsed ModuleConfig.xml.
+        Configure a fomod.
         """
-        if not (components := self._get_validated_components("mod", index)):
-            print("Invalid index.")
+
+        # This has to run a hard refresh for now, so warn if there are uncommitted changes
+        if self.changes:
+            print("can't configure fomod when there are unsaved changes.")
+            print("Please run 'commit' and try again.")
             return False
 
-        mod = components[int(index)]
-        if not mod.fomod:
-            print("'configure' was called on something other than a fomod. Aborting.")
+        if not (fomod_installer_root_node := self._fomod_validated(index)):
             return False
 
-        if not mod.modconf:
-            print("Unable to find ModuleConfig.xml for this fomod.")
-            print("Please configure manually in:")
-            print(mod.location)
+        required_files = self._fomod_required_files(
+            fomod_installer_root_node
+        )
+        module_name = fomod_installer_root_node.find("moduleName").text
+        steps = self._fomod_install_steps(fomod_installer_root_node)
+        pages = list(steps.keys())
+        page_index = 0
+
+        command_dict = {
+            "<index>": "     Choose an option.",
+            "info <index>": "Show the description for the selected option.",
+            "exit": "        Abandon configuration of this fomod.",
+            "n": "           Next page of the installer or complete installation.",
+            "b": "           Back. Return to the previous page of the installer.",
+        }
+
+
+        while True:
+            # Evaluate the flags every loop to ensure the visible pages and selected options
+            # are always up to date. This will ensure the proper files are chosen later as well.
+            flags = {}
+            for step in steps.values():
+                for plugin in step["plugins"]:
+                    if plugin["selected"]:
+                        if not plugin["flags"]:
+                            continue
+                        for flag in plugin["flags"]:
+                            flags[flag] = plugin["flags"][flag]
+
+            # Determine which steps should be visible
+            visible_pages = []
+            for page in pages:
+                expected_flags = steps[page]["visible"]
+
+                if not expected_flags:
+                    # No requirements for this page to be shown
+                    visible_pages.append(page)
+                    continue
+
+                if self._is_match(flags, expected_flags):
+                    visible_pages.append(page)
+
+            # Only exit loop after determining which flags are set and pages are shown.
+            if page_index >= len(visible_pages):
+                break
+
+            info = False
+            os.system("clear")
+            page = steps[visible_pages[page_index]]
+
+            print(module_name)
+            print("-----------------")
             print(
-                "Once there is a data dir inside that folder with the desired files in place,"
+                f"Page {page_index + 1} / {len(visible_pages)}: {visible_pages[page_index]}"
             )
-            print("refresh and try again.")
-            return False
+            print()
 
-        # If there is already a Data dir in the mod folder,
-        # warn that this is the point of no return.
-        if mod.has_data_dir:
-            print("This has been configured previously.")
-            choice = (
-                input("Discard previous configuration and continue? [y/n]: ").lower()
-                == "y"
-            )
-            if not choice:
-                print("No changes made.")
-                return False
+            print(" ### | Selected | Option Name")
+            print("-----|----------|------------")
+            for i, p in enumerate(page["plugins"]):
+                num = f"[{i}]     "
+                num = num[0:-1]
+                enabled = "[True]     " if p["selected"] else "[False]    "
+                print(f"{num} {enabled} {p['name']}")
+            print()
+            selection = input(f"{page['type']} >_: ").lower()
 
-            # Clean up previous configuration.
-            try:
-                shutil.rmtree(os.path.join(mod.location, "Data"))
-            except FileNotFoundError:
-                pass
-
-            # disable this mod and commit to prevent polluting the data dir
-            self.deactivate("mod", index)
-            self.commit()
-            self.__reset__()
-
-        # Parse the fomod installer.
-        try:
-            tree = ElementTree.parse(mod.modconf)
-            root = tree.getroot()
-        except:
-            print("This mod's ModuleConfig.xml is malformed.")
-            print("Please configure manually, refresh, and try again.")
-            return False
-
-        return root
-
-    def _fomod_required_files(self, fomod_installer_root_node):
-        """
-        get a list of files that are always required.
-        """
-        return fomod_installer_root_node.find("requiredInstallFiles")
-
-    def _fomod_install_steps(self, fomod_installer_root_node):
-        """
-        get a native data type (dict) representing this fomod's install stpes.
-        """
-        steps = {}
-        # Find all the install steps
-        for step in fomod_installer_root_node.find("installSteps"):
-            for optional_file_groups in step:
-                for group in optional_file_groups:
-                    if not (group_of_plugins := group.find("plugins")):
-                        # This step has no configurable plugins.
-                        # Skip the false positive.
-                        continue
-
-                    step_name = group.get("name")
-                    steps[step_name] = {}
-                    steps[step_name]["type"] = group.get("type")
-                    steps[step_name]["plugins"] = []
-                    steps[step_name]["visible"] = {}
-
-                    # Collect this step's visibility conditions. Associate it with
-                    # the group instead of the step. This is inefficient but fits
-                    # into the "each step is a page" paradigm better.
-                    if visible := step.find("visible"):
-                        if dependencies := visible.find("dependencies"):
-                            dep_op = dependencies.get("operator")
-                            if dep_op:
-                                dep_op = dep_op.lower()
-                            steps[step_name]["visible"]["operator"] = dep_op
-                            for xml_flag in dependencies:
-                                steps[step_name]["visible"][
-                                    xml_flag.get("flag")
-                                ] = xml_flag.get("value") in ["On", "1"]
-
-                    plugins = steps[step_name]["plugins"]
-                    for plugin_index, plugin in enumerate(group_of_plugins):
-                        plug_dict = {}
-                        plugin_name = plugin.get("name").strip()
-                        plug_dict["name"] = plugin_name
-                        if (description := plugin.find("description")) and description:
-                            plug_dict["description"] = description.text.strip()
-                        else:
-                            plug_dict[
-                                "description"
-                            ] = "No description for this plugin was provided"
-                        plug_dict["flags"] = {}
-                        # Automatically mark the first option as selected when a selection
-                        # is required.
-                        plug_dict["selected"] = (
-                            steps[step_name]["type"]
-                            in ["SelectExactlyOne", "SelectAtLeastOne"]
-                        ) and plugin_index == 0
-
-                        # Interpret on/off or 1/0 as true/false
-                        if conditional_flags := plugin.find("conditionFlags"):
-                            for flag in conditional_flags:
-                                # People use arbitrary flags here. Most commonly "On" or "1".
-                                plug_dict["flags"][flag.get("name")] = flag.text in [
-                                    "On",
-                                    "1",
-                                ]
-                            plug_dict["conditional"] = True
-
-                        else:
-                            # There were no conditional flags, so this was an unconditional install.
-                            plug_dict["conditional"] = False
-
-                        plug_dict["files"] = []
-                        if plugin_files := plugin.find("files"):
-                            for i in plugin_files:
-                                plug_dict["files"].append(i)
-
-                        plugins.append(plug_dict)
-
-        return steps
-
-    def _init_fomod_chosen_files(self, index, to_install):
-        """
-        Copy the chosen files 'to_install' from given mod at 'index'
-        to that mod's Data folder.
-        """
-        mod = self.mods[int(index)]
-        data = os.path.join(mod.location, "Data")
-
-        # delete the old configuration if it exists
-        shutil.rmtree(data, ignore_errors=True)
-        os.makedirs(data, exist_ok=True)
-
-        stage = {}
-        for node in to_install:
-            pre_stage = {}
-
-            # convert the 'source' folder form the xml into a full path
-            s = node.get("source")
-            full_source = mod.location
-            for i in s.split("\\"):
-                # i requires case-sensitivity correction because mod authors might have
-                # said a resource was at "00 Core/Meshes" in ModuleConfig.xml when the actual
-                # file itself might be "00 Core/meshes".
-                folder = i
-                for file in os.listdir(full_source):
-                    if file.lower() == i.lower():
-                        folder = file
-                        break
-                full_source = os.path.join(full_source, folder)
-
-            # get the 'destination' folder form the xml. This path is relative to Data.
-            destination = ""
-            d = node.get("destination")
-            for i in d.split("\\"):
-                destination = os.path.join(destination, i)
-
-            full_destination = os.path.join(
-                os.path.join(mod.location, "Data"), destination
-            )
-
-            # Normalize the capitalization of folder names
-            full_destination = self._normalize(
-                full_destination, os.path.join(mod.location, "Data")
-            )
-
-            # Handle the mod's file conflicts that are caused by itself.
-            # There's technically a priority clause in the fomod spec that
-            # isn't implemented here yet.
-            pre_stage[full_source] = full_destination
-
-            for dest, src in pre_stage.items():
-                if os.path.isdir(dest):
-                    # Handle directories
-                    for parent_dir, _folders, files in os.walk(dest):
-                        for file in files:
-                            source = os.path.join(parent_dir, file)
-                            local_parent_dir = parent_dir.split(dest)[-1].strip("/")
-                            destination = os.path.join(
-                                os.path.join(src, local_parent_dir), file
-                            )
-                            stage[destination] = source
-                else:
-                    # Handle files
-                    stage[src] = dest
-
-        # install the new files
-        for k, v in stage.items():
-            os.makedirs(k.rsplit("/", 1)[0], exist_ok=True)
-            shutil.copy(v, k)
-
-        mod.has_data_dir = True
-        return True
-
-    def _set_component_state(self, component_type, mod_index, state):
-        """
-        Activate or deactivate a component.
-        Returns which plugins need to be added to or removed from self.plugins.
-        """
-        if not (
-            components := self._get_validated_components(component_type, mod_index)
-        ):
-            print(f"Unable to find that {component_type}.")
-            return False
-        component = components[int(mod_index)]
-
-        starting_state = component.enabled
-        # Handle mods
-        if isinstance(component, Mod):
-            # Handle configuration of fomods
-            if (
-                hasattr(component, "fomod")
-                and component.fomod
-                and state
-                and not component.has_data_dir
+            if (not selection) or (
+                selection not in command_dict and selection.isalpha()
             ):
-                print("Fomods must be configured before they can be enabled.")
-                print(f"Please run 'configure {mod_index}', refresh, and try again.")
+                print()
+                for k, v in command_dict.items():
+                    print(f"{k} {v}")
+                print()
+                input("[Enter]")
+                continue
+
+            # Set a flag for 'info' command. This is so the index validation can be recycled.
+            if selection.split() and "info" == selection.split()[0]:
+                info = True
+
+            if "exit" == selection:
+                print("Bailed from configuring fomod.")
+                self.__reset__()
                 return False
 
-            component.enabled = state
-            if component.enabled:
-                # Show plugins owned by this mod
-                for name in component.plugins:
-                    if name not in [i.name for i in self.plugins]:
-                        plugin = Plugin(name, False, component)
-                        self.plugins.append(plugin)
+            if "n" == selection:
+                page_index += 1
+                continue
+
+            if "b" == selection:
+                page_index -= 1
+                if page_index < 0:
+                    page_index = 0
+                    print("Can't go back from here.")
+                    input("[Enter]")
+                continue
+
+            # Convert selection to int and validate.
+            try:
+                if selection.split():
+                    selection = selection[-1]
+
+                selection = int(selection)
+                if selection not in range(len(page["plugins"])):
+                    print(f"Expected 0 through {len(page['plugins']) - 1} (inclusive)")
+                    input("[Enter]")
+                    continue
+
+            except ValueError:
+                print(f"Expected 0 through {len(page['plugins']) - 1} (inclusive)")
+                input("[Enter]")
+                continue
+
+            if info:
+                # Selection was valid argument for 'info' command.
+                print()
+                print(page["plugins"][selection]["description"])
+                print()
+                input("[Enter]")
+                continue
+
+            # Selection was a valid index command.
+            # toggle the 'selected' switch on appropriate plugins.
+            # Whenever a plugin is unselected, re-assess all flags.
+            val = not page["plugins"][selection]["selected"]
+            if "SelectExactlyOne" == page["type"]:
+                for i in range(len(page["plugins"])):
+                    page["plugins"][i]["selected"] = i == selection
+            elif "SelectAtMostOne" == page["type"]:
+                for i in range(len(page["plugins"])):
+                    page["plugins"][i]["selected"] = False
+                page["plugins"][selection]["selected"] = val
             else:
-                # Hide plugins owned by this mod
-                for plugin in component.associated_plugins(self.plugins):
-                    plugin.enabled = False
+                page["plugins"][selection]["selected"] = val
+            # END MAIN INPUT WHILE LOOP
 
-                    if plugin in self.plugins:
-                        self.plugins.remove(plugin)
+        # Determine which files need to be installed.
+        to_install = []
+        if required_files:
+            for file in required_files:
+                if file.tag == "files":
+                    for f in file:
+                        to_install.append(f)
+                else:
+                    to_install.append(file)
 
-        # Handle plugins
-        if isinstance(component, Plugin):
-            component.enabled = state
+        # Normal files. If these were selected, install them unless flags disqualify.
+        for step in steps:
+            for plugin in steps[step]["plugins"]:
+                if plugin["selected"]:
+                    if plugin["conditional"]:
+                        # conditional normal file
+                        expected_flags = plugin["flags"]
 
-        self.changes = starting_state != component.enabled
+                        if self._is_match(flags, expected_flags):
+                            for folder in plugin["files"]:
+                                to_install.append(folder)
+                    else:
+                        # unconditional file install
+                        for folder in plugin["files"]:
+                            to_install.append(folder)
+
+        # include conditional file installs based on the user choice. These are different from
+        # the normal_files with conditions because these conditions are set after all of the install
+        # steps instead of inside each install step.
+        patterns = []
+        if conditionals := fomod_installer_root_node.find("conditionalFileInstalls"):
+            patterns = conditionals.find("patterns")
+        if patterns:
+            for pattern in patterns:
+                dependencies = pattern.find("dependencies")
+                dep_op = dependencies.get("operator")
+                if dep_op:
+                    dep_op = dep_op.lower()
+                expected_flags = {"operator": dep_op}
+                for xml_flag in dependencies:
+                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
+                        "On",
+                        "1",
+                    ]
+
+                # xml_files is a list of folders. The folder objects contain the paths.
+                xml_files = pattern.find("files")
+                if not xml_files:
+                    # can't find files for this, no point in checking whether to include.
+                    continue
+
+                if not expected_flags:
+                    # No requirements for these files to be used.
+                    for folder in xml_files:
+                        to_install.append(folder)
+
+                if self._is_match(flags, expected_flags):
+                    for folder in xml_files:
+                        to_install.append(folder)
+
+        if not to_install:
+            print("The configured options failed to map to installable components!")
+            return False
+
+        # Let the controller stage the chosen files and copy them to the mod's local Data dir.
+        self._init_fomod_chosen_files(index, to_install)
+
+        # If _init_fomod_chosen_files can rebuild the "files" property of the mod,
+        # resetting the controller and preventing configuration when there are unsaved changes
+        # will no longer be required.
+        self.__reset__()
         return True
+
 
     def activate(self, mod_or_plugin: Mod | Plugin, index):
         """
@@ -572,11 +911,13 @@ class Controller:
         """
         return self._set_component_state(mod_or_plugin, index, True)
 
+
     def deactivate(self, mod_or_plugin: Mod | Plugin, index):
         """
         Disabled components will not be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, False)
+
 
     def delete(self, mod_or_download: Mod | Download, index):
         """
@@ -622,6 +963,7 @@ class Controller:
                 return False
         return True
 
+
     def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index):
         """
         Larger numbers win file conflicts.
@@ -640,29 +982,6 @@ class Controller:
         self.changes = True
         return True
 
-    def _clean_data_dir(self):
-        """
-        Removes all symlinks and deletes empty folders.
-        """
-        # remove symlinks
-        for dirpath, _dirnames, filenames in os.walk(self.game_dir):
-            for file in filenames:
-                full_path = os.path.join(dirpath, file)
-                if os.path.islink(full_path):  # or os.stat(full_path)[3] > 1:
-                    os.unlink(full_path)
-
-        # remove empty directories
-        def remove_empty_dirs(path):
-            for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
-                for dirname in dirnames:
-                    try:
-                        os.rmdir(os.path.realpath(os.path.join(dirpath, dirname)))
-                    except OSError:
-                        # directory wasn't empty, ignore this
-                        pass
-
-        remove_empty_dirs(self.game_dir)
-        return True
 
     def vanilla(self):
         """
@@ -684,61 +1003,6 @@ class Controller:
         self._clean_data_dir()
         return True
 
-    def _normalize(self, destination, dest_prefix):
-        """
-        Prevent folders with the same name but different case from being created.
-        """
-        path, file = os.path.split(destination)
-        local_path = path.split(dest_prefix)[-1].lower()
-        for i in [
-            "Data",
-            "DynDOLOD",
-            "Plugins",
-            "SKSE",
-            "Edit Scripts",
-            "Docs",
-            "Scripts",
-            "Source",
-        ]:
-            local_path = local_path.replace(i.lower(), i)
-        new_dest = os.path.join(dest_prefix, local_path.lstrip("/"))
-        result = os.path.join(new_dest, file)
-        return result
-
-    def _stage(self):
-        """
-        Returns a dict containing the final symlinks that will be installed.
-        """
-        # destination: (mod_name, source)
-        result = {}
-        # Iterate through enabled mods in order.
-        for mod in [i for i in self.mods if i.enabled]:
-            # Iterate through the source files of the mod
-            for src in mod.files.values():
-                # Get the sanitized full path relative to the game directory.
-                corrected_name = src.split(mod.name, 1)[-1]
-
-                # Don't install fomod folders.
-                if "fomod" in corrected_name.lower():
-                    continue
-
-                # It is possible to make a mod install in the game dir instead of the data dir
-                # by setting mod.has_data_dir = True.
-                if mod.has_data_dir:
-                    dest = os.path.join(
-                        self.game_dir,
-                        corrected_name.replace("/data", "/Data").lstrip("/"),
-                    )
-                else:
-                    dest = os.path.join(
-                        self.game_dir,
-                        "Data" + corrected_name,
-                    )
-                # Add the sanitized full path to the stage, resolving conflicts.
-                dest = self._normalize(dest, self.game_dir)
-                result[dest] = (mod.name, src)
-
-        return result
 
     def commit(self):
         """
@@ -769,6 +1033,7 @@ class Controller:
         self.changes = False
         # Always return False so status messages persist.
         return False
+
 
     def refresh(self):
         """
