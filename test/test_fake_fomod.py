@@ -10,6 +10,7 @@ INSTALL_FILES = [
     "Data/some_plugin.esp",
 ]
 
+
 def test_install_fake_fomod():
     """
     Tests that installing a mod that has a fomod dir but no

@@ -123,7 +123,6 @@ def mod_installs_files(mod_name, files):
         for file in files:
             expected_file = os.path.join(controller.game_dir, file)
             if not os.path.exists(expected_file):
-
                 # print the files that _do_ exist to show where things ended up
                 for parent_dir, folders, actual_files in os.walk(controller.game_dir):
                     print(f"{parent_dir} folders: {folders}")
@@ -134,5 +133,62 @@ def mod_installs_files(mod_name, files):
                 raise FileNotFoundError(expected_file)
 
             # Catch any broken symlinks.
-            assert os.path.exists(os.readlink(expected_file)), \
-                f"Detected broken symlink: {expected_file}"
+            assert os.path.exists(
+                os.readlink(expected_file)
+            ), f"Detected broken symlink: {expected_file}"
+
+
+def install_everything(controller):
+    """
+    Helper function that installs everything from downloads,
+    then activates all mods and plugins.
+    """
+    # install everything
+    for download in controller.downloads:
+        index = controller.downloads.index(download)
+        controller.install(index)
+
+    # activate everything
+    for mod in controller.mods:
+        index = controller.mods.index(mod)
+        controller.activate("mod", index)
+
+    for plugin in controller.plugins:
+        index = controller.plugins.index(plugin)
+        controller.activate("plugin", index)
+
+    controller.commit()
+
+
+def install_normal_mod_inactive(controller):
+    """
+    Helper function that installs a normal mod,
+    then activates all mods and plugins.
+    """
+    index = [i.name for i in controller.downloads].index("normal_mod.7z")
+    controller.install(index)
+
+    mod_index = [i.name for i in controller.mods].index("normal_mod")
+
+    controller.commit()
+
+    return mod_index
+
+
+def install_normal_mod_active(controller):
+    """
+    Helper function that installs a normal mod,
+    then activates all mods and plugins.
+    """
+    index = [i.name for i in controller.downloads].index("normal_mod.7z")
+    controller.install(index)
+
+    mod_index = [i.name for i in controller.mods].index("normal_mod")
+    controller.activate("mod", mod_index)
+
+    plugin_index = [i.name for i in controller.plugins].index("normal_plugin.esp")
+    controller.activate("plugin", plugin_index)
+
+    controller.commit()
+
+    return mod_index, plugin_index

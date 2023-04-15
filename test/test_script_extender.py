@@ -11,6 +11,7 @@ FILES = [
     "se64_whatsnew.txt",
 ]
 
+
 def test_install_script_extender():
     """
     Tests that installing a script extender causes files

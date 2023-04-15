@@ -9,6 +9,7 @@ INSTALL_FILES = [
     "Data/no_data_folder_plugin.esp",
 ]
 
+
 def test_install_no_data_folder_plugin():
     """
     Tests that installing a mod with no data folder

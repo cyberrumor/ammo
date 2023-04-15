@@ -8,6 +8,7 @@ FILES = [
     "tbbmalloc.dll",
 ]
 
+
 def test_install_dll_mod():
     """
     Tests that custom DLLs extract to expected location.

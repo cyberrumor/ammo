@@ -11,6 +11,7 @@ FILES = [
     "file.dll",
 ]
 
+
 def test_duplicate_plugin():
     """
     Test that installing two mods with the same plugin
