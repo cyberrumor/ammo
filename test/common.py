@@ -68,9 +68,12 @@ class AmmoController:
                         # directory wasn't empty, ignore this
                         pass
 
-        remove_empty_dirs(self.game_dir)
-        shutil.rmtree(self.game_dir)
-        shutil.rmtree(self.ammo_dir)
+        if os.path.exists(self.game_dir):
+            remove_empty_dirs(self.game_dir)
+        if os.path.exists(self.game_dir):
+            shutil.rmtree(self.game_dir)
+        if os.path.exists(self.ammo_dir):
+            shutil.rmtree(self.ammo_dir)
 
 
 def mod_extracts_files(mod_name, files):
