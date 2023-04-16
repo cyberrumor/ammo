@@ -7,6 +7,7 @@ from common import (
     install_normal_mod_inactive,
 )
 
+
 def test_pending_change_restrictions():
     """
     Actions that require the persistent state and in-memory state to be the
@@ -23,6 +24,7 @@ def test_pending_change_restrictions():
 
         with pytest.raises(AssertionError):
             controller.install(1)
+
 
 def test_pending_change_move():
     """
@@ -51,7 +53,7 @@ def test_pending_change_activate():
     with AmmoController() as controller:
         install_normal_mod_inactive(controller)
         controller.activate("mod", 0)
-        assert(
+        assert (
             controller.changes is True
         ), "activate command failed to create a pending change."
 
@@ -87,6 +89,7 @@ def test_pending_change_refresh():
             controller.changes is False
         ), "refresh command failed to clear pending changes."
 
+
 def test_pending_change_commit():
     """
     Tests that the commit command clears pending changes.
@@ -98,15 +101,14 @@ def test_pending_change_commit():
             controller.changes is False
         ), "commit command failed to clear pending changes."
 
+
 def test_pending_change_install():
     """
     Tests that install does not create a pending change.
     """
     with AmmoController() as controller:
         controller.install(0)
-        assert (
-            controller.changes is False
-        ), "Install command created a pending change"
+        assert controller.changes is False, "Install command created a pending change"
 
 
 def test_pending_change_delete():
@@ -116,6 +118,4 @@ def test_pending_change_delete():
     with AmmoController() as controller:
         install_normal_mod_active(controller)
         controller.delete("mod", 0)
-        assert (
-            controller.changes is False
-        ), "Delete command created a pending change."
+        assert controller.changes is False, "Delete command created a pending change."

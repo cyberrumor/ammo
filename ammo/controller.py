@@ -659,7 +659,6 @@ class Controller:
 
         mod.has_data_dir = True
 
-
     def configure(self, index) -> bool:
         """
         Configure a fomod.
@@ -730,9 +729,8 @@ class Controller:
                 info = True
 
             if "exit" == selection:
-                print("Bailed from configuring fomod.")
                 self.refresh()
-                return False
+                return True
 
             if "n" == selection:
                 page_index += 1
@@ -964,12 +962,12 @@ class Controller:
         Abandon pending changes.
         """
         self.__init__(
-              self.name,
-              self.game_dir,
-              self.data_dir,
-              self.conf,
-              self.dlc_file,
-              self.plugin_file,
-              self.mods_dir,
-              self.downloads_dir,
-          )
+            self.name,
+            self.game_dir,
+            self.data_dir,
+            self.conf,
+            self.dlc_file,
+            self.plugin_file,
+            self.mods_dir,
+            self.downloads_dir,
+        )

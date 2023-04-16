@@ -149,7 +149,6 @@ def test_delete_validation():
         with pytest.raises(IndexError):
             controller.delete("download", 1000)
 
-
         # Delete invalid component type
         with pytest.raises(TypeError):
             controller.delete("plugin", 0)
@@ -209,6 +208,7 @@ def test_no_components_validation():
         # attempt to configure a non-existing mod
         with pytest.raises(IndexError):
             controller._fomod_get_root_node(0)
+
 
 def test_no_install_twice():
     """
