@@ -573,6 +573,7 @@ class Controller:
                 os.path.join(mod.location, "Data"), destination
             )
 
+            # TODO: this is broken :)
             # Normalize the capitalization of folder names
             full_destination = self._normalize(
                 full_destination, os.path.join(mod.location, "Data")
