@@ -652,6 +652,7 @@ class Controller:
             # Evaluate the flags every loop to ensure the visible pages and selected options
             # are always up to date. This will ensure the proper files are chosen later as well.
             flags = self._fomod_get_flags(steps)
+
             visible_pages = self._fomod_get_pages(steps, flags)
 
             # Only exit loop after determining which flags are set and pages are shown.

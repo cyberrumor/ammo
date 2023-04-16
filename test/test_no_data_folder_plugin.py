@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from common import mod_extracts_files, mod_installs_files
 
-MOD = "no_data_folder_plugin.7z"
+MOD = "no_data_folder_plugin"
 EXTRACT_FILES = [
     "no_data_folder_plugin.esp",
 ]

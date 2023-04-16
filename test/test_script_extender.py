@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from common import mod_extracts_files, mod_installs_files
 
-MOD = "mock_script_extender.7z"
+MOD = "mock_script_extender"
 FILES = [
     "Data/Scripts/Source/Game.psc",
     "Data/Scripts/game.pex",

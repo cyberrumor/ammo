@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from common import mod_extracts_files, mod_installs_files
 
-MOD = "mock_skyui.7z"
+MOD = "mock_skyui"
 EXTRACT_FILES = [
     "fomod/no_module_conf.txt",
     "some_plugin.esp",

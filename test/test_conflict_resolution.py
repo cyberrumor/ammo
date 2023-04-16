@@ -2,8 +2,8 @@
 import os
 from common import AmmoController
 
-MOD_1 = "conflict_1.7z"
-MOD_2 = "conflict_2.7z"
+MOD_1 = "conflict_1"
+MOD_2 = "conflict_2"
 
 FILES = [
     "Data/textures/mock_texture.nif",
@@ -20,11 +20,12 @@ def test_duplicate_plugin():
     with AmmoController() as controller:
         # Install both mods
         for mod in [MOD_1, MOD_2]:
-            mod_index_download = [i.name for i in controller.downloads].index(mod)
+            mod_index_download = [i.name for i in controller.downloads].index(
+                mod + ".7z"
+            )
             controller.install(mod_index_download)
 
-            mod_name = mod.strip(".7z")
-            mod_index = [i.name for i in controller.mods].index(mod_name)
+            mod_index = [i.name for i in controller.mods].index(mod)
 
             controller.activate("mod", mod_index)
             # Ensure there is only one esp
@@ -43,11 +44,12 @@ def test_conflict_resolution():
     with AmmoController() as controller:
         # Install both mods
         for mod in [MOD_1, MOD_2]:
-            mod_index_download = [i.name for i in controller.downloads].index(mod)
+            mod_index_download = [i.name for i in controller.downloads].index(
+                mod + ".7z"
+            )
             controller.install(mod_index_download)
 
-            mod_name = mod.strip(".7z")
-            mod_index = [i.name for i in controller.mods].index(mod_name)
+            mod_index = [i.name for i in controller.mods].index(mod)
 
             controller.activate("mod", mod_index)
             controller.commit()

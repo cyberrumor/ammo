@@ -84,13 +84,14 @@ def mod_extracts_files(mod_name, files):
     """
     with AmmoController() as controller:
         # install the mod
-        mod_index_download = [i.name for i in controller.downloads].index(mod_name)
+        mod_index_download = [i.name for i in controller.downloads].index(
+            mod_name + ".7z"
+        )
         controller.install(mod_index_download)
 
         # Assert the mod extracted to the expected place
-        extracted_mod_name = mod_name.strip(".7z")
-        assert extracted_mod_name == controller.mods[0].name
-        assert os.path.exists(os.path.join(controller.mods_dir, extracted_mod_name))
+        assert mod_name == controller.mods[0].name
+        assert os.path.exists(os.path.join(controller.mods_dir, mod_name))
 
         for file in files:
             expected_file = os.path.join(controller.mods[0].location, file)
@@ -113,10 +114,12 @@ def mod_installs_files(mod_name, files):
     """
     with AmmoController() as controller:
         # install the mod
-        mod_index_download = [i.name for i in controller.downloads].index(mod_name)
+        mod_index_download = [i.name for i in controller.downloads].index(
+            mod_name + ".7z"
+        )
         controller.install(mod_index_download)
-
-        controller.activate("mod", 0)
+        mod_index = [i.name for i in controller.mods].index(mod_name)
+        controller.activate("mod", mod_index)
 
         # activate any plugins this mod has
         for plugin in range(len(controller.plugins)):
@@ -141,6 +144,60 @@ def mod_installs_files(mod_name, files):
             ), f"Detected broken symlink: {expected_file}"
 
 
+def fomod_selections_choose_files(mod_name, files, selections=[]):
+    """
+    Configure a fomod with flags, using default flags if unspecified.
+
+    Test that this causes all and only all of 'files' to exist,
+    relative to the mod's local data directory.
+
+    selections is a list of {"page": <page_number>, "option": <selection index>}
+    """
+    with AmmoController() as controller:
+        mod_index_download = [i.name for i in controller.downloads].index(
+            mod_name + ".7z"
+        )
+        controller.install(mod_index_download)
+
+        mod_index = [i.name for i in controller.mods].index(mod_name)
+        mod = controller.mods[mod_index]
+        try:
+            shutil.rmtree(os.path.join(mod.location, "Data"))
+        except FileNotFoundError:
+            pass
+        tree = ElementTree.parse(mod.modconf)
+        xml_root_node = tree.getroot()
+        steps = controller._fomod_get_steps(xml_root_node)
+        for selection in selections:
+            flags = controller._fomod_get_flags(steps)
+            visible_pages = controller._fomod_get_pages(steps, flags)
+            page = steps[visible_pages[selection["page"]]]
+            controller._fomod_select(page, selection["option"])
+
+        flags = controller._fomod_get_flags(steps)
+        install_nodes = controller._fomod_get_nodes(xml_root_node, steps, flags)
+        controller._fomod_install_files(mod_index, install_nodes)
+
+        # Check that all the expected files exist.
+        for file in files:
+            expected_file = os.path.join(mod.location, file)
+            if not os.path.exists(expected_file):
+                # print the files that _do_ exist to show where things ended up
+                for parent_dir, folders, actual_files in os.walk(mod.location):
+                    print(f"{parent_dir} folders: {folders}")
+                    print(f"{parent_dir} files: {actual_files}")
+
+                print(f"expected: {expected_file}")
+                raise FileNotFoundError(expected_file)
+
+        # Check that no unexpected files exist.
+        for path, folders, filenames in os.walk(os.path.join(mod.location, "Data")):
+            for file in filenames:
+                exists = os.path.join(path, file)
+                local_exists = exists.split(mod.location)[-1].lstrip("/")
+                assert local_exists in files, f"Got an extra file: {local_exists}"
+
+
 def install_everything(controller):
     """
     Helper function that installs everything from downloads,
@@ -151,14 +208,11 @@ def install_everything(controller):
         index = controller.downloads.index(download)
         controller.install(index)
 
-    # activate everything
+    # activate everything that's not a fomod.
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            assert(
-                controller.activate("mod", index) is True
-            ), "Unable to activate a mod"
-
+            assert controller.activate("mod", index) is True, "Unable to activate a mod"
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)
@@ -199,26 +253,3 @@ def install_mod(controller, mod_name):
     controller.commit()
 
     return mod_index
-
-
-def fomod_configures_files(controller, mod_index, files):
-    """
-    Helper function that configures a fomod with default options.
-    """
-    controller.deactivate("mod", mod_index)
-    controller.commit()
-    controller.refresh()
-    mod = controller.mods[mod_index]
-    try:
-        shutil.rmtree(os.path.join(mod.location, "Data"))
-    except FileNotFoundError:
-        pass
-    tree = ElementTree.parse(mod.modconf)
-    xml_root_node = tree.getroot()
-    steps = controller._fomod_get_steps(xml_root_node)
-    flags = controller._fomod_get_flags(steps)
-    _visible_pages = controller._fomod_get_pages(steps, flags)
-
-    install_nodes = controller._fomod_get_nodes(xml_root_node, steps, flags)
-    controller._fomod_install_files(mod_index, install_nodes)
-    controller.refresh()
