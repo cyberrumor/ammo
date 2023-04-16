@@ -5,8 +5,8 @@ import pytest
 from common import (
     AmmoController,
     install_everything,
-    install_normal_mod_active,
-    install_normal_mod_inactive,
+    install_mod,
+    extract_mod,
 )
 
 
@@ -61,7 +61,7 @@ def test_activate_validation():
     Install a mod, then check various arguments to "activate" for validity
     """
     with AmmoController() as controller:
-        mod_index = install_normal_mod_inactive(controller)
+        mod_index = extract_mod(controller, "normal_mod")
 
         # Activate valid mod
         assert (
@@ -93,7 +93,10 @@ def test_deactivate_validation():
     Install a mod, then check various arguments to "deactivate" for validity
     """
     with AmmoController() as controller:
-        mod_index, plugin_index = install_normal_mod_active(controller)
+        mod_index = install_mod(controller, "normal_mod")
+        plugin_index = [i.name for i in controller.plugins].index(
+            controller.mods[mod_index].plugins[0]
+        )
 
         # valid deactivate plugin
         assert (
@@ -134,7 +137,7 @@ def test_delete_validation():
     Delete a valid and invalid mod and download
     """
     with AmmoController() as controller:
-        install_normal_mod_active(controller)
+        install_mod(controller, "normal_mod")
 
         # delete mod out of range
         with pytest.raises(IndexError):
@@ -205,10 +208,6 @@ def test_no_components_validation():
         with pytest.raises(IndexError):
             controller.deactivate("plugin", 0)
 
-        # attempt to configure a non-existing mod
-        with pytest.raises(IndexError):
-            controller._fomod_get_root_node(0)
-
 
 def test_no_install_twice():
     """
@@ -216,7 +215,7 @@ def test_no_install_twice():
     Explicitly test that this is not allowed.
     """
     with AmmoController() as controller:
-        install_normal_mod_active(controller)
+        install_mod(controller, "normal_mod")
 
         with pytest.raises(FileExistsError):
-            install_normal_mod_active(controller)
+            install_mod(controller, "normal_mod")

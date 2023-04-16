@@ -3,8 +3,8 @@ import pytest
 from common import (
     AmmoController,
     install_everything,
-    install_normal_mod_active,
-    install_normal_mod_inactive,
+    install_mod,
+    extract_mod,
 )
 
 
@@ -16,7 +16,7 @@ def test_pending_change_restrictions():
     Test that the commands configure, delete, and install are blocked.
     """
     with AmmoController() as controller:
-        install_normal_mod_active(controller)
+        install_mod(controller, "normal_mod")
         controller.changes = True
 
         with pytest.raises(AssertionError):
@@ -44,14 +44,14 @@ def test_pending_change_activate():
     unless it's to activate a component that was already activated.
     """
     with AmmoController() as controller:
-        install_normal_mod_active(controller)
+        install_mod(controller, "normal_mod")
         controller.activate("mod", 0)
         assert (
             controller.changes is False
         ), "activate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
-        install_normal_mod_inactive(controller)
+        extract_mod(controller, "normal_mod")
         controller.activate("mod", 0)
         assert (
             controller.changes is True
@@ -64,14 +64,14 @@ def test_pending_change_deactivate():
     unless it's to deactivate an inactive component.
     """
     with AmmoController() as controller:
-        install_normal_mod_inactive(controller)
+        extract_mod(controller, "normal_mod")
         controller.deactivate("mod", 0)
         assert (
             controller.changes is False
         ), "deactivate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
-        install_normal_mod_active(controller)
+        install_mod(controller, "normal_mod")
         controller.deactivate("mod", 0)
         assert (
             controller.changes is True
@@ -116,6 +116,6 @@ def test_pending_change_delete():
     Tests that delete does not create a pending change.
     """
     with AmmoController() as controller:
-        install_normal_mod_active(controller)
+        install_mod(controller, "normal_mod")
         controller.delete("mod", 0)
         assert controller.changes is False, "Delete command created a pending change."

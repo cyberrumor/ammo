@@ -63,7 +63,7 @@ At any time from the interactive shell, you can type `help` to show this menu:
 
 ```
 activate   mod|plugin <index>                 Enabled components will be loaded by game.
-commit                                        Apply and save this configuration.
+commit                                        Apply pending changes.
 configure  <index>                            Configure a fomod.
 deactivate mod|plugin <index>                 Disabled components will not be loaded by game.
 delete     mod|download <index>               Removes specified file from the filesystem.
@@ -72,7 +72,7 @@ find       [<keyword> ...]                    Show only components with any keyw
 help                                          Show this menu.
 install    <index>                            Extract and manage an archive from ~/Downloads.
 move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
-refresh                                       Reload configuration and files from disk.
+refresh                                       Abandon pending changes.
 vanilla                                       Disable all managed components and clean up.
 ```
 

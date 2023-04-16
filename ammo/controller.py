@@ -348,60 +348,6 @@ class Controller:
                 visible_pages.append(page)
         return visible_pages
 
-    def _fomod_get_root_node(self, index):
-        """
-        Returns false if there is an issue preventing fomod configuration.
-        Otherwise, returns the root node of the parsed ModuleConfig.xml.
-        """
-        mod = self.mods[int(index)]
-        if not mod.fomod:
-            print("'configure' was called on something other than a fomod. Aborting.")
-            return False
-
-        if not mod.modconf:
-            print("Unable to find ModuleConfig.xml for this fomod.")
-            print("Please configure manually in:")
-            print(mod.location)
-            print(
-                "Once there is a data dir inside that folder with the desired files in place,"
-            )
-            print("refresh and try again.")
-            return False
-
-        # If there is already a Data dir in the mod folder,
-        # warn that this is the point of no return.
-        if mod.has_data_dir:
-            print("This has been configured previously.")
-            choice = (
-                input("Discard previous configuration and continue? [y/n]: ").lower()
-                == "y"
-            )
-            if not choice:
-                print("No changes made.")
-                return False
-
-            # Clean up previous configuration.
-            try:
-                shutil.rmtree(os.path.join(mod.location, "Data"))
-            except FileNotFoundError:
-                pass
-
-            # disable this mod and commit to prevent polluting the data dir
-            self.deactivate("mod", index)
-            self.commit()
-            self.refresh()
-
-        # Parse the fomod installer.
-        try:
-            tree = ElementTree.parse(mod.modconf)
-            root = tree.getroot()
-        except:
-            print("This mod's ModuleConfig.xml is malformed.")
-            print("Please configure manually, refresh, and try again.")
-            return False
-
-        return root
-
     def _fomod_get_steps(self, xml_root_node) -> dict:
         """
         Get a dictionary representing every install step for this fomod.
@@ -666,10 +612,28 @@ class Controller:
         # This has to run a hard refresh for now, so warn if there are uncommitted changes
         assert self.changes is False
 
-        # TODO: find out which error this will raise and catch it somewhere else
-        if not (xml_root_node := self._fomod_get_root_node(index)):
-            # There was some issue preventing this from being configured.
-            return False
+        # Since there must be a hard refresh after the fomod wizard to load the mod's new
+        # files, deactivate this mod and commit changes. This prevents a scenario where
+        # the user could re-configure a fomod (thereby changing mod.location/Data),
+        # and quit ammo without running 'commit', which could leave broken symlinks in their
+        # game directory.
+        self.deactivate("mod", index)
+        self.commit()
+        self.refresh()
+
+        mod = self.mods[int(index)]
+        if not mod.fomod:
+            raise TypeError
+
+        # Clean up previous configuration, if it exists.
+        try:
+            shutil.rmtree(os.path.join(mod.location, "Data"))
+        except FileNotFoundError:
+            pass
+
+        # Parse the fomod installer.
+        tree = ElementTree.parse(mod.modconf)
+        xml_root_node = tree.getroot()
 
         module_name = xml_root_node.find("moduleName").text
         steps = self._fomod_get_steps(xml_root_node)
@@ -971,3 +935,4 @@ class Controller:
             self.mods_dir,
             self.downloads_dir,
         )
+        return True

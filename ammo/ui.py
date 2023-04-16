@@ -2,6 +2,7 @@
 import inspect
 import os
 import sys
+from xml.etree import ElementTree
 
 
 class UI:
@@ -230,7 +231,11 @@ class UI:
                     input("[Enter]")
 
                 except TypeError:
-                    print("Expected a different component.")
+                    print("invalid component for that command")
+                    input("[Enter]")
+
+                except ElementTree.ParseError:
+                    print("This mod's ModuleConfig.xml is malformed.")
                     input("[Enter]")
 
         except KeyboardInterrupt:

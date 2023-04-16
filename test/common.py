@@ -2,6 +2,7 @@
 import os
 import sys
 import shutil
+from xml.etree import ElementTree
 
 sys.path.append(os.path.abspath("../ammo"))
 from controller import Controller
@@ -132,7 +133,6 @@ def mod_installs_files(mod_name, files):
                     print(f"{parent_dir} files: {actual_files}")
 
                 print(f"expected: {expected_file}")
-
                 raise FileNotFoundError(expected_file)
 
             # Catch any broken symlinks.
@@ -163,35 +163,58 @@ def install_everything(controller):
     controller.commit()
 
 
-def install_normal_mod_inactive(controller):
+def extract_mod(controller, mod_name):
+    """
+    Helper function that installs a mod by name.
+
+    Returns the index the mod inhabits.
+    """
+    index = [i.name for i in controller.downloads].index(f"{mod_name}.7z")
+    controller.install(index)
+    mod_index = [i.name for i in controller.mods].index(mod_name)
+    return mod_index
+
+
+def install_mod(controller, mod_name):
     """
     Helper function that installs a normal mod,
-    then activates all mods and plugins.
+    then activates it and all plugins associated with it.
+
+    Returns the index the mod inhabits.
     """
-    index = [i.name for i in controller.downloads].index("normal_mod.7z")
+    index = [i.name for i in controller.downloads].index(f"{mod_name}.7z")
     controller.install(index)
 
-    mod_index = [i.name for i in controller.mods].index("normal_mod")
+    mod_index = [i.name for i in controller.mods].index(mod_name)
+    controller.activate("mod", mod_index)
+
+    for plugin in controller.mods[mod_index].plugins:
+        plugin_index = [i.name for i in controller.plugins].index(plugin)
+        controller.activate("plugin", plugin_index)
 
     controller.commit()
 
     return mod_index
 
 
-def install_normal_mod_active(controller):
+def fomod_configures_files(controller, mod_index, files):
     """
-    Helper function that installs a normal mod,
-    then activates all mods and plugins.
+    Helper function that configures a fomod with default options.
     """
-    index = [i.name for i in controller.downloads].index("normal_mod.7z")
-    controller.install(index)
-
-    mod_index = [i.name for i in controller.mods].index("normal_mod")
-    controller.activate("mod", mod_index)
-
-    plugin_index = [i.name for i in controller.plugins].index("normal_plugin.esp")
-    controller.activate("plugin", plugin_index)
-
+    controller.deactivate("mod", mod_index)
     controller.commit()
+    controller.refresh()
+    mod = controller.mods[mod_index]
+    try:
+        shutil.rmtree(os.path.join(mod.location, "Data"))
+    except FileNotFoundError:
+        pass
+    tree = ElementTree.parse(mod.modconf)
+    xml_root_node = tree.getroot()
+    steps = controller._fomod_get_steps(xml_root_node)
+    flags = controller._fomod_get_flags(steps)
+    _visible_pages = controller._fomod_get_pages(steps, flags)
 
-    return mod_index, plugin_index
+    install_nodes = controller._fomod_get_nodes(xml_root_node, steps, flags)
+    controller._fomod_install_files(mod_index, install_nodes)
+    controller.refresh()
