@@ -153,8 +153,12 @@ def install_everything(controller):
 
     # activate everything
     for mod in controller.mods:
-        index = controller.mods.index(mod)
-        controller.activate("mod", index)
+        if not mod.fomod:
+            index = controller.mods.index(mod)
+            assert(
+                controller.activate("mod", index) is True
+            ), "Unable to activate a mod"
+
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)

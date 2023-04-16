@@ -81,3 +81,7 @@ vanilla                                       Disable all managed components and
 - When you install a file from ~/Downloads, the filename may be sanitized.
 - This will remove symlinks and empty directories from your game dir.
 
+# License
+GNU General Public License v2, with the exception of some of the mock mods used for testing,
+which are subject to their packaged license (if it exists), which also contains credits.
+

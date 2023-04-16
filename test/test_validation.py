@@ -170,16 +170,6 @@ def test_delete_validation():
         ), "valid input was considered an error"
 
 
-def test_configure_validation():
-    """
-    Tests running configure against invalid fomods.
-    """
-    # TODO: The configure function uniquely has an input loop.
-    # Tests should be created for bad input, but they must be configured
-    # with a timeout so pytest doesn't hang on that loop.
-    pass
-
-
 def test_no_components_validation():
     """
     In the absence of any mods, plugins, or downloads,
