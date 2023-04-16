@@ -191,50 +191,25 @@ class Controller:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
         return True
 
-    def _get_validated_components(self, component_type, mod_index):
+    def _get_validated_components(self, component_type) -> list:
         """
         Expects either the string "plugin" or the string "mod",
         and an index. If the index is within the valid range
         for that type of component, return that entire component list.
         Otherwise, return False.
-
-        TODO: make this return an empty list instead, so there aren't multiple
-        return types.
         """
-        index = None
-        try:
-            index = int(mod_index)
-            if index < 0:
-                raise ValueError
-        except ValueError:
-            print("Expected a number greater than or equal to 0")
-            return False
-
         if component_type not in ["plugin", "mod"]:
-            print(f"Expected 'plugin' or 'mod', got arg {component_type}")
-            return False
+            raise TypeError
+
         components = self.plugins if component_type == "plugin" else self.mods
-        if len(components) == 0:
-            print(f"Install mods to '{self.mods_dir}' to manage them with ammo.")
-            print("To see plugins, the mods they belong to must be activated.")
-            return False
-
-        if index > len(components) - 1:
-            print(f"Expected int 0 through {len(components) - 1} (inclusive)")
-            return False
-
         return components
 
-    def _set_component_state(self, component_type, mod_index, state):
+    def _set_component_state(self, component_type, mod_index, state) -> bool:
         """
         Activate or deactivate a component.
         If a mod with plugins was deactivated, remove those plugins from self.plugins.
         """
-        if not (
-            components := self._get_validated_components(component_type, mod_index)
-        ):
-            print(f"Unable to find that {component_type}.")
-            return False
+        components = self._get_validated_components(component_type)
         component = components[int(mod_index)]
 
         starting_state = component.enabled
@@ -273,7 +248,7 @@ class Controller:
         self.changes = starting_state != component.enabled
         return True
 
-    def _normalize(self, destination, dest_prefix):
+    def _normalize(self, destination, dest_prefix) -> str:
         """
         Prevent folders with the same name but different case from being created.
         """
@@ -294,7 +269,7 @@ class Controller:
         result = os.path.join(new_dest, file)
         return result
 
-    def _stage(self):
+    def _stage(self) -> dict:
         """
         Returns a dict containing the final symlinks that will be installed.
         """
@@ -329,7 +304,7 @@ class Controller:
 
         return result
 
-    def _clean_data_dir(self):
+    def _clean_data_dir(self) -> bool:
         """
         Removes all symlinks and deletes empty folders.
         """
@@ -353,7 +328,7 @@ class Controller:
         remove_empty_dirs(self.game_dir)
         return True
 
-    def _fomod_get_flags(self, steps):
+    def _fomod_get_flags(self, steps) -> dict:
         """
         Expects a dictionary of fomod install steps.
         Returns a dictionary where keys are flag names and values are flag states.
@@ -368,12 +343,13 @@ class Controller:
                         flags[flag] = plugin["flags"][flag]
         return flags
 
-    def _fomod_get_pages(self, pages, steps, flags):
+    def _fomod_get_pages(self, steps, flags) -> list:
         """
         Returns a list of only fomod pages that should be visible,
         determined by the current flags.
         """
         # Determine which steps should be visible
+        pages = list(steps.keys())
         visible_pages = []
         for page in pages:
             expected_flags = steps[page]["visible"]
@@ -392,11 +368,7 @@ class Controller:
         Returns false if there is an issue preventing fomod configuration.
         Otherwise, returns the root node of the parsed ModuleConfig.xml.
         """
-        if not (components := self._get_validated_components("mod", index)):
-            print("Invalid index.")
-            return False
-
-        mod = components[int(index)]
+        mod = self.mods[int(index)]
         if not mod.fomod:
             print("'configure' was called on something other than a fomod. Aborting.")
             return False
@@ -445,7 +417,7 @@ class Controller:
 
         return root
 
-    def _fomod_get_steps(self, xml_root_node):
+    def _fomod_get_steps(self, xml_root_node) -> dict:
         """
         Get a dictionary representing every install step for this fomod.
         """
@@ -521,7 +493,7 @@ class Controller:
 
         return steps
 
-    def _fomod_get_nodes(self, xml_root_node, steps, flags):
+    def _fomod_get_nodes(self, xml_root_node, steps, flags) -> list:
         """
         Expects xml root node for the fomod, a dictionary representing
         all install steps, and a dictionary representing configured flags.
@@ -591,7 +563,7 @@ class Controller:
 
         return selected_nodes
 
-    def _fomod_flags_match(self, flags, expected_flags):
+    def _fomod_flags_match(self, flags, expected_flags) -> bool:
         """
         Compare actual flags with expected flags to determine whether
         the plugin associated with expected_flags should be included.
@@ -701,26 +673,22 @@ class Controller:
             shutil.copy(v, k)
 
         mod.has_data_dir = True
-        return True
 
-    def configure(self, index):
+
+    def configure(self, index) -> bool:
         """
         Configure a fomod.
         """
-
         # This has to run a hard refresh for now, so warn if there are uncommitted changes
-        if self.changes:
-            print("can't configure fomod when there are unsaved changes.")
-            print("Please run 'commit' and try again.")
-            return False
+        assert self.changes is False
 
+        # TODO: find out which error this will raise and catch it somewhere else
         if not (xml_root_node := self._fomod_get_root_node(index)):
             # There was some issue preventing this from being configured.
             return False
 
         module_name = xml_root_node.find("moduleName").text
         steps = self._fomod_get_steps(xml_root_node)
-        pages = list(steps.keys())
         page_index = 0
 
         command_dict = {
@@ -736,7 +704,7 @@ class Controller:
             # Evaluate the flags every loop to ensure the visible pages and selected options
             # are always up to date. This will ensure the proper files are chosen later as well.
             flags = self._fomod_get_flags(steps)
-            visible_pages = self._fomod_get_pages(pages, steps, flags)
+            visible_pages = self._fomod_get_pages(steps, flags)
 
             # Only exit loop after determining which flags are set and pages are shown.
             if page_index >= len(visible_pages):
@@ -834,30 +802,26 @@ class Controller:
         self.__reset__()
         return True
 
-    def activate(self, mod_or_plugin: Mod | Plugin, index):
+    def activate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
         """
         Enabled components will be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, True)
 
-    def deactivate(self, mod_or_plugin: Mod | Plugin, index):
+    def deactivate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
         """
         Disabled components will not be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, False)
 
-    def delete(self, mod_or_download: Mod | Download, index):
+    def delete(self, mod_or_download: Mod | Download, index) -> bool:
         """
         Removes specified file from the filesystem.
         """
-        if self.changes:
-            print("Changes must be committed before deleting a component, as this will")
-            print("force a data reload from disk.")
-            return False
+        assert self.changes is False
 
         if mod_or_download not in ["download", "mod"]:
-            print(f"Expected either 'download' or 'mod', got '{mod_or_download}'")
-            return False
+            raise TypeError
 
         if mod_or_download == "mod":
             if not self.deactivate("mod", index):
@@ -869,51 +833,20 @@ class Controller:
             shutil.rmtree(mod.location)
             self.commit()
         else:
-            if not self.downloads:
-                print("There are no downloads to delete.")
-                return False
-            error = f"Expected a number between 0 and {len(self.downloads) - 1} (inclusive)."
-            try:
-                index = int(index)
-                assert index >= 0
-                assert index <= len(self.downloads) - 1
-            except (ValueError, AssertionError):
-                print(error)
-                return False
-
-            name = self.downloads[index].name
-            try:
-                os.remove(self.downloads[index].location)
-                self.downloads.pop(index)
-            except IsADirectoryError:
-                print(f"Error deleting {name}, it is a directory not an archive!")
-                return False
+            index = int(index)
+            os.remove(self.downloads[index].location)
+            self.downloads.pop(index)
         return True
 
-    def install(self, index):
+    def install(self, index) -> bool:
         """
         Extract and manage an archive from ~/Downloads.
         """
-        if self.changes:
-            print("commit changes to disk before installing a mod,")
-            print("as this will force a data reload from disk.")
-            return False
+        assert self.changes is False
 
-        if not self.downloads:
-            print(f"{self.downloads_dir} has no eligible files.")
-            return False
-
-        try:
-            index = int(index)
-        except ValueError:
-            print("expected an integer")
-            return False
-
-        if index > len(self.downloads) - 1:
-            print(f"Expected int 0 through {len(self.downloads) - 1} (inclusive)")
-            return False
-
+        index = int(index)
         download = self.downloads[index]
+
         if not download.sane:
             # Sanitize the download name to guarantee compatibility with 7z syntax.
             fixed_name = download.name.replace(" ", "_")
@@ -937,18 +870,11 @@ class Controller:
 
         extract_to = os.path.join(self.mods_dir, output_folder)
         if os.path.exists(extract_to):
-            print(
-                "This mod already exists. To reinstall, you must first delete the mod."
-            )
-            return False
+            raise FileExistsError
 
         extracted_files = []
-        try:
-            os.system(f"7z x '{download.location}' -o'{extract_to}'")
-            extracted_files = os.listdir(extract_to)
-        except FileNotFoundError:
-            print("There was an issue extracting files. Is this a real archive?")
-            return False
+        os.system(f"7z x '{download.location}' -o'{extract_to}'")
+        extracted_files = os.listdir(extract_to)
 
         if (
             len(extracted_files) == 1
@@ -979,25 +905,26 @@ class Controller:
         self.__reset__()
         return True
 
-    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index):
+    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index) -> bool:
         """
         Larger numbers win file conflicts.
         """
-        components = None
-        for index in [from_index, to_index]:
-            components = self._get_validated_components(mod_or_plugin, index)
-            if not components:
-                return False
+        components = self._get_validated_components(mod_or_plugin)
 
+        # Since this operation it not atomic, validation must be performed
+        # before anything is attempted to ensure nothing can become mangled.
         old_ind = int(from_index)
         new_ind = int(to_index)
-
+        if new_ind > len(components) - 1:
+            raise IndexError
+        if old_ind > len(components) - 1:
+            raise IndexError
         component = components.pop(old_ind)
         components.insert(new_ind, component)
         self.changes = True
         return True
 
-    def vanilla(self):
+    def vanilla(self) -> bool:
         """
         Disable all managed components and clean up.
         """
@@ -1017,7 +944,7 @@ class Controller:
         self._clean_data_dir()
         return True
 
-    def commit(self):
+    def commit(self) -> bool:
         """
         Apply and save this configuration.
         """
@@ -1047,7 +974,7 @@ class Controller:
         # Always return False so status messages persist.
         return False
 
-    def refresh(self):
+    def refresh(self) -> bool:
         """
         Reload configuration and files from disk.
         """

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import pytest
+
 from common import (
     AmmoController,
     install_everything,
@@ -35,26 +37,23 @@ def test_move_validation():
 
         # Test invalid move mod input
         highest = len(controller.mods)
-        assert (
-            controller.move("mod", 0, highest) is False
-        ), "issue moving mod to outside of range"
-        assert (
-            controller.move("mod", highest, 0) is False
-        ), "issue moving mod from outside of range"
+        with pytest.raises(IndexError):
+            controller.move("mod", 0, highest)
+
+        with pytest.raises(IndexError):
+            controller.move("mod", highest, 0)
 
         # Test invalid move plugin input
         highest = len(controller.plugins)
-        assert (
-            controller.move("plugin", 0, highest) is False
-        ), "issue moving plugin to outside of range"
-        assert (
-            controller.move("plugin", highest, 0) is False
-        ), "issue moving plugin from outside of range"
+        with pytest.raises(IndexError):
+            controller.move("plugin", 0, highest)
+
+        with pytest.raises(IndexError):
+            controller.move("plugin", highest, 0)
 
         # Test invalid move component type
-        assert (
-            controller.move("download", 0, 1) is False
-        ), "issue while attempting to move a download"
+        with pytest.raises(TypeError):
+            controller.move("download", 0, 1)
 
 
 def test_activate_validation():
@@ -77,14 +76,16 @@ def test_activate_validation():
         ), "valid input was considered an error"
 
         # Activate invalid mod
-        assert (
-            controller.activate("mod", 1000) is False
-        ), "issue attempting to activate mod out of range"
+        with pytest.raises(IndexError):
+            controller.activate("mod", 1000)
 
         # Activate invalid plugin
-        assert (
-            controller.activate("plugin", 1000) is False
-        ), "issue attempting to activate plugin out of range"
+        with pytest.raises(IndexError):
+            controller.activate("plugin", 1000)
+
+        # Activate invalid component type
+        with pytest.raises(TypeError):
+            controller.activate("download", 0)
 
 
 def test_deactivate_validation():
@@ -105,14 +106,16 @@ def test_deactivate_validation():
         ), "valid input was considered an error"
 
         # invalid deactivate plugin.
-        assert (
-            controller.deactivate("plugin", plugin_index) is False
-        ), "valid input was considered invalid, did the plugin fail to disappear?"
+        with pytest.raises(IndexError):
+            controller.deactivate("plugin", plugin_index)
 
         # invalid deactivate mod
-        assert (
-            controller.deactivate("mod", 1000) is False
-        ), "issue attempting to deactivate mod out of range"
+        with pytest.raises(IndexError):
+            controller.deactivate("mod", 1000)
+
+        # Deactivate invalid component type
+        with pytest.raises(TypeError):
+            controller.deactivate("download", 0)
 
 
 def test_install_validation():
@@ -122,9 +125,8 @@ def test_install_validation():
     with AmmoController() as controller:
         assert controller.install(0) is True, "valid input was considered an error"
 
-        assert (
-            controller.install(1000) is False
-        ), "issue attempting to install mod out of range"
+        with pytest.raises(IndexError):
+            controller.install(1000)
 
 
 def test_delete_validation():
@@ -135,7 +137,8 @@ def test_delete_validation():
         install_normal_mod_active(controller)
 
         # delete mod out of range
-        assert controller.delete("mod", 1) is False, "issue deleting mod out of range"
+        with pytest.raises(IndexError):
+            controller.delete("mod", 1000)
 
         # delete mod in range
         assert (
@@ -143,13 +146,17 @@ def test_delete_validation():
         ), "valid input was considered an error"
 
         # delete download out of range
-        assert (
-            controller.delete("download", 1000) is False
-        ), "issue deleting download out of range"
+        with pytest.raises(IndexError):
+            controller.delete("download", 1000)
+
+
+        # Delete invalid component type
+        with pytest.raises(TypeError):
+            controller.delete("plugin", 0)
 
         # generate an expendable download file
         with open(os.path.join(controller.downloads_dir, "temp_download.7z"), "w") as f:
-            f.write("zzz")
+            f.write("")
 
         controller.refresh()
 
@@ -161,6 +168,16 @@ def test_delete_validation():
         ), "valid input was considered an error"
 
 
+def test_configure_validation():
+    """
+    Tests running configure against invalid fomods.
+    """
+    # TODO: The configure function uniquely has an input loop.
+    # Tests should be created for bad input, but they must be configured
+    # with a timeout so pytest doesn't hang on that loop.
+    pass
+
+
 def test_no_components_validation():
     """
     In the absence of any mods, plugins, or downloads,
@@ -168,35 +185,27 @@ def test_no_components_validation():
     """
     with AmmoController() as controller:
         # attempt to move mod/plugin
-        assert (
-            controller.move("mod", 0, 1) is False
-        ), "issue while attempting to move mod when there are no components"
-        assert (
-            controller.move("plugin", 0, 1) is False
-        ), "issue while attempting to move plugin when there are no components"
+        with pytest.raises(IndexError):
+            controller.move("mod", 0, 1)
+        with pytest.raises(IndexError):
+            controller.move("plugin", 0, 1)
 
         # attempt to delete mod
-        assert (
-            controller.delete("mod", 0) is False
-        ), "issue while attempting to delete a mod when there are no components"
+        with pytest.raises(IndexError):
+            controller.delete("mod", 0)
 
         # attempt to activate mod/plugin
-        assert (
-            controller.activate("mod", 0) is False
-        ), "issue while attempting to activate a mod when there are no components"
-        assert (
-            controller.activate("plugin", 0) is False
-        ), "issue while attempting to activate a plugin when there are no components"
+        with pytest.raises(IndexError):
+            controller.activate("mod", 0)
+        with pytest.raises(IndexError):
+            controller.activate("plugin", 0)
 
         # attempt to deactivate mod/plugin
-        assert (
-            controller.deactivate("mod", 0) is False
-        ), "issue while attempting to deactivate a mod when there are no components"
-        assert (
-            controller.deactivate("plugin", 0) is False
-        ), "issue while attempting to deactivate a plugin when there are no components"
+        with pytest.raises(IndexError):
+            controller.deactivate("mod", 0)
+        with pytest.raises(IndexError):
+            controller.deactivate("plugin", 0)
 
         # attempt to configure a non-existing mod
-        assert (
-            controller._fomod_get_root_node(0) is False
-        ), "issue while attempting to configure a mod when there are no components"
+        with pytest.raises(IndexError):
+            controller._fomod_get_root_node(0)

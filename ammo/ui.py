@@ -164,6 +164,9 @@ class UI:
             print()
 
     def repl(self):
+        """
+        Read, execute, print loop
+        """
         cmd: str = ""
         try:
             while True:
@@ -197,11 +200,38 @@ class UI:
                 if "instance" in command:
                     args.insert(0, command["instance"])
 
-                if not command["func"](*args):
-                    # Functions that fail return False. This input() call allows the user
-                    # to see the error before their screen is cleared.
+                try:
+                    ret = command["func"](*args)
+                    if not ret:
+                        input("[Enter]")
+
+                except IndexError:
+                    print("Index out of range.")
                     input("[Enter]")
-                    continue
+
+                except ValueError:
+                    print("Expected a number and got a string.")
+                    input("[Enter]")
+
+                except FileExistsError:
+                    print("Resource exists. Try removing it first.")
+                    input("[Enter]")
+
+                except FileNotFoundError:
+                    print("Failed to extract. Is this a real archive?")
+                    input("[Enter]")
+
+                except IsADirectoryError:
+                    print("Failed to delete directory disguised as archive.")
+                    input("[Enter]")
+
+                except AssertionError:
+                    print("Changes must be committed first.")
+                    input("[Enter]")
+
+                except TypeError:
+                    print("Expected a different component.")
+                    input("[Enter]")
 
         except KeyboardInterrupt:
             if self.controller.changes:
