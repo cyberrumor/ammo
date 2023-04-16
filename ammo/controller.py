@@ -164,21 +164,6 @@ class Controller:
         self.downloads = downloads
         self.changes = False
 
-    def __reset__(self):
-        """
-        Convenience function that reinitializes the controller instance.
-        """
-        self.__init__(
-            self.name,
-            self.game_dir,
-            self.data_dir,
-            self.conf,
-            self.dlc_file,
-            self.plugin_file,
-            self.mods_dir,
-            self.downloads_dir,
-        )
-
     def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
@@ -404,7 +389,7 @@ class Controller:
             # disable this mod and commit to prevent polluting the data dir
             self.deactivate("mod", index)
             self.commit()
-            self.__reset__()
+            self.refresh()
 
         # Parse the fomod installer.
         try:
@@ -746,7 +731,7 @@ class Controller:
 
             if "exit" == selection:
                 print("Bailed from configuring fomod.")
-                self.__reset__()
+                self.refresh()
                 return False
 
             if "n" == selection:
@@ -799,7 +784,7 @@ class Controller:
         # If _fomod_install_files can rebuild the "files" property of the mod,
         # resetting the controller and preventing configuration when there are unsaved changes
         # will no longer be required.
-        self.__reset__()
+        self.refresh()
         return True
 
     def activate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
@@ -902,7 +887,7 @@ class Controller:
                 filename = os.path.join(extract_to, extracted_files[0], file)
                 shutil.move(filename, extract_to)
 
-        self.__reset__()
+        self.refresh()
         return True
 
     def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index) -> bool:
@@ -946,7 +931,7 @@ class Controller:
 
     def commit(self) -> bool:
         """
-        Apply and save this configuration.
+        Apply pending changes.
         """
         self._save_order()
         stage = self._stage()
@@ -976,19 +961,15 @@ class Controller:
 
     def refresh(self) -> bool:
         """
-        Reload configuration and files from disk.
+        Abandon pending changes.
         """
-        if self.changes:
-            print("There are unsaved changes!")
-            print("refreshing reloads data from disk.")
-            if (
-                input("reload data from disk and lose unsaved changes? [y/n]: ").lower()
-                == "y"
-            ):
-                self.__reset__()
-                return True
-            return False
-
-        self.__reset__()
-
-        return True
+        self.__init__(
+              self.name,
+              self.game_dir,
+              self.data_dir,
+              self.conf,
+              self.dlc_file,
+              self.plugin_file,
+              self.mods_dir,
+              self.downloads_dir,
+          )

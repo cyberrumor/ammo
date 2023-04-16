@@ -209,3 +209,14 @@ def test_no_components_validation():
         # attempt to configure a non-existing mod
         with pytest.raises(IndexError):
             controller._fomod_get_root_node(0)
+
+def test_no_install_twice():
+    """
+    Attempting to install a mod that is already installed isn't supported.
+    Explicitly test that this is not allowed.
+    """
+    with AmmoController() as controller:
+        install_normal_mod_active(controller)
+
+        with pytest.raises(FileExistsError):
+            install_normal_mod_active(controller)
