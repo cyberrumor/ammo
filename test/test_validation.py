@@ -198,5 +198,5 @@ def test_no_components_validation():
 
         # attempt to configure a non-existing mod
         assert (
-            controller._fomod_validated(0) is False
+            controller._fomod_get_root_node(0) is False
         ), "issue while attempting to configure a mod when there are no components"

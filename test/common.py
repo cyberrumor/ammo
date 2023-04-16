@@ -96,7 +96,7 @@ def mod_extracts_files(mod_name, files):
 
             if not os.path.exists(expected_file):
                 # print the files that _do_ exist to show where things ended up
-                for parent_dir, folders, actual_files in os.walk(controller.mod_dir):
+                for parent_dir, folders, actual_files in os.walk(controller.mods_dir):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
 

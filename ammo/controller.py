@@ -192,6 +192,15 @@ class Controller:
         return True
 
     def _get_validated_components(self, component_type, mod_index):
+        """
+        Expects either the string "plugin" or the string "mod",
+        and an index. If the index is within the valid range
+        for that type of component, return that entire component list.
+        Otherwise, return False.
+
+        TODO: make this return an empty list instead, so there aren't multiple
+        return types.
+        """
         index = None
         try:
             index = int(mod_index)
@@ -219,7 +228,7 @@ class Controller:
     def _set_component_state(self, component_type, mod_index, state):
         """
         Activate or deactivate a component.
-        Returns which plugins need to be added to or removed from self.plugins.
+        If a mod with plugins was deactivated, remove those plugins from self.plugins.
         """
         if not (
             components := self._get_validated_components(component_type, mod_index)
@@ -344,7 +353,11 @@ class Controller:
         remove_empty_dirs(self.game_dir)
         return True
 
-    def _fomod_flags(self, steps):
+    def _fomod_get_flags(self, steps):
+        """
+        Expects a dictionary of fomod install steps.
+        Returns a dictionary where keys are flag names and values are flag states.
+        """
         flags = {}
         for step in steps.values():
             for plugin in step["plugins"]:
@@ -355,28 +368,11 @@ class Controller:
                         flags[flag] = plugin["flags"][flag]
         return flags
 
-    def _fomod_flags_match(self, flags, expected_flags):
+    def _fomod_get_pages(self, pages, steps, flags):
         """
-        Compare actual flags with the flags we expected to determine whether
-        the plugin associated with expected_flags should be included.
+        Returns a list of only fomod pages that should be visible,
+        determined by the current flags.
         """
-        match = False
-        for k, v in expected_flags.items():
-            if k in flags:
-                if flags[k] != v:
-                    if (
-                        "operator" in expected_flags
-                        and expected_flags["operator"] == "and"
-                    ):
-                        # Mismatched flag. Skip this plugin.
-                        return False
-                    # if dep_op is "or" (or undefined), we can try the rest of these.
-                    continue
-                # A single match.
-                match = True
-        return match
-
-    def _fomod_visible_pages(self, pages, steps, flags):
         # Determine which steps should be visible
         visible_pages = []
         for page in pages:
@@ -391,19 +387,7 @@ class Controller:
                 visible_pages.append(page)
         return visible_pages
 
-    def _fomod_handle_selection(self, page, selection):
-        val = not page["plugins"][selection]["selected"]
-        if "SelectExactlyOne" == page["type"]:
-            for i in range(len(page["plugins"])):
-                page["plugins"][i]["selected"] = i == selection
-        elif "SelectAtMostOne" == page["type"]:
-            for i in range(len(page["plugins"])):
-                page["plugins"][i]["selected"] = False
-            page["plugins"][selection]["selected"] = val
-        else:
-            page["plugins"][selection]["selected"] = val
-
-    def _fomod_validated(self, index):
+    def _fomod_get_root_node(self, index):
         """
         Returns false if there is an issue preventing fomod configuration.
         Otherwise, returns the root node of the parsed ModuleConfig.xml.
@@ -461,19 +445,13 @@ class Controller:
 
         return root
 
-    def _fomod_required_files(self, fomod_installer_root_node):
+    def _fomod_get_steps(self, xml_root_node):
         """
-        get a list of files that are always required.
-        """
-        return fomod_installer_root_node.find("requiredInstallFiles")
-
-    def _fomod_install_steps(self, fomod_installer_root_node):
-        """
-        get a native data type (dict) representing this fomod's install stpes.
+        Get a dictionary representing every install step for this fomod.
         """
         steps = {}
         # Find all the install steps
-        for step in fomod_installer_root_node.find("installSteps"):
+        for step in xml_root_node.find("installSteps"):
             for optional_file_groups in step:
                 for group in optional_file_groups:
                     if not (group_of_plugins := group.find("plugins")):
@@ -543,9 +521,118 @@ class Controller:
 
         return steps
 
-    def _fomod_install_files(self, index, to_install):
+    def _fomod_get_nodes(self, xml_root_node, steps, flags):
         """
-        Copy the chosen files 'to_install' from given mod at 'index'
+        Expects xml root node for the fomod, a dictionary representing
+        all install steps, and a dictionary representing configured flags.
+
+        Returns a list of xml nodes for each folder that matched the configured flags.
+        """
+        # Determine which files need to be installed.
+        selected_nodes = []
+
+        # Normal files. If these were selected, install them unless flags disqualify.
+        for step in steps:
+            for plugin in steps[step]["plugins"]:
+                if plugin["selected"]:
+                    if plugin["conditional"]:
+                        # conditional normal file
+                        expected_flags = plugin["flags"]
+
+                        if self._fomod_flags_match(flags, expected_flags):
+                            for folder in plugin["files"]:
+                                selected_nodes.append(folder)
+                    else:
+                        # unconditional file install
+                        for folder in plugin["files"]:
+                            selected_nodes.append(folder)
+
+        # include conditional file installs based on the user choice. These are different from
+        # the normal_files with conditions because these conditions are in a different part of
+        # the xml (they're after all the install steps instead of within them).
+        patterns = []
+        if conditionals := xml_root_node.find("conditionalFileInstalls"):
+            patterns = conditionals.find("patterns")
+        if patterns:
+            for pattern in patterns:
+                dependencies = pattern.find("dependencies")
+                dep_op = dependencies.get("operator")
+                if dep_op:
+                    dep_op = dep_op.lower()
+                expected_flags = {"operator": dep_op}
+                for xml_flag in dependencies:
+                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
+                        "On",
+                        "1",
+                    ]
+
+                # xml_files is a list of folders. The folder objects contain the paths.
+                xml_files = pattern.find("files")
+                if not xml_files:
+                    # can't find files for this, no point in checking whether to include.
+                    continue
+
+                if not expected_flags:
+                    # No requirements for these files to be used.
+                    for folder in xml_files:
+                        selected_nodes.append(folder)
+
+                if self._fomod_flags_match(flags, expected_flags):
+                    for folder in xml_files:
+                        selected_nodes.append(folder)
+
+        if required_files := xml_root_node.find("requiredInstallFiles"):
+            for file in required_files:
+                if file.tag == "files":
+                    for f in file:
+                        selected_nodes.append(f)
+                else:
+                    selected_nodes.append(file)
+
+        return selected_nodes
+
+    def _fomod_flags_match(self, flags, expected_flags):
+        """
+        Compare actual flags with expected flags to determine whether
+        the plugin associated with expected_flags should be included.
+
+        Returns whether the plugin which owns expected_flags matches.
+        """
+        match = False
+        for k, v in expected_flags.items():
+            if k in flags:
+                if flags[k] != v:
+                    if (
+                        "operator" in expected_flags
+                        and expected_flags["operator"] == "and"
+                    ):
+                        # Mismatched flag. Skip this plugin.
+                        return False
+                    # if dep_op is "or" (or undefined), we can try the rest of these.
+                    continue
+                # A single match.
+                match = True
+        return match
+
+    def _fomod_select(self, page, selection):
+        """
+        Toggle the 'selected' switch on appropriate plugins.
+        This logic ensures any constraints on selections are obeyed.
+        """
+        val = not page["plugins"][selection]["selected"]
+        if "SelectExactlyOne" == page["type"]:
+            for i in range(len(page["plugins"])):
+                page["plugins"][i]["selected"] = i == selection
+        elif "SelectAtMostOne" == page["type"]:
+            for i in range(len(page["plugins"])):
+                page["plugins"][i]["selected"] = False
+            page["plugins"][selection]["selected"] = val
+        else:
+            page["plugins"][selection]["selected"] = val
+
+    def _fomod_install_files(self, index, selected_nodes):
+        """
+        Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's Data folder.
         """
         mod = self.mods[int(index)]
@@ -556,7 +643,7 @@ class Controller:
         os.makedirs(data, exist_ok=True)
 
         stage = {}
-        for node in to_install:
+        for node in selected_nodes:
             pre_stage = {}
 
             # convert the 'source' folder form the xml into a full path
@@ -627,12 +714,12 @@ class Controller:
             print("Please run 'commit' and try again.")
             return False
 
-        if not (fomod_installer_root_node := self._fomod_validated(index)):
+        if not (xml_root_node := self._fomod_get_root_node(index)):
+            # There was some issue preventing this from being configured.
             return False
 
-        required_files = self._fomod_required_files(fomod_installer_root_node)
-        module_name = fomod_installer_root_node.find("moduleName").text
-        steps = self._fomod_install_steps(fomod_installer_root_node)
+        module_name = xml_root_node.find("moduleName").text
+        steps = self._fomod_get_steps(xml_root_node)
         pages = list(steps.keys())
         page_index = 0
 
@@ -645,17 +732,17 @@ class Controller:
         }
 
         while True:
+            os.system("clear")
             # Evaluate the flags every loop to ensure the visible pages and selected options
             # are always up to date. This will ensure the proper files are chosen later as well.
-            flags = self._fomod_flags(steps)
-            visible_pages = self._fomod_visible_pages(pages, steps, flags)
+            flags = self._fomod_get_flags(steps)
+            visible_pages = self._fomod_get_pages(pages, steps, flags)
 
             # Only exit loop after determining which flags are set and pages are shown.
             if page_index >= len(visible_pages):
                 break
 
             info = False
-            os.system("clear")
             page = steps[visible_pages[page_index]]
 
             print(module_name)
@@ -731,76 +818,15 @@ class Controller:
                 continue
 
             # Selection was a valid index command.
-            # toggle the 'selected' switch on appropriate plugins.
             # Whenever a plugin is unselected, re-assess all flags.
-            self._fomod_handle_selection(page, selection)
+            self._fomod_select(page, selection)
 
-        # Determine which files need to be installed.
-        to_install = []
-        if required_files:
-            for file in required_files:
-                if file.tag == "files":
-                    for f in file:
-                        to_install.append(f)
-                else:
-                    to_install.append(file)
-
-        # Normal files. If these were selected, install them unless flags disqualify.
-        for step in steps:
-            for plugin in steps[step]["plugins"]:
-                if plugin["selected"]:
-                    if plugin["conditional"]:
-                        # conditional normal file
-                        expected_flags = plugin["flags"]
-
-                        if self._fomod_flags_match(flags, expected_flags):
-                            for folder in plugin["files"]:
-                                to_install.append(folder)
-                    else:
-                        # unconditional file install
-                        for folder in plugin["files"]:
-                            to_install.append(folder)
-
-        # include conditional file installs based on the user choice. These are different from
-        # the normal_files with conditions because these conditions are set after all of the install
-        # steps instead of inside each install step.
-        patterns = []
-        if conditionals := fomod_installer_root_node.find("conditionalFileInstalls"):
-            patterns = conditionals.find("patterns")
-        if patterns:
-            for pattern in patterns:
-                dependencies = pattern.find("dependencies")
-                dep_op = dependencies.get("operator")
-                if dep_op:
-                    dep_op = dep_op.lower()
-                expected_flags = {"operator": dep_op}
-                for xml_flag in dependencies:
-                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
-                        "On",
-                        "1",
-                    ]
-
-                # xml_files is a list of folders. The folder objects contain the paths.
-                xml_files = pattern.find("files")
-                if not xml_files:
-                    # can't find files for this, no point in checking whether to include.
-                    continue
-
-                if not expected_flags:
-                    # No requirements for these files to be used.
-                    for folder in xml_files:
-                        to_install.append(folder)
-
-                if self._fomod_flags_match(flags, expected_flags):
-                    for folder in xml_files:
-                        to_install.append(folder)
-
-        if not to_install:
+        if not (install_nodes := self._fomod_get_nodes(xml_root_node, steps, flags)):
             print("The configured options failed to map to installable components!")
             return False
 
         # Let the controller stage the chosen files and copy them to the mod's local Data dir.
-        self._fomod_install_files(index, to_install)
+        self._fomod_install_files(index, install_nodes)
 
         # If _fomod_install_files can rebuild the "files" property of the mod,
         # resetting the controller and preventing configuration when there are unsaved changes
@@ -846,13 +872,13 @@ class Controller:
             if not self.downloads:
                 print("There are no downloads to delete.")
                 return False
-            error_message = f"Expected a number between 0 and {len(self.downloads) - 1} (inclusive)."
+            error = f"Expected a number between 0 and {len(self.downloads) - 1} (inclusive)."
             try:
                 index = int(index)
                 assert index >= 0
                 assert index <= len(self.downloads) - 1
             except (ValueError, AssertionError):
-                print(error_message)
+                print(error)
                 return False
 
             name = self.downloads[index].name
