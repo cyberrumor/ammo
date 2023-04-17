@@ -87,6 +87,7 @@ def test_conflict_resolution():
 
             assert os.readlink(expected_game_file) == expected_mod_file
 
+
 def test_conflicting_plugins_disable():
     """
     Install two mods with the same files. Disable the one that is winning the
@@ -122,6 +123,14 @@ def test_conflicting_plugins_disable():
         assert (
             len(controller.plugins) == 1
         ), "Deactivating a mod hid a plugin provided by another mod"
+
+        # ensure the plugin points at mod 0
+        assert os.readlink(
+            os.path.join(controller.data_dir, "mock_plugin.esp")
+        ) == os.path.join(
+            controller.mods[0].location, "Data/mock_plugin.esp"
+        ), "Plugin pointed to the wrong mod!"
+
 
 def test_conflicting_plugins_delete():
     """
