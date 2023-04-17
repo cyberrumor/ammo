@@ -86,3 +86,63 @@ def test_conflict_resolution():
             assert expected_mod_file not in uniques
 
             assert os.readlink(expected_game_file) == expected_mod_file
+
+def test_conflicting_plugins_disable():
+    """
+    Install two mods with the same files. Disable the one that is winning the
+    conflict for the plugin.
+
+    Test that the plugin isn't removed from the controller's plugins.
+    """
+    with AmmoController() as controller:
+        # Install both mods
+        for mod in [MOD_1, MOD_2]:
+            mod_index_download = [i.name for i in controller.downloads].index(
+                mod + ".7z"
+            )
+            controller.install(mod_index_download)
+
+            mod_index = [i.name for i in controller.mods].index(mod)
+
+            controller.activate("mod", mod_index)
+            controller.commit()
+
+        # plugin is disabled, changes were not / are not committed
+        controller.deactivate("mod", 1)
+        assert (
+            len(controller.plugins) == 1
+        ), "Deactivating a mod hid a plugin provided by another mod"
+
+        # plugin is enabled, changes were / are committed
+        controller.activate("mod", 1)
+        controller.activate("plugin", 0)
+        controller.commit()
+        controller.deactivate("mod", 1)
+        controller.commit()
+        assert (
+            len(controller.plugins) == 1
+        ), "Deactivating a mod hid a plugin provided by another mod"
+
+def test_conflicting_plugins_delete():
+    """
+    Install two mods with the same files. Delete the one that is winning the
+    conflict for the plugin.
+
+    Test that the plugin isn't removed from the controller's plugins.
+    """
+    with AmmoController() as controller:
+        # Install both mods
+        for mod in [MOD_1, MOD_2]:
+            mod_index_download = [i.name for i in controller.downloads].index(
+                mod + ".7z"
+            )
+            controller.install(mod_index_download)
+            mod_index = [i.name for i in controller.mods].index(mod)
+            controller.activate("mod", mod_index)
+            controller.commit()
+
+        # plugin is disabled, changes were not / are not committed
+        controller.delete("mod", 1)
+        assert (
+            len(controller.plugins) == 1
+        ), "Deleting a mod hid a plugin provided by another mod"

@@ -192,7 +192,8 @@ class Controller:
     def _set_component_state(self, component_type, mod_index, state) -> bool:
         """
         Activate or deactivate a component.
-        If a mod with plugins was deactivated, remove those plugins from self.plugins.
+        If a mod with plugins was deactivated, remove those plugins from self.plugins
+        if they aren't also provided by another mod.
         """
         components = self._get_validated_components(component_type)
         component = components[int(mod_index)]
@@ -219,12 +220,18 @@ class Controller:
                         plugin = Plugin(name, False, component)
                         self.plugins.append(plugin)
             else:
-                # Hide plugins owned by this mod
+                # Hide plugins owned by this mod and not another mod
                 for plugin in component.associated_plugins(self.plugins):
-                    plugin.enabled = False
+                    provided_elsewhere = False
+                    for mod in [i for i in self.mods if i.name != component.name]:
+                        if plugin in mod.associated_plugins(self.plugins):
+                            provided_elsewhere = True
+                            break
+                    if not provided_elsewhere:
+                        plugin.enabled = False
 
-                    if plugin in self.plugins:
-                        self.plugins.remove(plugin)
+                        if plugin in self.plugins:
+                            self.plugins.remove(plugin)
 
         # Handle plugins
         if isinstance(component, Plugin):
