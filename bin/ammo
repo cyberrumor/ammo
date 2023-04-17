@@ -1,2 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env python3
+from ammo import ammo
 
+exit(ammo.main())

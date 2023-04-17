@@ -38,17 +38,33 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 # Installation Instructions
 ```
-cd /path/to/desired/install/location
 git clone https://github.com/cyberrumor/ammo
 cd ammo
-echo "$PWD/ammo/ammo.py" >> bin/ammo
-sudo cp bin/ammo /usr/local/bin
+pip3 install -r requirements.txt
+pip3 install .
 ```
+Then add ~/.local/bin to your PATH if it isn't already.
+You can do this by appending the following to ~/.bashrc:
+```
+PATH=$PATH:$HOME/.local/bin
+```
+Then restart your terminal or source .bashrc: `. ~/.bashrc`
+You can now execute ammo with the terminal command `ammo`.
 
 # Updating Instructions
 ```
-cd /path/to/ammo/installation/directory
+cd /path/to/ammo/clone/dir
 git pull
+pip3 install --force-reinstall .
+
+# If you are updating from a version from before 2023/04/17,
+# do this instead once, then subsequent updates are performed
+# normally:
+sudo rm /usr/local/bin/ammo
+cd /path/to/ammo/clone/dir
+git pull
+pip3 install .
+# Add ~/.local/bin to your PATH, directions above.
 ```
 If you have mods that were previously misbehaving and are wondering whether you need to
 reinstall them to benefit from the update, you don't. However, [patch notes](https://github.com/cyberrumor/ammo/commits/main) will specify
@@ -74,6 +90,12 @@ install    <index>                            Extract and manage an archive from
 move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
 refresh                                       Abandon pending changes.
 vanilla                                       Disable all managed components and clean up.
+```
+
+# Running tests
+```
+cd /path/to/ammo/clone/dir
+pytest
 ```
 
 # Disclaimer

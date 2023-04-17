@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
-from ui import UI
-from controller import Controller
+from .ui import UI
+from .controller import Controller
 
 IDS = {
     "Skyrim Special Edition": "489830",
@@ -16,7 +16,8 @@ HOME = os.environ["HOME"]
 DOWNLOADS = os.path.join(HOME, "Downloads")
 STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
 
-if __name__ == "__main__":
+
+def main():
     # game selection
     games = [game for game in os.listdir(os.path.join(STEAM, "common")) if game in IDS]
     if not games:
@@ -75,4 +76,4 @@ if __name__ == "__main__":
     )
     # Run the UI against the controller.
     ui = UI(controller)
-    sys.exit(ui.repl())
+    return ui.repl()

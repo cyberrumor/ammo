@@ -2,7 +2,7 @@
 import os
 import shutil
 from xml.etree import ElementTree
-from mod import Mod, Download, Plugin, DLC
+from .mod import Mod, Download, Plugin, DLC
 
 
 class Controller:

@@ -4,8 +4,8 @@ import sys
 import shutil
 from xml.etree import ElementTree
 
-sys.path.append(os.path.abspath("../ammo"))
-from controller import Controller
+# sys.path.append(os.path.abspath("../ammo"))
+from ammo.controller import Controller
 
 
 class AmmoController:
@@ -28,7 +28,7 @@ class AmmoController:
         self.conf = "/tmp/ammo_test/ammo.conf"
         self.plugins = "/tmp/ammo_test/Plugins.txt"
         self.mods_dir = "/tmp/ammo_test/MockGame/mods"
-        self.downloads = os.path.abspath("./Downloads")
+        self.downloads = os.path.join(os.path.split(__file__)[0], "Downloads")
 
     def __enter__(self):
         """
