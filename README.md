@@ -11,25 +11,17 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Enderal
 - Enderal Special Edition
 
-# Features
-- Handles file conflicts correctly.
-- Deactivating a mod auto-hides its plugins.
-- Ability to manage load order of mods and plugins.
-- Ability to install mod archives from ~/Downloads folder.
-- Ability to delete downloads and installed mods.
-- Ability to return to vanilla game state easily.
-- FOMOD install wizard.
-- Can install mods that other mod organizers can not, for example:
-  - SKSE
-  - Both parts of SSE Engine Fixes
-- Fuzzy "find" command easily displays relevant resources.
-
-# Limitations
-- No dependency checking or automated load order handling.
-- Manual downloads only.
-- FOMOD install wizard is in beta. Please report any bugs you encounter.
-- If the FOMOD needs to put things _above_ the game's Data dir, the FOMOD will require
-  manual configuration.
+# AMMO vs Manual
+- AMMO only:
+  - FOMOD install wizard.
+  - Ability to return to vanilla game state easily.
+  - Load order management, including activation / deactivation.
+- AMMO and Manual:
+  - No dependency checking or automated load order handling.
+  - No Nexus integration. Manual downloads only.
+- Manual only:
+  - Even minor mistakes are catistrophic.
+  - Returning to vanilla requires nuke/pave/reinstall.
 
 # Dependencies
 - Linux version of Steam, Proton.
@@ -56,26 +48,11 @@ You can now execute ammo with the terminal command `ammo`.
 cd /path/to/ammo/clone/dir
 git pull
 pip3 install --force-reinstall .
-
-# If you are updating from a version from before 2023/04/17,
-# do this instead once, then subsequent updates are performed
-# normally:
-sudo rm /usr/local/bin/ammo
-cd /path/to/ammo/clone/dir
-git pull
-pip3 install .
-# Add ~/.local/bin to your PATH, directions above.
 ```
-If you have mods that were previously misbehaving and are wondering whether you need to
-reinstall them to benefit from the update, you don't. However, [patch notes](https://github.com/cyberrumor/ammo/commits/main) will specify
-whether re-running a fomod install wizard could resolve issues. If this is the case,
-you may want to run `configure <index>` on misbehaving fomods.
 
 # Usage Instructions
 
 `ammo` - Launch the interactive shell. Select a game via index if prompted.
-
-At any time from the interactive shell, you can type `help` to show this menu:
 
 ```
 activate   mod|plugin <index>                 Enabled components will be loaded by game.
@@ -92,16 +69,10 @@ refresh                                       Abandon pending changes.
 vanilla                                       Disable all managed components and clean up.
 ```
 
-# Running tests
-```
-cd /path/to/ammo/clone/dir
-pytest
-```
-
-# Disclaimer
-- I waive all liability. Use at your own risk.
-- When you install a file from ~/Downloads, the filename may be sanitized.
-- This will remove symlinks and empty directories from your game dir.
+# Technical Details
+- AMMO works via creating symlinks in your game directory pointing to your mod files.
+- When you install an archive, the archive may be renamed to remove special characters.
+- This will remove symlinks and empty directories from your game dir, and reinstall them whenever you commit.
 
 # License
 GNU General Public License v2, with the exception of some of the mock mods used for testing,
