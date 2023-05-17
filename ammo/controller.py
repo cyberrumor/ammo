@@ -242,7 +242,8 @@ class Controller:
 
     def _normalize(self, destination, dest_prefix) -> str:
         """
-        Prevent folders with the same name but different case from being created.
+        Prevent folders with the same name but different case from being
+        created.
         """
         path, file = os.path.split(destination)
         local_path = path.split(dest_prefix)[-1].lower()
@@ -278,8 +279,8 @@ class Controller:
                 if "fomod" in corrected_name.lower():
                     continue
 
-                # It is possible to make a mod install in the game dir instead of the data dir
-                # by setting mod.has_data_dir = True.
+                # It is possible to make a mod install in the game dir instead
+                # of the data dir by setting mod.has_data_dir = True.
                 if mod.has_data_dir:
                     dest = os.path.join(
                         self.game_dir,
@@ -290,7 +291,8 @@ class Controller:
                         self.game_dir,
                         "Data" + corrected_name,
                     )
-                # Add the sanitized full path to the stage, resolving conflicts.
+                # Add the sanitized full path to the stage, resolving
+                # conflicts.
                 dest = self._normalize(dest, self.game_dir)
                 result[dest] = (mod.name, src)
 
@@ -323,7 +325,8 @@ class Controller:
     def _fomod_get_flags(self, steps) -> dict:
         """
         Expects a dictionary of fomod install steps.
-        Returns a dictionary where keys are flag names and values are flag states.
+        Returns a dictionary where keys are flag names and values
+        are flag states.
         """
         flags = {}
         for step in steps.values():
@@ -375,9 +378,9 @@ class Controller:
                     steps[step_name]["plugins"] = []
                     steps[step_name]["visible"] = {}
 
-                    # Collect this step's visibility conditions. Associate it with
-                    # the group instead of the step. This is inefficient but fits
-                    # into the "each step is a page" paradigm better.
+                    # Collect this step's visibility conditions. Associate it
+                    # with the group instead of the step. This is inefficient
+                    # but fits into the "each step is a page" paradigm better.
                     if visible := step.find("visible"):
                         if dependencies := visible.find("dependencies"):
                             dep_op = dependencies.get("operator")
@@ -401,8 +404,8 @@ class Controller:
                                 "description"
                             ] = "No description for this plugin was provided"
                         plug_dict["flags"] = {}
-                        # Automatically mark the first option as selected when a selection
-                        # is required.
+                        # Automatically mark the first option as selected when
+                        # a selection is required.
                         plug_dict["selected"] = (
                             steps[step_name]["type"]
                             in ["SelectExactlyOne", "SelectAtLeastOne"]
@@ -411,7 +414,8 @@ class Controller:
                         # Interpret on/off or 1/0 as true/false
                         if conditional_flags := plugin.find("conditionFlags"):
                             for flag in conditional_flags:
-                                # People use arbitrary flags here. Most commonly "On" or "1".
+                                # People use arbitrary flags here.
+                                # Most commonly "On" or "1".
                                 plug_dict["flags"][flag.get("name")] = flag.text in [
                                     "On",
                                     "1",
@@ -419,7 +423,8 @@ class Controller:
                             plug_dict["conditional"] = True
 
                         else:
-                            # There were no conditional flags, so this was an unconditional install.
+                            # There were no conditional flags, so this was an
+                            # unconditional install.
                             plug_dict["conditional"] = False
 
                         plug_dict["files"] = []
@@ -436,12 +441,14 @@ class Controller:
         Expects xml root node for the fomod, a dictionary representing
         all install steps, and a dictionary representing configured flags.
 
-        Returns a list of xml nodes for each folder that matched the configured flags.
+        Returns a list of xml nodes for each folder that matched the
+        configured flags.
         """
         # Determine which files need to be installed.
         selected_nodes = []
 
-        # Normal files. If these were selected, install them unless flags disqualify.
+        # Normal files. If these were selected, install them unless flags
+        # disqualify.
         for step in steps:
             for plugin in steps[step]["plugins"]:
                 if plugin["selected"]:
@@ -457,9 +464,10 @@ class Controller:
                         for folder in plugin["files"]:
                             selected_nodes.append(folder)
 
-        # include conditional file installs based on the user choice. These are different from
-        # the normal_files with conditions because these conditions are in a different part of
-        # the xml (they're after all the install steps instead of within them).
+        # include conditional file installs based on the user choice. These are
+        # different from the normal_files with conditions because these
+        # conditions are in a different part of the xml (they're after all the
+        # install steps instead of within them).
         patterns = []
         if conditionals := xml_root_node.find("conditionalFileInstalls"):
             patterns = conditionals.find("patterns")
@@ -518,7 +526,7 @@ class Controller:
                     ):
                         # Mismatched flag. Skip this plugin.
                         return False
-                    # if dep_op is "or" (or undefined), we can try the rest of these.
+                    # if dep_op is "or" (or undefined), try the rest of these.
                     continue
                 # A single match.
                 match = True
@@ -560,9 +568,10 @@ class Controller:
             s = node.get("source")
             full_source = mod.location
             for i in s.split("\\"):
-                # i requires case-sensitivity correction because mod authors might have
-                # said a resource was at "00 Core/Meshes" in ModuleConfig.xml when the actual
-                # file itself might be "00 Core/meshes".
+                # i requires case-sensitivity correction because mod authors
+                # might have said a resource was at "00 Core/Meshes" in
+                # ModuleConfig.xml when the actual file itself might be
+                # "00 Core/meshes".
                 folder = i
                 for file in os.listdir(full_source):
                     if file.lower() == i.lower():

@@ -29,18 +29,21 @@ A Simple Terminal-Based Mod Organizer for Linux
 - p7z (or something else that puts 7z in your PATH).
 
 # Installation Instructions
+Steam Deck users:
 ```
+python -m ensurepip --upgrade
+python -m pip install --upgrade pip
+```
+
+Everyone:
+```
+echo 'PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/cyberrumor/ammo
 cd ammo
 pip3 install -r requirements.txt
 pip3 install .
 ```
-Then add ~/.local/bin to your PATH if it isn't already.
-You can do this by appending the following to ~/.bashrc:
-```
-PATH=$PATH:$HOME/.local/bin
-```
-Then restart your terminal or source .bashrc: `. ~/.bashrc`
 You can now execute ammo with the terminal command `ammo`.
 
 # Updating Instructions
