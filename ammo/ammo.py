@@ -52,34 +52,33 @@ def main():
                 continue
             break
 
-    # create the paths
-    app_name = games[CHOICE]
-    app_id = IDS[app_name]
+    # Get the paths and files associated with our game.
+    name = games[CHOICE]
+    app_id = IDS[name]
     pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")
-    game_dir = os.path.join(STEAM, f"common/{app_name}")
+    directory = os.path.join(STEAM, f"common/{name}")
     app_data = os.path.join(STEAM, f"{pfx}/drive_c/users/steamuser/AppData/Local")
-    plugins = os.path.join(app_data, f"{app_name.replace('t 4', 't4')}/Plugins.txt")
-    dlc = os.path.join(app_data, f"{app_name.replace('t 4', 't4')}/DLCList.txt")
-
-    data = os.path.join(game_dir, "Data")
-    mods_dir = os.path.join(HOME, f".local/share/ammo/{app_name}/mods")
-    conf_dir = os.path.join(HOME, f".local/share/ammo/{app_name}")
-    conf = os.path.join(conf_dir, "ammo.conf")
+    dlc_file = os.path.join(app_data, f"{name.replace('t 4', 't4')}/DLCList.txt")
+    plugin_file = os.path.join(app_data, f"{name.replace('t 4', 't4')}/Plugins.txt")
+    data = os.path.join(directory, "Data")
+    ammo_mods_dir = os.path.join(HOME, f".local/share/ammo/{name}/mods")
+    ammo_conf_dir = os.path.join(HOME, f".local/share/ammo/{name}")
+    ammo_conf = os.path.join(ammo_conf_dir, "ammo.ammo_conf")
 
     # Create expected directories if they don't alrady exist.
-    for expected_dir in [mods_dir, conf_dir]:
+    for expected_dir in [ammo_mods_dir, ammo_conf_dir]:
         if not os.path.exists(expected_dir):
             os.makedirs(expected_dir)
 
-    # Get a configuration for the chosen game
+    # Get a ammo_configuration for the chosen game
     game = Game(
-        name=app_name,
-        directory=game_dir,
-        data=data,
-        ammo_conf=conf,
-        dlc_file=dlc,
-        plugin_file=plugins,
-        ammo_mods_dir=mods_dir,
+        name,
+        directory,
+        data,
+        ammo_conf,
+        dlc_file,
+        plugin_file,
+        ammo_mods_dir,
     )
 
     # Create an instance of the controller.
