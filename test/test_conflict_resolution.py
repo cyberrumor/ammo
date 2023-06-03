@@ -67,7 +67,7 @@ def test_conflict_resolution():
         # Since it was installed last, it will be last
         # in both mods/plugins load order.
         for file in FILES:
-            expected_game_file = os.path.join(controller.game_dir, file)
+            expected_game_file = os.path.join(controller.game.directory, file)
             expected_mod_file = os.path.join(controller.mods[1].location, file)
             uniques.append(expected_mod_file)
 
@@ -79,7 +79,7 @@ def test_conflict_resolution():
 
         # Assert that the symlinks point to MOD_1 now.
         for file in FILES:
-            expected_game_file = os.path.join(controller.game_dir, file)
+            expected_game_file = os.path.join(controller.game.directory, file)
             expected_mod_file = os.path.join(controller.mods[1].location, file)
 
             # Check that a different mod is the conflict winner now.
@@ -126,7 +126,7 @@ def test_conflicting_plugins_disable():
 
         # ensure the plugin points at mod 0
         assert os.readlink(
-            os.path.join(controller.data_dir, "mock_plugin.esp")
+            os.path.join(controller.game.data, "mock_plugin.esp")
         ) == os.path.join(
             controller.mods[0].location, "Data/mock_plugin.esp"
         ), "Plugin pointed to the wrong mod!"

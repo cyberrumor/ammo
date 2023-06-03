@@ -3,6 +3,7 @@ import os
 import sys
 from .ui import UI
 from .controller import Controller
+from .game import Game
 
 IDS = {
     "Skyrim Special Edition": "489830",
@@ -70,10 +71,20 @@ def main():
         if not os.path.exists(expected_dir):
             os.makedirs(expected_dir)
 
-    # Create an instance of the controller.
-    controller = Controller(
-        app_name, game_dir, data, conf, dlc, plugins, mods_dir, DOWNLOADS
+    # Get a configuration for the chosen game
+    game = Game(
+        name=app_name,
+        directory=game_dir,
+        data=data,
+        ammo_conf=conf,
+        dlc_file=dlc,
+        plugin_file=plugins,
+        ammo_mods_dir=mods_dir,
     )
+
+    # Create an instance of the controller.
+    controller = Controller(DOWNLOADS, game)
+
     # Run the UI against the controller.
     ui = UI(controller)
     return ui.repl()

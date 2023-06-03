@@ -6,56 +6,42 @@ from .mod import Mod, Download, Plugin, DLC
 
 
 class Controller:
-    def __init__(
-        self,
-        app_name,
-        game_dir,
-        data_dir,
-        conf,
-        dlc_file,
-        plugin_file,
-        mods_dir,
-        downloads_dir,
-    ):
-        self.changes = False
-        self.name = app_name
-        self.game_dir = game_dir
-        self.data_dir = data_dir
-        self.conf = conf
-        self.dlc_file = dlc_file
-        self.plugin_file = plugin_file
-        self.mods_dir = mods_dir
+    def __init__(self, downloads_dir, game):
         self.downloads_dir = downloads_dir
+        self.game = game
+
+        self.changes = False
+
         self.downloads = []
         self.mods = []
         self.plugins = []
 
         # Create required directories for testing. Harmless if exists.
-        os.makedirs(self.mods_dir, exist_ok=True)
-        os.makedirs(self.data_dir, exist_ok=True)
+        os.makedirs(self.game.ammo_mods_dir, exist_ok=True)
+        os.makedirs(self.game.data, exist_ok=True)
 
         # Instance a Mod class for each mod folder in the mod directory.
         mods = []
-        os.makedirs(self.mods_dir, exist_ok=True)
+        os.makedirs(self.game.ammo_mods_dir, exist_ok=True)
         mod_folders = [
             i
-            for i in os.listdir(self.mods_dir)
-            if os.path.isdir(os.path.join(self.mods_dir, i))
+            for i in os.listdir(self.game.ammo_mods_dir)
+            if os.path.isdir(os.path.join(self.game.ammo_mods_dir, i))
         ]
         for name in mod_folders:
             mod = Mod(
                 name,
-                location=os.path.join(self.mods_dir, name),
-                parent_data_dir=self.data_dir,
+                location=os.path.join(self.game.ammo_mods_dir, name),
+                parent_data_dir=self.game.data,
             )
             mods.append(mod)
         self.mods = mods
 
-        # Read the configuration file. If there's mods in it, put them in order.
-        # Put mods that aren't listed in the conf file at the end.
+        # Read the game.ammo_conf file. If there's mods in it, put them in order.
+        # Put mods that aren't listed in the game.ammo_conf file at the end.
         ordered_mods = []
-        if os.path.exists(self.conf):
-            with open(self.conf, "r") as file:
+        if os.path.exists(self.game.ammo_conf):
+            with open(self.game.ammo_conf, "r") as file:
                 for line in file:
                     if line.startswith("#"):
                         continue
@@ -81,15 +67,15 @@ class Controller:
         # Add Plugins from these files to the list of managed plugins,
         # with attention to the order and enabled state.
         # Create the plugins file if it didn't already exist.
-        os.makedirs(os.path.split(self.plugin_file)[0], exist_ok=True)
-        if not os.path.exists(self.plugin_file):
-            with open(self.plugin_file, "w") as file:
+        os.makedirs(os.path.split(self.game.plugin_file)[0], exist_ok=True)
+        if not os.path.exists(self.game.plugin_file):
+            with open(self.game.plugin_file, "w") as file:
                 file.write("")
 
         # Detect whether DLCList.txt needs parsing.
-        files_with_plugins = [self.plugin_file]
-        if os.path.exists(self.dlc_file):
-            files_with_plugins.append(self.dlc_file)
+        files_with_plugins = [self.game.plugin_file]
+        if os.path.exists(self.game.dlc_file):
+            files_with_plugins.append(self.game.dlc_file)
 
         for file_with_plugin in files_with_plugins:
             with open(file_with_plugin, "r") as file:
@@ -107,7 +93,7 @@ class Controller:
                     name = line.strip("*").strip()
 
                     # Don't manage order of manually installed mods that were deleted.
-                    if not os.path.exists(os.path.join(self.data_dir, name)):
+                    if not os.path.exists(os.path.join(self.game.data, name)):
                         continue
 
                     parent_mod = DLC(name)
@@ -168,10 +154,10 @@ class Controller:
         """
         Writes ammo.conf and Plugins.txt.
         """
-        with open(self.plugin_file, "w") as file:
+        with open(self.game.plugin_file, "w") as file:
             for plugin in self.plugins:
                 file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
-        with open(self.conf, "w") as file:
+        with open(self.game.ammo_conf, "w") as file:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
         return True
@@ -272,28 +258,28 @@ class Controller:
         for mod in [i for i in self.mods if i.enabled]:
             # Iterate through the source files of the mod
             for src in mod.files.values():
-                # Get the sanitized full path relative to the game directory.
+                # Get the sanitized full path relative to the game.directoryectory.
                 corrected_name = src.split(mod.name, 1)[-1]
 
                 # Don't install fomod folders.
                 if "fomod" in corrected_name.lower():
                     continue
 
-                # It is possible to make a mod install in the game dir instead
+                # It is possible to make a mod install in the game.directory instead
                 # of the data dir by setting mod.has_data_dir = True.
                 if mod.has_data_dir:
                     dest = os.path.join(
-                        self.game_dir,
+                        self.game.directory,
                         corrected_name.replace("/data", "/Data").lstrip("/"),
                     )
                 else:
                     dest = os.path.join(
-                        self.game_dir,
+                        self.game.directory,
                         "Data" + corrected_name,
                     )
                 # Add the sanitized full path to the stage, resolving
                 # conflicts.
-                dest = self._normalize(dest, self.game_dir)
+                dest = self._normalize(dest, self.game.directory)
                 result[dest] = (mod.name, src)
 
         return result
@@ -303,7 +289,7 @@ class Controller:
         Removes all symlinks and deletes empty folders.
         """
         # remove symlinks
-        for dirpath, _dirnames, filenames in os.walk(self.game_dir):
+        for dirpath, _dirnames, filenames in os.walk(self.game.directory):
             for file in filenames:
                 full_path = os.path.join(dirpath, file)
                 if os.path.islink(full_path):  # or os.stat(full_path)[3] > 1:
@@ -319,7 +305,7 @@ class Controller:
                         # directory wasn't empty, ignore this
                         pass
 
-        remove_empty_dirs(self.game_dir)
+        remove_empty_dirs(self.game.directory)
         return True
 
     def _fomod_get_flags(self, steps) -> dict:
@@ -633,7 +619,7 @@ class Controller:
         # files, deactivate this mod and commit changes. This prevents a scenario where
         # the user could re-configure a fomod (thereby changing mod.location/Data),
         # and quit ammo without running 'commit', which could leave broken symlinks in their
-        # game directory.
+        # game.directoryectory.
         self.deactivate("mod", index)
         self.commit()
         self.refresh()
@@ -833,7 +819,7 @@ class Controller:
         if not output_folder:
             output_folder = os.path.splitext(download.name)[0]
 
-        extract_to = os.path.join(self.mods_dir, output_folder)
+        extract_to = os.path.join(self.game.ammo_mods_dir, output_folder)
         if os.path.exists(extract_to):
             raise FileExistsError
 
@@ -895,7 +881,7 @@ class Controller:
         """
         print(
             "This will disable all mods and plugins, and remove all symlinks and \
-                empty folders from the game dir."
+                empty folders from the game.directory."
         )
         print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
@@ -928,7 +914,7 @@ class Controller:
             except FileExistsError:
                 skipped_files.append(
                     f"{name} skipped overwriting an unmanaged file: \
-                        {dest.split(self.game_dir)[-1].lstrip('/')}."
+                        {dest.split(self.game.directory)[-1].lstrip('/')}."
                 )
             finally:
                 print(f"files processed: {index+1}/{count}", end="\r", flush=True)
@@ -943,14 +929,5 @@ class Controller:
         """
         Abandon pending changes.
         """
-        self.__init__(
-            self.name,
-            self.game_dir,
-            self.data_dir,
-            self.conf,
-            self.dlc_file,
-            self.plugin_file,
-            self.mods_dir,
-            self.downloads_dir,
-        )
+        self.__init__(self.downloads_dir, self.game)
         return True

@@ -174,7 +174,7 @@ class UI:
                 os.system("clear")
                 self.print_status()
 
-                if not (cmd := input(f"{self.controller.name} >_: ")):
+                if not (cmd := input(f"{self.controller.game.name} >_: ")):
                     continue
 
                 cmds = cmd.split()

@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 import os
-import sys
 import shutil
 from xml.etree import ElementTree
 
-# sys.path.append(os.path.abspath("../ammo"))
+from ammo.game import Game
 from ammo.controller import Controller
+
+
+# Create a configuration for the mock controller to use.
+AMMO_DIR = "/tmp/ammo_test"
+
+GAME = Game(
+    name="MockGame",
+    directory="/tmp/MockGame",
+    data="/tmp/MockGame/Data",
+    ammo_conf=f"{AMMO_DIR}/ammo.conf",
+    dlc_file=f"{AMMO_DIR}/dlcList.txt",
+    plugin_file=f"{AMMO_DIR}/Plugins.txt",
+    ammo_mods_dir=f"{AMMO_DIR}/MockGame/mods",
+)
 
 
 class AmmoController:
@@ -13,38 +26,22 @@ class AmmoController:
     Context manager for ammo's controller class.
 
     Builds a Controller instance to run against /tmp/MockGame.
-    Ammo's configuration directory will be set up as /tmp/ammo_test,
+    Ammo's configuration directory will be set up as AMMO_DIR,
     if it doesn't already exist.
 
     Removes those folders on exit or error.
     """
 
     def __init__(self):
-        self.app_name = "MockGame"
-        self.game_dir = "/tmp/MockGame"
-        self.dlc = "/tmp/ammo_test/dlcList.txt"
-        self.data = "/tmp/MockGame/Data"
-        self.ammo_dir = "/tmp/ammo_test"
-        self.conf = "/tmp/ammo_test/ammo.conf"
-        self.plugins = "/tmp/ammo_test/Plugins.txt"
-        self.mods_dir = "/tmp/ammo_test/MockGame/mods"
-        self.downloads = os.path.join(os.path.split(__file__)[0], "Downloads")
+        self.game = GAME
+        self.downloads_dir = os.path.join(os.path.split(__file__)[0], "Downloads")
 
     def __enter__(self):
         """
         Return an instance of ammo's controller for tests to
         interact with.
         """
-        return Controller(
-            self.app_name,
-            self.game_dir,
-            self.data,
-            self.conf,
-            self.dlc,
-            self.plugins,
-            self.mods_dir,
-            self.downloads,
-        )
+        return Controller(self.downloads_dir, self.game)
 
     def __exit__(self, *args, **kwargs):
         """
@@ -53,7 +50,7 @@ class AmmoController:
         created by a previous test.
         """
         # remove symlinks
-        for dirpath, _dirnames, filenames in os.walk(self.game_dir):
+        for dirpath, _dirnames, filenames in os.walk(self.game.directory):
             for file in filenames:
                 full_path = os.path.join(dirpath, file)
                 if os.path.islink(full_path):
@@ -61,6 +58,7 @@ class AmmoController:
 
         # remove empty directories
         def remove_empty_dirs(path):
+            print(f"deleting stuff in {path}")
             for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
                 for dirname in dirnames:
                     try:
@@ -69,12 +67,12 @@ class AmmoController:
                         # directory wasn't empty, ignore this
                         pass
 
-        if os.path.exists(self.game_dir):
-            remove_empty_dirs(self.game_dir)
-        if os.path.exists(self.game_dir):
-            shutil.rmtree(self.game_dir)
-        if os.path.exists(self.ammo_dir):
-            shutil.rmtree(self.ammo_dir)
+        if os.path.exists(self.game.directory):
+            remove_empty_dirs(self.game.directory)
+        if os.path.exists(self.game.directory):
+            shutil.rmtree(self.game.directory)
+        if os.path.exists(AMMO_DIR):
+            shutil.rmtree(AMMO_DIR)
 
 
 def mod_extracts_files(mod_name, files):
@@ -91,14 +89,16 @@ def mod_extracts_files(mod_name, files):
 
         # Assert the mod extracted to the expected place
         assert mod_name == controller.mods[0].name
-        assert os.path.exists(os.path.join(controller.mods_dir, mod_name))
+        assert os.path.exists(os.path.join(controller.game.ammo_mods_dir, mod_name))
 
         for file in files:
             expected_file = os.path.join(controller.mods[0].location, file)
 
             if not os.path.exists(expected_file):
                 # print the files that _do_ exist to show where things ended up
-                for parent_dir, folders, actual_files in os.walk(controller.mods_dir):
+                for parent_dir, folders, actual_files in os.walk(
+                    controller.game.ammo_mods_dir
+                ):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
 
@@ -128,10 +128,12 @@ def mod_installs_files(mod_name, files):
         controller.commit()
 
         for file in files:
-            expected_file = os.path.join(controller.game_dir, file)
+            expected_file = os.path.join(controller.game.directory, file)
             if not os.path.exists(expected_file):
                 # print the files that _do_ exist to show where things ended up
-                for parent_dir, folders, actual_files in os.walk(controller.game_dir):
+                for parent_dir, folders, actual_files in os.walk(
+                    controller.game.directory
+                ):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
 

@@ -9,42 +9,42 @@ def test_controller_first_launch():
     the game directory and properly removes it.
     """
     with AmmoController() as controller:
-        game_dir = controller.game_dir
+        game_dir = controller.game.directory
         assert os.path.exists(
             game_dir
-        ), "game_dir did not exist after the controller started."
+        ), f"game_dir {game_dir} did not exist after the controller started."
 
-        data_dir = controller.data_dir
+        data_dir = controller.game.data
         assert os.path.exists(
             data_dir
-        ), "data_dir did not exist after the controller started."
+        ), f"data_dir {data_dir} did not exist after the controller started."
 
         downloads_dir = controller.downloads_dir
         assert os.path.exists(
             downloads_dir
-        ), "downloads_dir did not exist after the controller started."
+        ), f"downloads_dir {downloads_dir} did not exist after the controller started."
 
-        conf_dir = os.path.split(controller.conf)[0]
+        conf_dir = os.path.split(controller.game.ammo_conf)[0]
         assert os.path.exists(
             conf_dir
-        ), "ammo_dir did not exist after the controller started."
+        ), f"ammo_dir {conf_dir} did not exist after the controller started."
 
     assert not os.path.exists(
         game_dir
-    ), "game_dir was not removed after context manager closed"
+    ), f"game_dir {game_dir} was not removed after context manager closed"
 
     assert not os.path.exists(
         data_dir
-    ), "data dir was not removed after context manager closed"
+    ), f"data dir {data_dir} was not removed after context manager closed"
 
     assert os.path.exists(
         downloads_dir
-    ), "downloads_dir was deleted after context manager closed.\
+    ), f"downloads_dir {downloads_dir} was deleted after context manager closed.\
         It would be a good time to `git checkout Downloads`"
 
     assert not os.path.exists(
         conf_dir
-    ), "ammo_dir existed after the context manager closed."
+    ), f"ammo_dir {conf_dir} existed after the context manager closed."
 
 
 def test_controller_subsequent_launch():
