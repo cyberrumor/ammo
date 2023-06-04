@@ -37,6 +37,18 @@ def test_pending_change_move():
             controller.changes is True
         ), "move command did not create a pending change"
 
+def test_pending_change_move_nowhere():
+    """
+    Tests that a move operation where <from> and <to>
+    are the same doesn't create a pending change.
+    """
+    with AmmoController() as controller:
+        install_everything(controller)
+        controller.move("mod", 0, 0)
+        assert (
+            controller.changes is False
+        ), "move command created a pending change when it shouldn't have."
+
 
 def test_pending_change_activate():
     """

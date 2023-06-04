@@ -861,11 +861,12 @@ class Controller:
         Larger numbers win file conflicts.
         """
         components = self._get_validated_components(mod_or_plugin)
-
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
         old_ind = int(from_index)
         new_ind = int(to_index)
+        if old_ind == new_ind:
+            return True
         if new_ind > len(components) - 1:
             raise IndexError
         if old_ind > len(components) - 1:
