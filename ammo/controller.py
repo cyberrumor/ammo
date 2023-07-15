@@ -162,7 +162,7 @@ class Controller:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
         return True
 
-    def _get_validated_components(self, component_type) -> list:
+    def _get_validated_components(self, component_type: str) -> list:
         """
         Expects either the string "plugin" or the string "mod",
         and an index. If the index is within the valid range
@@ -175,7 +175,7 @@ class Controller:
         components = self.plugins if component_type == "plugin" else self.mods
         return components
 
-    def _set_component_state(self, component_type, mod_index, state) -> bool:
+    def _set_component_state(self, component_type: str, mod_index: int, state: bool) -> bool:
         """
         Activate or deactivate a component.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
@@ -226,7 +226,7 @@ class Controller:
         self.changes = starting_state != component.enabled
         return True
 
-    def _normalize(self, destination, dest_prefix) -> str:
+    def _normalize(self, destination: str, dest_prefix: str) -> str:
         """
         Prevent folders with the same name but different case from being
         created.
@@ -324,7 +324,7 @@ class Controller:
                         flags[flag] = plugin["flags"][flag]
         return flags
 
-    def _fomod_get_pages(self, steps, flags) -> list:
+    def _fomod_get_pages(self, steps: dict, flags: dict) -> list:
         """
         Returns a list of only fomod pages that should be visible,
         determined by the current flags.
@@ -418,7 +418,7 @@ class Controller:
 
         return steps
 
-    def _fomod_get_nodes(self, xml_root_node, steps, flags) -> list:
+    def _fomod_get_nodes(self, xml_root_node, steps: dict, flags: dict) -> list:
         """
         Expects xml root node for the fomod, a dictionary representing
         all install steps, and a dictionary representing configured flags.
@@ -486,7 +486,7 @@ class Controller:
 
         return selected_nodes
 
-    def _fomod_flags_match(self, flags, expected_flags) -> bool:
+    def _fomod_flags_match(self, flags: dict, expected_flags: dict) -> bool:
         """
         Compare actual flags with expected flags to determine whether
         the plugin associated with expected_flags should be included.
@@ -509,7 +509,7 @@ class Controller:
                 match = True
         return match
 
-    def _fomod_select(self, page, selection):
+    def _fomod_select(self, page: dict, selection: str):
         """
         Toggle the 'selected' switch on appropriate plugins.
         This logic ensures any constraints on selections are obeyed.
@@ -525,7 +525,7 @@ class Controller:
         else:
             page["plugins"][selection]["selected"] = val
 
-    def _fomod_install_files(self, index, selected_nodes):
+    def _fomod_install_files(self, index: int, selected_nodes: list):
         """
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's Data folder.
@@ -599,7 +599,7 @@ class Controller:
 
         mod.has_data_dir = True
 
-    def configure(self, index) -> bool:
+    def configure(self, index: int) -> bool:
         """
         Configure a fomod.
         """
@@ -744,19 +744,19 @@ class Controller:
         self.refresh()
         return True
 
-    def activate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
+    def activate(self, mod_or_plugin: Mod | Plugin, index: int) -> bool:
         """
         Enabled components will be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, True)
 
-    def deactivate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
+    def deactivate(self, mod_or_plugin: Mod | Plugin, index: int) -> bool:
         """
         Disabled components will not be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, False)
 
-    def delete(self, mod_or_download: Mod | Download, index) -> bool:
+    def delete(self, mod_or_download: Mod | Download, index: int) -> bool:
         """
         Removes specified file from the filesystem.
         """
@@ -780,7 +780,7 @@ class Controller:
             self.downloads.pop(index)
         return True
 
-    def install(self, index) -> bool:
+    def install(self, index: int) -> bool:
         """
         Extract and manage an archive from ~/Downloads.
         """
@@ -847,7 +847,7 @@ class Controller:
         self.refresh()
         return True
 
-    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index) -> bool:
+    def move(self, mod_or_plugin: Mod | Plugin, from_index: int, to_index: int) -> bool:
         """
         Larger numbers win file conflicts.
         """
