@@ -20,7 +20,7 @@ A Simple Terminal-Based Mod Organizer for Linux
   - No dependency checking or automated load order handling.
   - No Nexus integration. Manual downloads only.
 - Manual only:
-  - Even minor mistakes are catistrophic.
+  - Even minor mistakes are catastrophic.
   - Returning to vanilla requires nuke/pave/reinstall.
 
 # Dependencies

@@ -67,8 +67,7 @@ def main():
 
     # Create expected directories if they don't alrady exist.
     for expected_dir in [ammo_mods_dir, ammo_conf_dir]:
-        if not os.path.exists(expected_dir):
-            os.makedirs(expected_dir)
+        os.makedirs(expected_dir, exist_ok=True)
 
     # Get a ammo_configuration for the chosen game
     game = Game(

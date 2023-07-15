@@ -150,7 +150,7 @@ class Controller:
         self.downloads = downloads
         self.changes = False
 
-    def _save_order(self):
+    def _save_order(self) -> bool:
         """
         Writes ammo.conf and Plugins.txt.
         """
