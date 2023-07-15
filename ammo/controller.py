@@ -2,7 +2,12 @@
 import os
 import shutil
 from xml.etree import ElementTree
-from .mod import Mod, Download, Plugin, DLC
+from .mod import (
+    Mod,
+    Download,
+    Plugin,
+    DLC,
+)
 
 
 class Controller:
@@ -58,9 +63,7 @@ class Controller:
                             mod.enabled = enabled
                             ordered_mods.append(mod)
                             break
-            for mod in self.mods:
-                if mod not in ordered_mods:
-                    ordered_mods.append(mod)
+            ordered_mods.extend([mod for mod in self.mods if mod not in ordered_mods])
             self.mods = ordered_mods
 
         # Read the DLCList.txt and Plugins.txt files.
@@ -80,11 +83,8 @@ class Controller:
         for file_with_plugin in files_with_plugins:
             with open(file_with_plugin, "r") as file:
                 for line in file:
-                    # Empty lines
-                    if not line.strip():
-                        continue
-                    # Comments
-                    if line.startswith("#"):
+                    # Empty lines, comments
+                    if not line.strip() or line.startswith("#"):
                         continue
 
                     # Initially assign all plugin parents as a DLC.
@@ -258,7 +258,7 @@ class Controller:
         for mod in [i for i in self.mods if i.enabled]:
             # Iterate through the source files of the mod
             for src in mod.files.values():
-                # Get the sanitized full path relative to the game.directoryectory.
+                # Get the sanitized full path relative to the game.directory.
                 corrected_name = src.split(mod.name, 1)[-1]
 
                 # Don't install fomod folders.
@@ -330,19 +330,14 @@ class Controller:
         determined by the current flags.
         """
         # Determine which steps should be visible
-        pages = list(steps.keys())
-        visible_pages = []
-        for page in pages:
-            expected_flags = steps[page]["visible"]
-
-            if not expected_flags:
-                # No requirements for this page to be shown
-                visible_pages.append(page)
-                continue
-
-            if self._fomod_flags_match(flags, expected_flags):
-                visible_pages.append(page)
-        return visible_pages
+        return [
+            page
+            for page in list(steps.keys())
+            # if there's no condition for visibility, just show it.
+            if not steps[page]["visible"]
+            # if there's conditions, only include if the conditions are met.
+            or self._fomod_flags_match(flags, steps[page]["visible"])
+        ]
 
     def _fomod_get_steps(self, xml_root_node) -> dict:
         """
@@ -360,9 +355,11 @@ class Controller:
 
                     step_name = group.get("name")
                     steps[step_name] = {}
-                    steps[step_name]["type"] = group.get("type")
-                    steps[step_name]["plugins"] = []
-                    steps[step_name]["visible"] = {}
+
+                    this_step = steps[step_name]
+                    this_step["type"] = group.get("type")
+                    this_step["plugins"] = []
+                    this_step["visible"] = {}
 
                     # Collect this step's visibility conditions. Associate it
                     # with the group instead of the step. This is inefficient
@@ -372,13 +369,13 @@ class Controller:
                             dep_op = dependencies.get("operator")
                             if dep_op:
                                 dep_op = dep_op.lower()
-                            steps[step_name]["visible"]["operator"] = dep_op
+                            this_step["visible"]["operator"] = dep_op
                             for xml_flag in dependencies:
-                                steps[step_name]["visible"][
+                                this_step["visible"][
                                     xml_flag.get("flag")
                                 ] = xml_flag.get("value") in ["On", "1"]
 
-                    plugins = steps[step_name]["plugins"]
+                    plugins = this_step["plugins"]
                     for plugin_index, plugin in enumerate(group_of_plugins):
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
@@ -393,7 +390,7 @@ class Controller:
                         # Automatically mark the first option as selected when
                         # a selection is required.
                         plug_dict["selected"] = (
-                            steps[step_name]["type"]
+                            this_step["type"]
                             in ["SelectExactlyOne", "SelectAtLeastOne"]
                         ) and plugin_index == 0
 
@@ -415,8 +412,7 @@ class Controller:
 
                         plug_dict["files"] = []
                         if plugin_files := plugin.find("files"):
-                            for i in plugin_files:
-                                plug_dict["files"].append(i)
+                            plug_dict["files"].extend(plugin_files)
 
                         plugins.append(plug_dict)
 
@@ -441,57 +437,52 @@ class Controller:
                     if plugin["conditional"]:
                         # conditional normal file
                         expected_flags = plugin["flags"]
-
                         if self._fomod_flags_match(flags, expected_flags):
-                            for folder in plugin["files"]:
-                                selected_nodes.append(folder)
-                    else:
-                        # unconditional file install
-                        for folder in plugin["files"]:
-                            selected_nodes.append(folder)
+                            selected_nodes.extend(plugin["files"])
+                        continue
+                    # unconditional file install
+                    selected_nodes.extend(plugin["files"])
 
         # include conditional file installs based on the user choice. These are
         # different from the normal_files with conditions because these
         # conditions are in a different part of the xml (they're after all the
         # install steps instead of within them).
-        patterns = []
-        if conditionals := xml_root_node.find("conditionalFileInstalls"):
-            patterns = conditionals.find("patterns")
-        if patterns:
-            for pattern in patterns:
-                dependencies = pattern.find("dependencies")
-                dep_op = dependencies.get("operator")
-                if dep_op:
-                    dep_op = dep_op.lower()
-                expected_flags = {"operator": dep_op}
-                for xml_flag in dependencies:
-                    expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
-                        "On",
-                        "1",
-                    ]
+        patterns = (
+            xml_root_node.find("conditionalFileInstalls").find("patterns")
+            if xml_root_node.find("conditionalFileInstalls")
+            else []
+        )
+        for pattern in patterns:
+            dependencies = pattern.find("dependencies")
+            dep_op = dependencies.get("operator")
+            if dep_op:
+                dep_op = dep_op.lower()
+            expected_flags = {"operator": dep_op}
+            for xml_flag in dependencies:
+                expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
+                    "On",
+                    "1",
+                ]
 
-                # xml_files is a list of folders. The folder objects contain the paths.
-                xml_files = pattern.find("files")
-                if not xml_files:
-                    # can't find files for this, no point in checking whether to include.
-                    continue
+            # xml_files is a list of folders. The folder objects contain the paths.
+            xml_files = pattern.find("files")
+            if not xml_files:
+                # can't find files for this, no point in checking whether to include.
+                continue
 
-                if not expected_flags:
-                    # No requirements for these files to be used.
-                    for folder in xml_files:
-                        selected_nodes.append(folder)
+            if not expected_flags:
+                # No requirements for these files to be used.
+                selected_nodes.extend(xml_files)
 
-                if self._fomod_flags_match(flags, expected_flags):
-                    for folder in xml_files:
-                        selected_nodes.append(folder)
+            if self._fomod_flags_match(flags, expected_flags):
+                selected_nodes.extend(xml_files)
 
-        if required_files := xml_root_node.find("requiredInstallFiles"):
-            for file in required_files:
-                if file.tag == "files":
-                    for f in file:
-                        selected_nodes.append(f)
-                else:
-                    selected_nodes.append(file)
+        required_files = xml_root_node.find("requiredInstallFiles") or []
+        for file in required_files:
+            if file.tag == "files":
+                selected_nodes.extend(file)
+            else:
+                selected_nodes.append(file)
 
         return selected_nodes
 
