@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from common import mod_extracts_files, mod_installs_files
 
 MOD = "no_data_folder_plugin"
 EXTRACT_FILES = [
-    "no_data_folder_plugin.esp",
+    Path("no_data_folder_plugin.esp"),
 ]
 INSTALL_FILES = [
-    "Data/no_data_folder_plugin.esp",
+    Path("Data/no_data_folder_plugin.esp"),
 ]
 
 

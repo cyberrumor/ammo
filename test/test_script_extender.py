@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from common import mod_extracts_files, mod_installs_files
 
 MOD = "mock_script_extender"
 FILES = [
-    "Data/Scripts/Source/Game.psc",
-    "Data/Scripts/game.pex",
-    "se64.dll",
-    "se64_loader.exe",
-    "se64_readme.txt",
-    "se64_whatsnew.txt",
+    Path("Data/Scripts/Source/Game.psc"),
+    Path("Data/Scripts/game.pex"),
+    Path("se64.dll"),
+    Path("se64_loader.exe"),
+    Path("se64_readme.txt"),
+    Path("se64_whatsnew.txt"),
 ]
 
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-from common import (
-    AmmoController,
-    fomod_selections_choose_files,
-)
+from pathlib import Path
+from common import fomod_selections_choose_files
+
 
 
 def test_fomod_relighting_skyrim():
@@ -16,9 +15,9 @@ def test_fomod_relighting_skyrim():
     """
     files = [
         # requiredInstallFiles
-        "Data/meshes/Relight/LightOccluder.nif",
+        Path("Data/meshes/Relight/LightOccluder.nif"),
         # Default options: USSEP yes, both indoors and outdoors
-        "Data/RelightingSkyrim_SSE.esp",
+        Path("Data/RelightingSkyrim_SSE.esp"),
     ]
 
     fomod_selections_choose_files(
@@ -38,9 +37,9 @@ def test_fomod_relighting_skryim_exteriors_only():
     """
     files = [
         # requiredInstallFiles
-        "Data/meshes/Relight/LightOccluder.nif",
+        Path("Data/meshes/Relight/LightOccluder.nif"),
         # exterior-only plugin
-        "Data/RelightingSkyrim_SSE_Exteriors.esp",
+        Path("Data/RelightingSkyrim_SSE_Exteriors.esp"),
     ]
 
     # With ussep
@@ -84,9 +83,9 @@ def test_fomod_relighting_skyrim_interiors_only():
     """
     files = [
         # requiredInstallFiles
-        "Data/meshes/Relight/LightOccluder.nif",
+        Path("Data/meshes/Relight/LightOccluder.nif"),
         # conditionalFileInstalls
-        "Data/RelightingSkyrim_SSE_Interiors.esp",
+        Path("Data/RelightingSkyrim_SSE_Interiors.esp"),
     ]
 
     # With ussep
@@ -105,7 +104,7 @@ def test_fomod_relighting_skyrim_interiors_only():
         ],
     )
 
-    files[-1] = "Data/RelightingSkyrim_SSE_Interiors_nonUSSEP.esp"
+    files[-1] = Path("Data/RelightingSkyrim_SSE_Interiors_nonUSSEP.esp")
     # Without ussep
     fomod_selections_choose_files(
         "mock_relighting_skyrim",
