@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import os
 import shutil
+from pathlib import Path
+from functools import reduce
 from xml.etree import ElementTree
+from .game import Game
 from .mod import (
     Mod,
     Download,
@@ -11,32 +14,26 @@ from .mod import (
 
 
 class Controller:
-    def __init__(self, downloads_dir, game):
-        self.downloads_dir = downloads_dir
-        self.game = game
-
-        self.changes = False
-
-        self.downloads = []
-        self.mods = []
-        self.plugins = []
+    def __init__(self, downloads_dir: Path, game: Game):
+        self.downloads_dir: Path = downloads_dir
+        self.game: Game = game
+        self.changes: bool = False
+        self.downloads: list[Download] = []
+        self.mods: list[Mod] = []
+        self.plugins: list[Plugin] = []
 
         # Create required directories for testing. Harmless if exists.
-        os.makedirs(self.game.ammo_mods_dir, exist_ok=True)
-        os.makedirs(self.game.data, exist_ok=True)
+        Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
+        Path.mkdir(self.game.data, parents=True, exist_ok=True)
 
         # Instance a Mod class for each mod folder in the mod directory.
         mods = []
-        os.makedirs(self.game.ammo_mods_dir, exist_ok=True)
-        mod_folders = [
-            i
-            for i in os.listdir(self.game.ammo_mods_dir)
-            if os.path.isdir(os.path.join(self.game.ammo_mods_dir, i))
-        ]
-        for name in mod_folders:
+        Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
+        mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
+        for path in mod_folders:
             mod = Mod(
-                name,
-                location=os.path.join(self.game.ammo_mods_dir, name),
+                path.name,
+                location=self.game.ammo_mods_dir / path.name,
                 parent_data_dir=self.game.data,
             )
             mods.append(mod)
@@ -45,7 +42,7 @@ class Controller:
         # Read the game.ammo_conf file. If there's mods in it, put them in order.
         # Put mods that aren't listed in the game.ammo_conf file at the end.
         ordered_mods = []
-        if os.path.exists(self.game.ammo_conf):
+        if self.game.ammo_conf.exists():
             with open(self.game.ammo_conf, "r") as file:
                 for line in file:
                     if line.startswith("#"):
@@ -63,21 +60,25 @@ class Controller:
                             mod.enabled = enabled
                             ordered_mods.append(mod)
                             break
-            ordered_mods.extend([mod for mod in self.mods if mod not in ordered_mods])
+
+            for mod in self.mods:
+                if mod not in ordered_mods:
+                    ordered_mods.append(mod)
+
             self.mods = ordered_mods
 
         # Read the DLCList.txt and Plugins.txt files.
         # Add Plugins from these files to the list of managed plugins,
         # with attention to the order and enabled state.
         # Create the plugins file if it didn't already exist.
-        os.makedirs(os.path.split(self.game.plugin_file)[0], exist_ok=True)
-        if not os.path.exists(self.game.plugin_file):
+        Path.mkdir(self.game.plugin_file.parent, parents=True, exist_ok=True)
+        if not self.game.plugin_file.exists():
             with open(self.game.plugin_file, "w") as file:
                 file.write("")
 
         # Detect whether DLCList.txt needs parsing.
-        files_with_plugins = [self.game.plugin_file]
-        if os.path.exists(self.game.dlc_file):
+        files_with_plugins: list[Path] = [self.game.plugin_file]
+        if self.game.dlc_file.exists():
             files_with_plugins.append(self.game.dlc_file)
 
         for file_with_plugin in files_with_plugins:
@@ -93,7 +94,7 @@ class Controller:
                     name = line.strip("*").strip()
 
                     # Don't manage order of manually installed mods that were deleted.
-                    if not os.path.exists(os.path.join(self.game.data, name)):
+                    if not (self.game.data / name).exists():
                         continue
 
                     parent_mod = DLC(name)
@@ -131,7 +132,7 @@ class Controller:
 
         # Populate self.downloads. Ignore downloads that have a '.part' file that
         # starts with the same name. This hides downloads that haven't completed yet.
-        downloads = []
+        downloads: list[Path] = []
         for file in os.listdir(self.downloads_dir):
             still_downloading = False
             if any((file.endswith(ext) for ext in (".rar", ".zip", ".7z"))):
@@ -145,7 +146,7 @@ class Controller:
                         break
                 if still_downloading:
                     continue
-                download = Download(file, os.path.join(self.downloads_dir, file))
+                download = Download(file, self.downloads_dir / file)
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
@@ -175,7 +176,9 @@ class Controller:
         components = self.plugins if component_type == "plugin" else self.mods
         return components
 
-    def _set_component_state(self, component_type: str, mod_index: int, state: bool) -> bool:
+    def _set_component_state(
+        self, component_type: str, mod_index: int, state: bool
+    ) -> bool:
         """
         Activate or deactivate a component.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
@@ -226,13 +229,14 @@ class Controller:
         self.changes = starting_state != component.enabled
         return True
 
-    def _normalize(self, destination: str, dest_prefix: str) -> str:
+    def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
         """
         Prevent folders with the same name but different case from being
         created.
         """
-        path, file = os.path.split(destination)
-        local_path = path.split(dest_prefix)[-1].lower()
+        path = destination.parent
+        file = destination.name
+        local_path: str = str(path).split(str(dest_prefix))[-1].lower()
         for i in [
             "Data",
             "DynDOLOD",
@@ -244,8 +248,8 @@ class Controller:
             "Source",
         ]:
             local_path = local_path.replace(i.lower(), i)
-        new_dest = os.path.join(dest_prefix, local_path.lstrip("/"))
-        result = os.path.join(new_dest, file)
+        new_dest: Path = Path(dest_prefix / local_path.lstrip("/"))
+        result = new_dest / file
         return result
 
     def _stage(self) -> dict:
@@ -259,7 +263,7 @@ class Controller:
             # Iterate through the source files of the mod
             for src in mod.files.values():
                 # Get the sanitized full path relative to the game.directory.
-                corrected_name = src.split(mod.name, 1)[-1]
+                corrected_name = str(src).split(mod.name, 1)[-1]
 
                 # Don't install fomod folders.
                 if "fomod" in corrected_name.lower():
@@ -268,14 +272,18 @@ class Controller:
                 # It is possible to make a mod install in the game.directory instead
                 # of the data dir by setting mod.has_data_dir = True.
                 if mod.has_data_dir:
-                    dest = os.path.join(
-                        self.game.directory,
-                        corrected_name.replace("/data", "/Data").lstrip("/"),
+                    dest = Path(
+                        os.path.join(
+                            self.game.directory,
+                            corrected_name.replace("/data", "/Data").lstrip("/"),
+                        )
                     )
                 else:
-                    dest = os.path.join(
-                        self.game.directory,
-                        "Data" + corrected_name,
+                    dest = Path(
+                        os.path.join(
+                            self.game.directory,
+                            "Data" + corrected_name,
+                        )
                     )
                 # Add the sanitized full path to the stage, resolving
                 # conflicts.
@@ -290,17 +298,19 @@ class Controller:
         """
         # remove symlinks
         for dirpath, _dirnames, filenames in os.walk(self.game.directory):
+            d = Path(dirpath)
             for file in filenames:
-                full_path = os.path.join(dirpath, file)
-                if os.path.islink(full_path):  # or os.stat(full_path)[3] > 1:
-                    os.unlink(full_path)
+                full_path = d / file
+                if full_path.is_symlink():
+                    full_path.unlink()
 
         # remove empty directories
-        def remove_empty_dirs(path):
+        def remove_empty_dirs(path: Path):
             for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
                 for dirname in dirnames:
+                    d = Path(dirname)
                     try:
-                        os.rmdir(os.path.realpath(os.path.join(dirpath, dirname)))
+                        (d / dirname).resolve().rmdir()
                     except OSError:
                         # directory wasn't empty, ignore this
                         pass
@@ -525,17 +535,17 @@ class Controller:
         else:
             page["plugins"][selection]["selected"] = val
 
-    def _fomod_install_files(self, index: int, selected_nodes: list):
+    def _fomod_install_files(self, index, selected_nodes: list):
         """
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's Data folder.
         """
         mod = self.mods[int(index)]
-        data = os.path.join(mod.location, "Data")
+        data = mod.location / "Data"
 
         # delete the old configuration if it exists
         shutil.rmtree(data, ignore_errors=True)
-        os.makedirs(data, exist_ok=True)
+        Path.mkdir(data, parents=True, exist_ok=True)
 
         stage = {}
         for node in selected_nodes:
@@ -543,6 +553,13 @@ class Controller:
 
             # convert the 'source' folder form the xml into a full path
             s = node.get("source")
+            """
+            full_source = reduce(
+                lambda path, name: path / name.lower() if name.lower() in path.iterdir() else path / name,
+                s.split("\\"),
+                mod.location,
+            )
+            """
             full_source = mod.location
             for i in s.split("\\"):
                 # i requires case-sensitivity correction because mod authors
@@ -554,23 +571,18 @@ class Controller:
                     if file.lower() == i.lower():
                         folder = file
                         break
-                full_source = os.path.join(full_source, folder)
+                full_source = full_source / folder
 
             # get the 'destination' folder form the xml. This path is relative to Data.
-            destination = ""
-            d = node.get("destination")
-            for i in d.split("\\"):
-                destination = os.path.join(destination, i)
-
-            full_destination = os.path.join(
-                os.path.join(mod.location, "Data"), destination
+            full_destination = reduce(
+                lambda path, name: path / name,
+                node.get("destination").split("\\"),
+                data,
             )
-
             # TODO: this is broken :)
             # Normalize the capitalization of folder names
-            full_destination = self._normalize(
-                full_destination, os.path.join(mod.location, "Data")
-            )
+
+            full_destination = self._normalize(full_destination, data.parent)
 
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that
@@ -578,15 +590,15 @@ class Controller:
             pre_stage[full_source] = full_destination
 
             for dest, src in pre_stage.items():
-                if os.path.isdir(dest):
+                if dest.is_dir():
                     # Handle directories
                     for parent_dir, _folders, files in os.walk(dest):
                         for file in files:
-                            source = os.path.join(parent_dir, file)
-                            local_parent_dir = parent_dir.split(dest)[-1].strip("/")
-                            destination = os.path.join(
-                                os.path.join(src, local_parent_dir), file
+                            source = Path(parent_dir) / str(file)
+                            local_parent_dir = parent_dir.split(str(dest))[-1].strip(
+                                "/"
                             )
+                            destination = src / local_parent_dir / str(file)
                             stage[destination] = source
                 else:
                     # Handle files
@@ -594,12 +606,15 @@ class Controller:
 
         # install the new files
         for k, v in stage.items():
-            os.makedirs(k.rsplit("/", 1)[0], exist_ok=True)
+            Path.mkdir(k.parent, parents=True, exist_ok=True)
+            assert (
+                v.exists()
+            ), f"expected {v} but it did not exist.\nWe were going to copy to {k}\n\nIssue with fomod configurator."
             shutil.copy(v, k)
 
         mod.has_data_dir = True
 
-    def configure(self, index: int) -> bool:
+    def configure(self, index) -> bool:
         """
         Configure a fomod.
         """
@@ -621,12 +636,12 @@ class Controller:
 
         # Clean up previous configuration, if it exists.
         try:
-            shutil.rmtree(os.path.join(mod.location, "Data"))
+            shutil.rmtree(mod.location / "Data")
         except FileNotFoundError:
             pass
 
         # Parse the fomod installer.
-        tree = ElementTree.parse(mod.modconf)
+        tree = ElementTree.parse(str(mod.modconf))
         xml_root_node = tree.getroot()
 
         module_name = xml_root_node.find("moduleName").text
@@ -744,19 +759,19 @@ class Controller:
         self.refresh()
         return True
 
-    def activate(self, mod_or_plugin: Mod | Plugin, index: int) -> bool:
+    def activate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
         """
         Enabled components will be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, True)
 
-    def deactivate(self, mod_or_plugin: Mod | Plugin, index: int) -> bool:
+    def deactivate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
         """
         Disabled components will not be loaded by game.
         """
         return self._set_component_state(mod_or_plugin, index, False)
 
-    def delete(self, mod_or_download: Mod | Download, index: int) -> bool:
+    def delete(self, mod_or_download: Mod | Download, index) -> bool:
         """
         Removes specified file from the filesystem.
         """
@@ -780,7 +795,7 @@ class Controller:
             self.downloads.pop(index)
         return True
 
-    def install(self, index: int) -> bool:
+    def install(self, index) -> bool:
         """
         Extract and manage an archive from ~/Downloads.
         """
@@ -847,7 +862,7 @@ class Controller:
         self.refresh()
         return True
 
-    def move(self, mod_or_plugin: Mod | Plugin, from_index: int, to_index: int) -> bool:
+    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index) -> bool:
         """
         Larger numbers win file conflicts.
         """
@@ -898,15 +913,14 @@ class Controller:
         count = len(stage)
         skipped_files = []
         for index, (dest, source) in enumerate(stage.items()):
-            os.makedirs(os.path.split(dest)[0], exist_ok=True)
+            Path.mkdir(dest.parent, parents=True, exist_ok=True)
             (name, src) = source
             try:
-                os.symlink(src, dest)
-                # os.link(src, dest)
+                dest.symlink_to(src)
             except FileExistsError:
                 skipped_files.append(
                     f"{name} skipped overwriting an unmanaged file: \
-                        {dest.split(self.game.directory)[-1].lstrip('/')}."
+                        {str(dest).split(str(self.game.directory))[-1].lstrip('/')}."
                 )
             finally:
                 print(f"files processed: {index+1}/{count}", end="\r", flush=True)

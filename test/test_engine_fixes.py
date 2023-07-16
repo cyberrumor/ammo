@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from common import mod_extracts_files, mod_installs_files
 
 # script extender mod
 SE_MOD = "mock_engine_fixes_part_1"
-SE_EXTRACT_FILES = ["data/skse/plugins/mock_fixes.dll"]
-SE_INSTALLED_FILES = ["Data/SKSE/Plugins/mock_fixes.dll"]
+SE_EXTRACT_FILES = [Path("data/skse/plugins/mock_fixes.dll")]
+SE_INSTALLED_FILES = [Path("Data/SKSE/Plugins/mock_fixes.dll")]
 # DLL mod
 DLL_MOD = "mock_engine_fixes_part_2"
 DLL_FILES = [
-    "d3dx9_42.dll",
-    "tbb.dll",
-    "tbbmalloc.dll",
+    Path("d3dx9_42.dll"),
+    Path("tbb.dll"),
+    Path("tbbmalloc.dll"),
 ]
 
 

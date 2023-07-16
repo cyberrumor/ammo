@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import sys
+from pathlib import Path
 from .ui import UI
 from .controller import Controller
 from .game import Game
@@ -13,20 +13,19 @@ IDS = {
     "Enderal": "933480",
     "Enderal Special Edition": "976620",
 }
-HOME = os.environ["HOME"]
-DOWNLOADS = os.path.join(HOME, "Downloads")
-STEAM = os.path.join(HOME, ".local/share/Steam/steamapps")
+DOWNLOADS = Path.home() / "Downloads"
+STEAM = Path.home() / ".local/share/Steam/steamapps"
 
 
 def main():
     # game selection
-    games = [game for game in os.listdir(os.path.join(STEAM, "common")) if game in IDS]
+    games = [game.name for game in (STEAM / "common").iterdir() if game.name in IDS]
     if not games:
         print("Install a game through steam!")
         print("ammo supports:")
         for i in IDS:
             print(f"- {i}")
-        print(f"ammo looks for games in {os.path.join(STEAM, 'common')}")
+        print(f"ammo looks for games in {STEAM/'common'}")
         print("ammo stores mods in ~/.local/share/ammo")
         print("ammo looks for mods to install in ~/Downloads")
         sys.exit(1)
@@ -55,19 +54,19 @@ def main():
     # Get the paths and files associated with our game.
     name = games[CHOICE]
     app_id = IDS[name]
-    pfx = os.path.join(STEAM, f"compatdata/{app_id}/pfx")
-    directory = os.path.join(STEAM, f"common/{name}")
-    app_data = os.path.join(STEAM, f"{pfx}/drive_c/users/steamuser/AppData/Local")
-    dlc_file = os.path.join(app_data, f"{name.replace('t 4', 't4')}/DLCList.txt")
-    plugin_file = os.path.join(app_data, f"{name.replace('t 4', 't4')}/Plugins.txt")
-    data = os.path.join(directory, "Data")
-    ammo_mods_dir = os.path.join(HOME, f".local/share/ammo/{name}/mods")
-    ammo_conf_dir = os.path.join(HOME, f".local/share/ammo/{name}")
-    ammo_conf = os.path.join(ammo_conf_dir, "ammo.ammo_conf")
+    pfx = STEAM / f"compatdata/{app_id}/pfx"
+    directory = STEAM / f"common/{name}"
+    app_data = STEAM / f"{pfx}/drive_c/users/steamuser/AppData/Local"
+    dlc_file = app_data / f"{name.replace('t 4', 't4')}/DLCList.txt"
+    plugin_file = app_data / f"{name.replace('t 4', 't4')}/Plugins.txt"
+    data = directory / "Data"
+    ammo_mods_dir = Path.home() / f".local/share/ammo/{name}/mods"
+    ammo_conf_dir = Path.home() / f".local/share/ammo/{name}"
+    ammo_conf = ammo_conf_dir / "ammo.ammo_conf"
 
     # Create expected directories if they don't alrady exist.
     for expected_dir in [ammo_mods_dir, ammo_conf_dir]:
-        os.makedirs(expected_dir, exist_ok=True)
+        Path.mkdir(expected_dir, parents=True, exist_ok=True)
 
     # Get a ammo_configuration for the chosen game
     game = Game(

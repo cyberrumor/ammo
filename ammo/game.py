@@ -1,12 +1,13 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
 class Game:
     name: str
-    directory: str
-    data: str
-    ammo_conf: str
-    dlc_file: str
-    plugin_file: str
-    ammo_mods_dir: str
+    directory: Path
+    data: Path
+    ammo_conf: Path
+    dlc_file: Path
+    plugin_file: Path
+    ammo_mods_dir: Path

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import os
+from pathlib import Path
 from common import AmmoController
 
 MOD_1 = "conflict_1"
 MOD_2 = "conflict_2"
 
 FILES = [
-    "Data/textures/mock_texture.nif",
-    "Data/mock_plugin.esp",
-    "file.dll",
+    Path("Data/textures/mock_texture.nif"),
+    Path("Data/mock_plugin.esp"),
+    Path("file.dll"),
 ]
 
 
@@ -67,11 +67,11 @@ def test_conflict_resolution():
         # Since it was installed last, it will be last
         # in both mods/plugins load order.
         for file in FILES:
-            expected_game_file = os.path.join(controller.game.directory, file)
-            expected_mod_file = os.path.join(controller.mods[1].location, file)
+            expected_game_file = controller.game.directory / file
+            expected_mod_file = controller.mods[1].location / file
             uniques.append(expected_mod_file)
 
-            assert os.readlink(expected_game_file) == expected_mod_file
+            assert expected_game_file.readlink() == expected_mod_file
 
         # Rearrange the mods
         controller.move("mod", 1, 0)
@@ -79,13 +79,13 @@ def test_conflict_resolution():
 
         # Assert that the symlinks point to MOD_1 now.
         for file in FILES:
-            expected_game_file = os.path.join(controller.game.directory, file)
-            expected_mod_file = os.path.join(controller.mods[1].location, file)
+            expected_game_file = controller.game.directory / file
+            expected_mod_file = controller.mods[1].location / file
 
             # Check that a different mod is the conflict winner now.
             assert expected_mod_file not in uniques
 
-            assert os.readlink(expected_game_file) == expected_mod_file
+            assert expected_game_file.readlink() == expected_mod_file
 
 
 def test_conflicting_plugins_disable():
@@ -125,10 +125,8 @@ def test_conflicting_plugins_disable():
         ), "Deactivating a mod hid a plugin provided by another mod"
 
         # ensure the plugin points at mod 0
-        assert os.readlink(
-            os.path.join(controller.game.data, "mock_plugin.esp")
-        ) == os.path.join(
-            controller.mods[0].location, "Data/mock_plugin.esp"
+        assert ((controller.game.data / "mock_plugin.esp").readlink()) == (
+            (controller.mods[0].location / "Data/mock_plugin.esp")
         ), "Plugin pointed to the wrong mod!"
 
 

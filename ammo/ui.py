@@ -75,7 +75,11 @@ class UI:
             for arg in args:
                 if arg in anno:
                     params.append(
-                        str(anno[arg]).lower().replace("ammo.", "").replace("mod.", "").replace(" | ", "|")
+                        str(anno[arg])
+                        .lower()
+                        .replace("ammo.", "")
+                        .replace("mod.", "")
+                        .replace(" | ", "|")
                     )
                 else:
                     if v["num_args"] < 0:
@@ -174,7 +178,7 @@ class UI:
                 os.system("clear")
                 self.print_status()
 
-                changes = '*' if self.controller.changes else '_'
+                changes = "*" if self.controller.changes else "_"
                 if not (cmd := input(f"{self.controller.game.name} >{changes}: ")):
                     continue
 

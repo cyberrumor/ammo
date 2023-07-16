@@ -37,6 +37,7 @@ def test_pending_change_move():
             controller.changes is True
         ), "move command did not create a pending change"
 
+
 def test_pending_change_move_nowhere():
     """
     Tests that a move operation where <from> and <to>

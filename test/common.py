@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import shutil
+from pathlib import Path
 from xml.etree import ElementTree
 
 from ammo.game import Game
@@ -8,16 +9,16 @@ from ammo.controller import Controller
 
 
 # Create a configuration for the mock controller to use.
-AMMO_DIR = "/tmp/ammo_test"
+AMMO_DIR = Path("/tmp/ammo_test")
 
 GAME = Game(
     name="MockGame",
-    directory="/tmp/MockGame",
-    data="/tmp/MockGame/Data",
-    ammo_conf=f"{AMMO_DIR}/ammo.conf",
-    dlc_file=f"{AMMO_DIR}/dlcList.txt",
-    plugin_file=f"{AMMO_DIR}/Plugins.txt",
-    ammo_mods_dir=f"{AMMO_DIR}/MockGame/mods",
+    directory=Path("/tmp/MockGame"),
+    data=Path("/tmp/MockGame/Data"),
+    ammo_conf=Path(f"{AMMO_DIR}/ammo.conf"),
+    dlc_file=Path(f"{AMMO_DIR}/dlcList.txt"),
+    plugin_file=Path(f"{AMMO_DIR}/Plugins.txt"),
+    ammo_mods_dir=Path(f"{AMMO_DIR}/MockGame/mods"),
 )
 
 
@@ -34,7 +35,8 @@ class AmmoController:
 
     def __init__(self):
         self.game = GAME
-        self.downloads_dir = os.path.join(os.path.split(__file__)[0], "Downloads")
+        script_path = Path(__file__)
+        self.downloads_dir = script_path.parent / "Downloads"
 
     def __enter__(self):
         """
@@ -52,9 +54,9 @@ class AmmoController:
         # remove symlinks
         for dirpath, _dirnames, filenames in os.walk(self.game.directory):
             for file in filenames:
-                full_path = os.path.join(dirpath, file)
-                if os.path.islink(full_path):
-                    os.unlink(full_path)
+                full_path = Path(dirpath) / file
+                if full_path.is_symlink():
+                    full_path.unlink()
 
         # remove empty directories
         def remove_empty_dirs(path):
@@ -62,16 +64,16 @@ class AmmoController:
             for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
                 for dirname in dirnames:
                     try:
-                        os.rmdir(os.path.realpath(os.path.join(dirpath, dirname)))
+                        Path(dirpath, dirname).rmdir()
                     except OSError:
                         # directory wasn't empty, ignore this
                         pass
 
-        if os.path.exists(self.game.directory):
+        if self.game.directory.exists():
             remove_empty_dirs(self.game.directory)
-        if os.path.exists(self.game.directory):
+        if self.game.directory.exists():
             shutil.rmtree(self.game.directory)
-        if os.path.exists(AMMO_DIR):
+        if AMMO_DIR.exists():
             shutil.rmtree(AMMO_DIR)
 
 
@@ -89,12 +91,12 @@ def mod_extracts_files(mod_name, files):
 
         # Assert the mod extracted to the expected place
         assert mod_name == controller.mods[0].name
-        assert os.path.exists(os.path.join(controller.game.ammo_mods_dir, mod_name))
+        assert (controller.game.ammo_mods_dir / mod_name).exists()
 
         for file in files:
-            expected_file = os.path.join(controller.mods[0].location, file)
+            expected_file = controller.mods[0].location / file
 
-            if not os.path.exists(expected_file):
+            if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
                 for parent_dir, folders, actual_files in os.walk(
                     controller.game.ammo_mods_dir
@@ -128,8 +130,8 @@ def mod_installs_files(mod_name, files):
         controller.commit()
 
         for file in files:
-            expected_file = os.path.join(controller.game.directory, file)
-            if not os.path.exists(expected_file):
+            expected_file = controller.game.directory / file
+            if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
                 for parent_dir, folders, actual_files in os.walk(
                     controller.game.directory
@@ -141,8 +143,8 @@ def mod_installs_files(mod_name, files):
                 raise FileNotFoundError(expected_file)
 
             # Catch any broken symlinks.
-            assert os.path.exists(
-                os.readlink(expected_file)
+            assert (
+                expected_file.readlink().exists()
             ), f"Detected broken symlink: {expected_file}"
 
 
@@ -164,9 +166,10 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
         mod_index = [i.name for i in controller.mods].index(mod_name)
         mod = controller.mods[mod_index]
         try:
-            shutil.rmtree(os.path.join(mod.location, "Data"))
+            shutil.rmtree(mod.location / "Data")
         except FileNotFoundError:
             pass
+
         tree = ElementTree.parse(mod.modconf)
         xml_root_node = tree.getroot()
         steps = controller._fomod_get_steps(xml_root_node)
@@ -182,8 +185,8 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
 
         # Check that all the expected files exist.
         for file in files:
-            expected_file = os.path.join(mod.location, file)
-            if not os.path.exists(expected_file):
+            expected_file = mod.location / file
+            if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
                 for parent_dir, folders, actual_files in os.walk(mod.location):
                     print(f"{parent_dir} folders: {folders}")
@@ -193,11 +196,13 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
                 raise FileNotFoundError(expected_file)
 
         # Check that no unexpected files exist.
-        for path, folders, filenames in os.walk(os.path.join(mod.location, "Data")):
+        for path, folders, filenames in os.walk(mod.location / "Data"):
             for file in filenames:
                 exists = os.path.join(path, file)
-                local_exists = exists.split(mod.location)[-1].lstrip("/")
-                assert local_exists in files, f"Got an extra file: {local_exists}"
+                local_exists = exists.split(str(mod.location))[-1].lstrip("/")
+                assert local_exists in [
+                    str(i) for i in files
+                ], f"Got an extra file: {local_exists}\nExpected only: {files}"
 
 
 def install_everything(controller):
@@ -223,7 +228,7 @@ def install_everything(controller):
     controller.commit()
 
 
-def extract_mod(controller, mod_name):
+def extract_mod(controller, mod_name: str):
     """
     Helper function that installs a mod by name.
 
@@ -231,11 +236,15 @@ def extract_mod(controller, mod_name):
     """
     index = [i.name for i in controller.downloads].index(f"{mod_name}.7z")
     controller.install(index)
-    mod_index = [i.name for i in controller.mods].index(mod_name)
-    return mod_index
+    try:
+        mod_index = [i.name for i in controller.mods].index(mod_name)
+        return mod_index
+    except ValueError:
+        # mod_name was not in the list. Print the list.
+        print(f"{mod_name} was not in {[i.name for i in controller.mods]}")
 
 
-def install_mod(controller, mod_name):
+def install_mod(controller, mod_name: str):
     """
     Helper function that installs a normal mod,
     then activates it and all plugins associated with it.
