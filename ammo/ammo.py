@@ -63,7 +63,7 @@ def main():
     data = directory / "Data"
     ammo_mods_dir = Path.home() / f".local/share/ammo/{name}/mods"
     ammo_conf_dir = Path.home() / f".local/share/ammo/{name}"
-    ammo_conf = ammo_conf_dir / "ammo.ammo_conf"
+    ammo_conf = ammo_conf_dir / "ammo.conf"
 
     # Create expected directories if they don't alrady exist.
     for expected_dir in [ammo_mods_dir, ammo_conf_dir]:
