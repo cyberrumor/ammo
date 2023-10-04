@@ -12,6 +12,7 @@ IDS = {
     "Skyrim": "72850",
     "Enderal": "933480",
     "Enderal Special Edition": "976620",
+    "Starfield": "1716740",
 }
 DOWNLOADS = Path.home() / "Downloads"
 STEAM = Path.home() / ".local/share/Steam/steamapps"
