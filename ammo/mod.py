@@ -52,7 +52,6 @@ class Mod:
     files: dict[Path] = field(default_factory=dict)
     plugins: list[str] = field(default_factory=list)
 
-
     def populate_from(self, parent_dir, files):
         """
         Takes a parent directory and a list of files. If the file is a plugin,
@@ -71,7 +70,6 @@ class Mod:
                 self.files[file] = loc_parent / f
                 continue
             self.files[file] = loc_parent / f
-
 
     def __post_init__(self):
         # Overrides for whether a mod should install inside Data,
