@@ -52,6 +52,27 @@ class Mod:
     files: dict[Path] = field(default_factory=dict)
     plugins: list[str] = field(default_factory=list)
 
+
+    def populate_from(self, parent_dir, files):
+        """
+        Takes a parent directory and a list of files. If the file is a plugin,
+        ensure it's in the proper place before adding it to self.files.
+        If it's not a plugin, always add it.
+        """
+        for file in files:
+            f = Path(file)
+            loc_parent = Path(parent_dir)
+
+            if f.suffix.lower() in [".esp", ".esl", ".esm"]:
+                if loc_parent != self.location and loc_parent != self.location / "Data":
+                    # Skip plugins in the wrong place
+                    continue
+                self.plugins.append(file)
+                self.files[file] = loc_parent / f
+                continue
+            self.files[file] = loc_parent / f
+
+
     def __post_init__(self):
         # Overrides for whether a mod should install inside Data,
         # or inside the game dir go here.
@@ -86,25 +107,14 @@ class Mod:
                         break
 
             # Find plugin in the Data folder or top level and add them to self.plugins.
-            for file in files:
-                f = Path(file)
-                self.files[file] = loc_parent / f
-                if (
-                    f.suffix.lower() in [".esp", ".esl", ".esm"]
-                    and file not in self.plugins
-                    and (
-                        loc_parent == self.location
-                        or loc_parent == self.location / "Data"
-                    )
-                ):
-                    self.plugins.append(file)
-
-        # if this is a configured fomod, don't install anything above the "Data" folder.
-        if self.fomod:
-            self.files.clear()
-            for parent_dir, folders, files in os.walk(self.location / "Data"):
+            if not self.fomod:
                 for file in files:
-                    self.files[file] = loc_parent / file
+                    self.populate_from(parent_dir, files)
+
+        # Fomods only get stuff insalled if it's beneath the data folder.
+        if self.fomod:
+            for parent_dir, folders, files in os.walk(self.location / "Data"):
+                self.populate_from(parent_dir, files)
 
         else:
             # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
