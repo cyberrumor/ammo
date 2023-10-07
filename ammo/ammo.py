@@ -41,6 +41,8 @@ def main():
             for index, game in enumerate(games):
                 print(f"[{index}]         {game}")
             CHOICE = input("Index of game to manage: ")
+            if CHOICE.strip().lower() == "exit":
+                exit()
             try:
                 CHOICE = int(CHOICE)
                 assert CHOICE in range(len(games))
