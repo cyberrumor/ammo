@@ -850,7 +850,8 @@ class Controller:
                 "sounds",
                 "voices",
             ]
-            and not os.path.splitext(extracted_files[0])[-1] in [".esp", ".esl", ".esm"]
+            and os.path.splitext(extracted_files[0])[-1] not in [".esp", ".esl", ".esm"]
+            and Path(os.path.join(extract_to, extracted_files[0])).is_dir()
         ):
             # It is reasonable to conclude an extra directory can be eliminated.
             # This is needed for mods like skse that have a version directory
