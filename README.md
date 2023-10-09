@@ -42,8 +42,8 @@ echo 'PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/cyberrumor/ammo
 cd ammo
-pip3 install -r requirements.txt
-pip3 install .
+pip3 install -r requirements.txt || pip3 install --break-system-packages -r requirements.txt
+pip3 install . || pip3 install --break-system-packages .
 ```
 You can now execute ammo with the terminal command `ammo`.
 
@@ -51,7 +51,7 @@ You can now execute ammo with the terminal command `ammo`.
 ```
 cd /path/to/ammo/clone/dir
 git pull
-pip3 install --force-reinstall .
+pip3 install --force-reinstall . || pip3 install --break-system-packages --force-reinstall .
 ```
 
 # Usage Instructions
