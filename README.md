@@ -74,9 +74,11 @@ vanilla                                       Disable all managed components and
 ```
 
 # Technical Details
-- AMMO works via creating symlinks in your game directory pointing to your mod files.
+- AMMO works via creating hardlinks (or symlinks with `ammo -s`) in your game directory
+  pointing to your mod files.
 - When you install an archive, the archive may be renamed to remove special characters.
-- This will remove symlinks and empty directories from your game dir, and reinstall them whenever you commit.
+- This will remove symlinks, hardlinks, and empty directories from your game dir,
+  and reinstall them whenever you commit.
 
 # License
 GNU General Public License v2, with the exception of some of the mock mods used for testing,

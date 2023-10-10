@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 from common import AmmoController
 
+import pytest
+
 MOD_1 = "conflict_1"
 MOD_2 = "conflict_2"
 
@@ -35,14 +37,15 @@ def test_duplicate_plugin():
             assert len(controller.plugins) == 1
 
 
-def test_conflict_resolution():
+@pytest.mark.parametrize("use_symlinks", [True, False])
+def test_conflict_resolution(use_symlinks):
     """
     Install two mods with the same files. Verify the symlinks
     point back to the mod last in the load order.
 
     Conflicts for all files and plugins are won by a single mod.
     """
-    with AmmoController() as controller:
+    with AmmoController(use_symlinks) as controller:
         # Install both mods
         for mod in [MOD_1, MOD_2]:
             mod_index_download = [i.name for i in controller.downloads].index(
@@ -97,14 +100,15 @@ def test_conflict_resolution():
             check_links(expected_game_file, expected_mod_file)
 
 
-def test_conflicting_plugins_disable():
+@pytest.mark.parametrize("use_symlinks", [True, False])
+def test_conflicting_plugins_disable(use_symlinks):
     """
     Install two mods with the same files. Disable the one that is winning the
     conflict for the plugin.
 
     Test that the plugin isn't removed from the controller's plugins.
     """
-    with AmmoController() as controller:
+    with AmmoController(use_symlinks) as controller:
         # Install both mods
         for mod in [MOD_1, MOD_2]:
             mod_index_download = [i.name for i in controller.downloads].index(
