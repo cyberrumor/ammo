@@ -19,6 +19,7 @@ DLL_INSTALL_FILES = [
     Path("no_data_folder.dll"),
 ]
 
+
 def test_install_no_data_folder_plugin():
     """
     Tests that installing a mod with no data folder

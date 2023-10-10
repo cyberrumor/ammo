@@ -142,10 +142,17 @@ def mod_installs_files(mod_name, files):
                 print(f"expected: {expected_file}")
                 raise FileNotFoundError(expected_file)
 
-            # Catch any broken symlinks.
-            assert (
-                expected_file.readlink().exists()
-            ), f"Detected broken symlink: {expected_file}"
+            if expected_file.is_symlink():
+                # Catch any broken symlinks.
+                assert (
+                    expected_file.readlink().exists()
+                ), f"Detected broken symlink: {expected_file}"
+
+            else:
+                # Make sure hardlinks have more than 1 st_nlink
+                assert (
+                    os.stat(expected_file).st_nlink > 1
+                ), f"Detected lonely hard link: {expected_file}"
 
 
 def fomod_selections_choose_files(mod_name, files, selections=[]):

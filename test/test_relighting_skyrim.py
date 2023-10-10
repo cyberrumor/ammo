@@ -3,7 +3,6 @@ from pathlib import Path
 from common import fomod_selections_choose_files
 
 
-
 def test_fomod_relighting_skyrim():
     """
     Relighting Skyrim uses the 'requiredInstallFiles' directive as well as

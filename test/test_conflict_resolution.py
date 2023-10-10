@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from pathlib import Path
 from common import AmmoController
 
@@ -63,6 +64,16 @@ def test_conflict_resolution():
         # Track our expected mod files to confirm they're different later.
         uniques = []
 
+        def check_links(expected_game_file, expected_mod_file):
+            if expected_game_file.is_symlink():
+                # Symlink
+                assert expected_game_file.readlink() == expected_mod_file
+            else:
+                # Hardlink
+                expected_stat = os.stat(expected_game_file)
+                actual_stat = os.stat(expected_mod_file)
+                assert expected_stat.st_ino == actual_stat.st_ino
+
         # Assert that the symlinks point to MOD_2.
         # Since it was installed last, it will be last
         # in both mods/plugins load order.
@@ -70,8 +81,7 @@ def test_conflict_resolution():
             expected_game_file = controller.game.directory / file
             expected_mod_file = controller.mods[1].location / file
             uniques.append(expected_mod_file)
-
-            assert expected_game_file.readlink() == expected_mod_file
+            check_links(expected_game_file, expected_mod_file)
 
         # Rearrange the mods
         controller.move("mod", 1, 0)
@@ -84,8 +94,7 @@ def test_conflict_resolution():
 
             # Check that a different mod is the conflict winner now.
             assert expected_mod_file not in uniques
-
-            assert expected_game_file.readlink() == expected_mod_file
+            check_links(expected_game_file, expected_mod_file)
 
 
 def test_conflicting_plugins_disable():
@@ -124,10 +133,21 @@ def test_conflicting_plugins_disable():
             len(controller.plugins) == 1
         ), "Deactivating a mod hid a plugin provided by another mod"
 
-        # ensure the plugin points at mod 0
-        assert ((controller.game.data / "mock_plugin.esp").readlink()) == (
-            (controller.mods[0].location / "Data/mock_plugin.esp")
-        ), "Plugin pointed to the wrong mod!"
+        # ensure the plugin points at mod 0.
+        if (plugin := controller.game.data / "mock_plugin.esp").is_symlink():
+            # Symlink
+            assert plugin.readlink() == (
+                (controller.mods[0].location / "Data/mock_plugin.esp")
+            ), "Plugin pointed to the wrong mod!"
+        else:
+            # Hardlink
+            plugin_stat = os.stat(plugin)
+            expected_stat = os.stat(
+                controller.mods[0].location / "Data/mock_plugin.esp"
+            )
+            assert (
+                plugin_stat.st_ino == expected_stat.st_ino
+            ), f"Expected inode and actual inode differ! {plugin}"
 
 
 def test_conflicting_plugins_delete():

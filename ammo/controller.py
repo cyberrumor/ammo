@@ -294,14 +294,16 @@ class Controller:
 
     def _clean_data_dir(self) -> bool:
         """
-        Removes all symlinks and deletes empty folders.
+        Removes all links and deletes empty folders.
         """
-        # remove symlinks
+        # remove links
         for dirpath, _dirnames, filenames in os.walk(self.game.directory):
             d = Path(dirpath)
             for file in filenames:
                 full_path = d / file
                 if full_path.is_symlink():
+                    full_path.unlink()
+                elif os.stat(full_path).st_nlink > 1:
                     full_path.unlink()
 
         # remove empty directories
@@ -888,8 +890,8 @@ class Controller:
         Disable all managed components and clean up.
         """
         print(
-            "This will disable all mods and plugins, and remove all symlinks and \
-                empty folders from the game.directory."
+            "This will disable all mods and plugins, and remove all symlinks, \
+                hardlinks, and empty folders from the game.directory."
         )
         print("ammo will remember th mod load order but not the plugin load order.")
         print("These changes will take place immediately.")
@@ -918,6 +920,7 @@ class Controller:
             (name, src) = source
             try:
                 dest.symlink_to(src)
+                # dest.hardlink_to(src)
             except FileExistsError:
                 skipped_files.append(
                     f"{name} skipped overwriting an unmanaged file: \
