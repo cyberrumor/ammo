@@ -767,8 +767,9 @@ class Controller:
         """
         if index == "all" and mod_or_plugin in ["mod", "plugin"]:
             for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
-                if self._set_component_state(mod_or_plugin, i, True) is False:
-                    return False
+                if self.__dict__[f"{mod_or_plugin}s"][i].visible:
+                    if self._set_component_state(mod_or_plugin, i, True) is False:
+                        return False
             return True
 
         return self._set_component_state(mod_or_plugin, index, True)
@@ -779,8 +780,9 @@ class Controller:
         """
         if index == "all" and mod_or_plugin in ["mod", "plugin"]:
             for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
-                if self._set_component_state(mod_or_plugin, i, False) is False:
-                    return False
+                if self.__dict__[f"{mod_or_plugin}s"][i].visible:
+                    if self._set_component_state(mod_or_plugin, i, False) is False:
+                        return False
             return True
 
         return self._set_component_state(mod_or_plugin, index, False)
@@ -952,4 +954,30 @@ class Controller:
         Abandon pending changes.
         """
         self.__init__(self.downloads_dir, self.game)
+        return True
+
+    def find(self, *args):
+        """
+        Show only components with any keyword. `find` without args resets.
+        """
+        if not args:
+            keywords = []
+        else:
+            keywords = args
+
+        for component in self.mods + self.plugins + self.downloads:
+            component.visible = True
+            component_keywords = (
+                component.name.replace("_", " ").replace("-", " ").lower().split()
+            )
+
+            for keyword in keywords:
+                component.visible = False
+                if any(
+                    (
+                        component_keyword.count(keyword.lower())
+                        for component_keyword in component_keywords
+                    )
+                ):
+                    component.visible = True
         return True

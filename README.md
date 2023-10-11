@@ -72,6 +72,10 @@ move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
 refresh                                       Abandon pending changes.
 vanilla                                       Disable all managed components and clean up.
 ```
+Note that the `de/activate mod|plugin` command now supports `all` in place of `<index>`.
+This will activate or deactivate all mods or plugins that are visible. Combine this
+with the `find` command to quickly organize groups of components with related names.
+
 
 # Technical Details
 - AMMO works via creating symlinks in your game directory pointing to your mod files.

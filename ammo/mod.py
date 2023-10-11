@@ -15,6 +15,7 @@ class DLC:
     name: str
     enabled: bool = True
     is_dlc: bool = True
+    visible: bool = True
 
     def __str__(self):
         return self.name
@@ -28,6 +29,7 @@ class Download:
     name: str
     location: Path
     sane: bool = False
+    visible: bool = True
 
     def __post_init__(self):
         if all(((i.isalnum() or i in [".", "_", "-"]) for i in self.name)):
@@ -43,6 +45,7 @@ class Mod:
     location: Path
     parent_data_dir: Path
 
+    visible: bool = True
     modconf: None | Path = None
     has_data_dir: bool = False
     fomod: bool = False
@@ -160,6 +163,7 @@ class Plugin:
     name: str
     enabled: bool
     parent_mod: str
+    visible: bool = True
 
     def __str__(self):
         return f'{"[True]     " if self.enabled else "[False]    "}{self.name}'

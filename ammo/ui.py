@@ -8,7 +8,6 @@ from xml.etree import ElementTree
 class UI:
     def __init__(self, controller):
         self.controller = controller
-        self.keywords = []
 
         # get a map of commands to functions and the amount of args they expect
         self.command = {}
@@ -44,21 +43,12 @@ class UI:
         }
 
         self.command["find"] = {
-            "func": self.find,
+            "func": self.controller.find,
             "args": ["keyword"],
             "num_args": -1,
-            "doc": str(self.find.__doc__).strip(),
+            "doc": str(self.controller.find.__doc__).strip(),
         }
 
-    def find(self, *args):
-        """
-        Show only components with any keyword. `find` without args resets.
-        """
-        if not args:
-            self.keywords = []
-            return True
-        self.keywords = args
-        return True
 
     def help(self):
         """
@@ -86,14 +76,12 @@ class UI:
                         params.append(f"[<{arg}> ...]")
                     else:
                         params.append(f"<{arg}>")
-            # print(f"{k} {' '.join(params)} {v['doc']}")
             column_cmd.append(k)
             column_arg.append(" ".join(params))
             column_doc.append(v["doc"])
 
         pad_cmd = max((len(i) for i in column_cmd)) + 1
         pad_arg = max((len(i) for i in column_arg)) + 1
-        # pad_doc = max([len(i) for i in column_doc]) + 1
 
         for cmd, arg, doc in zip(column_cmd, column_arg, column_doc):
             print(
@@ -119,23 +107,7 @@ class UI:
             print("---------")
 
             for index, download in enumerate(self.controller.downloads):
-                match = True
-                download_keywords = (
-                    download.name.replace("_", " ").replace("-", " ").lower().split()
-                )
-
-                for keyword in self.keywords:
-                    match = False
-                    if any(
-                        (
-                            download_keyword.count(keyword.lower())
-                            for download_keyword in download_keywords
-                        )
-                    ):
-                        match = True
-                        break
-
-                if match:
+                if download.visible:
                     print(f"[{index}] {download}")
 
             print()
@@ -146,25 +118,10 @@ class UI:
             print(f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}")
             print("-----|-----------|-----")
             for priority, component in enumerate(components):
-                match = True
-                component_keywords = (
-                    component.name.replace("_", " ").replace("-", " ").lower().split()
-                )
-
-                for keyword in self.keywords:
-                    match = False
-                    if any(
-                        (
-                            component_keyword.count(keyword.lower())
-                            for component_keyword in component_keywords
-                        )
-                    ):
-                        match = True
-                        break
-                if match:
+                if component.visible:
                     num = f"[{priority}]     "
-                    l = len(str(priority)) + 1
-                    num = num[0:-l]
+                    length = len(str(priority)) + 1
+                    num = num[0:-length]
                     print(f"{num} {component}")
             print()
 
