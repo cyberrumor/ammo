@@ -765,12 +765,24 @@ class Controller:
         """
         Enabled components will be loaded by game.
         """
+        if index == "all" and mod_or_plugin in ["mod", "plugin"]:
+            for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
+                if self._set_component_state(mod_or_plugin, i, True) is False:
+                    return False
+            return True
+
         return self._set_component_state(mod_or_plugin, index, True)
 
     def deactivate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
         """
         Disabled components will not be loaded by game.
         """
+        if index == "all" and mod_or_plugin in ["mod", "plugin"]:
+            for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
+                if self._set_component_state(mod_or_plugin, i, False) is False:
+                    return False
+            return True
+
         return self._set_component_state(mod_or_plugin, index, False)
 
     def delete(self, mod_or_download: Mod | Download, index) -> bool:
