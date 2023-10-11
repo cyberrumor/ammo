@@ -724,7 +724,7 @@ class Controller:
             # Convert selection to int and validate.
             try:
                 if selection.split():
-                    selection = selection[-1]
+                    selection = selection.split()[-1]
 
                 selection = int(selection)
                 if selection not in range(len(page["plugins"])):
