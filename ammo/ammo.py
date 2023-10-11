@@ -19,16 +19,6 @@ STEAM = Path.home() / ".local/share/Steam/steamapps"
 
 
 def main():
-
-    args = sys.argv
-
-    if "-h" in args or "--help" in args:
-        print("Usage: ammo [options]")
-        print("-s  --symlink       Use symlinks instead of hardlinks")
-        sys.exit(0)
-
-    use_symlinks = "-s" in sys.argv or "--symlink" in sys.argv
-
     # game selection
     games = [game.name for game in (STEAM / "common").iterdir() if game.name in IDS]
     if not games:
@@ -93,7 +83,7 @@ def main():
     )
 
     # Create an instance of the controller.
-    controller = Controller(DOWNLOADS, game, use_symlinks)
+    controller = Controller(DOWNLOADS, game)
 
     # Run the UI against the controller.
     ui = UI(controller)

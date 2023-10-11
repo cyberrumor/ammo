@@ -14,8 +14,7 @@ from .mod import (
 
 
 class Controller:
-    def __init__(self, downloads_dir: Path, game: Game, use_symlinks=False):
-        self.use_symlinks = use_symlinks
+    def __init__(self, downloads_dir: Path, game: Game):
         self.downloads_dir: Path = downloads_dir
         self.game: Game = game
         self.changes: bool = False
@@ -920,10 +919,8 @@ class Controller:
             Path.mkdir(dest.parent, parents=True, exist_ok=True)
             (name, src) = source
             try:
-                if self.use_symlinks:
-                    dest.symlink_to(src)
-                else:
-                    dest.hardlink_to(src)
+                dest.symlink_to(src)
+                # dest.hardlink_to(src)
             except FileExistsError:
                 skipped_files.append(
                     f"{name} skipped overwriting an unmanaged file: \

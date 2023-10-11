@@ -33,8 +33,7 @@ class AmmoController:
     Removes those folders on exit or error.
     """
 
-    def __init__(self, use_symlinks=False):
-        self.use_symlinks = use_symlinks
+    def __init__(self):
         self.game = GAME
         script_path = Path(__file__)
         self.downloads_dir = script_path.parent / "Downloads"
@@ -44,7 +43,7 @@ class AmmoController:
         Return an instance of ammo's controller for tests to
         interact with.
         """
-        return Controller(self.downloads_dir, self.game, self.use_symlinks)
+        return Controller(self.downloads_dir, self.game)
 
     def __exit__(self, *args, **kwargs):
         """
@@ -110,12 +109,12 @@ def mod_extracts_files(mod_name, files):
                 raise FileNotFoundError(expected_file)
 
 
-def mod_installs_files(mod_name, files, use_symlinks=False):
+def mod_installs_files(mod_name, files):
     """
     Expects the name of a file in Downloads, and a list of file paths that should
     exist after installation and commit, relative to the game's directory.
     """
-    with AmmoController(use_symlinks) as controller:
+    with AmmoController() as controller:
         # install the mod
         mod_index_download = [i.name for i in controller.downloads].index(
             mod_name + ".7z"
@@ -156,7 +155,7 @@ def mod_installs_files(mod_name, files, use_symlinks=False):
                 ), f"Detected lonely hard link: {expected_file}"
 
 
-def fomod_selections_choose_files(mod_name, files, selections=[], use_symlinks=False):
+def fomod_selections_choose_files(mod_name, files, selections=[]):
     """
     Configure a fomod with flags, using default flags if unspecified.
 
@@ -165,7 +164,7 @@ def fomod_selections_choose_files(mod_name, files, selections=[], use_symlinks=F
 
     selections is a list of {"page": <page_number>, "option": <selection index>}
     """
-    with AmmoController(use_symlinks) as controller:
+    with AmmoController() as controller:
         mod_index_download = [i.name for i in controller.downloads].index(
             mod_name + ".7z"
         )

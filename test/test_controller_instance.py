@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 import os
 from common import AmmoController, install_everything
-import pytest
 
 
-@pytest.mark.parametrize("use_symlinks", [True, False])
-def test_controller_first_launch(use_symlinks):
+def test_controller_first_launch():
     """
     Sanity check the ammo_controller fixture, that it creates
     the game directory and properly removes it.
     """
-    with AmmoController(use_symlinks) as controller:
+    with AmmoController() as controller:
         game_dir = controller.game.directory
         assert os.path.exists(
             game_dir
@@ -49,14 +47,13 @@ def test_controller_first_launch(use_symlinks):
     ), f"ammo_dir {conf_dir} existed after the context manager closed."
 
 
-@pytest.mark.parametrize("use_symlinks", [True, False])
-def test_controller_subsequent_launch(use_symlinks):
+def test_controller_subsequent_launch():
     """
     Ensure ammo behaves correctly when launched against a game
     that already has mods installed, Plugins.txt populated with
     a non-default order, etc.
     """
-    with AmmoController(use_symlinks) as first_launch:
+    with AmmoController() as first_launch:
         install_everything(first_launch)
 
         # change some config to ensure it's not just alphabetic

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from common import mod_installs_files
-import pytest
 
 
-@pytest.mark.parametrize("use_symlinks", [True, False])
-def test_fomod_embers_xd(use_symlinks):
+def test_fomod_embers_xd():
     """
     In the past, there were some issues with Embers XD plugin becoming visible
     upon activate, but not persisting through a refresh.
@@ -20,4 +18,4 @@ def test_fomod_embers_xd(use_symlinks):
         Path("Data/Embers XD - Fire Magick Add-On.esp"),
     ]
 
-    mod_installs_files("mock_embers_xd", files, use_symlinks)
+    mod_installs_files("mock_embers_xd", files)
