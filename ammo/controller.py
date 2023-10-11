@@ -797,18 +797,34 @@ class Controller:
             raise TypeError
 
         if mod_or_download == "mod":
-            if not self.deactivate("mod", index):
-                # validation error
-                return False
+            if index == "all":
+                visible_mods = [i for i in self.mods if i.visible]
+                for mod in visible_mods:
+                    if not self.deactivate("mod", self.mods.index(mod)):
+                        # Don't get rid of stuff if we can't hide plugins
+                        return False
+                for mod in visible_mods:
+                    self.mods.pop(self.mods.index(mod))
+                    shutil.rmtree(mod.location)
+            else:
+                if not self.deactivate("mod", index):
+                    # validation error
+                    return False
 
-            # Remove the mod from the controller then delete it.
-            mod = self.mods.pop(int(index))
-            shutil.rmtree(mod.location)
+                # Remove the mod from the controller then delete it.
+                mod = self.mods.pop(int(index))
+                shutil.rmtree(mod.location)
             self.commit()
         else:
-            index = int(index)
-            os.remove(self.downloads[index].location)
-            self.downloads.pop(index)
+            if index == "all":
+                visible_downloads = [i for i in self.downloads if i.visible]
+                for download in visible_downloads:
+                    os.remove(self.downloads[self.downloads.index(download)].location)
+                    self.downloads.pop(self.downloads.index(download))
+            else:
+                index = int(index)
+                os.remove(self.downloads[index].location)
+                self.downloads.pop(index)
         return True
 
     def install(self, index) -> bool:
