@@ -833,64 +833,76 @@ class Controller:
         """
         assert self.changes is False
 
-        index = int(index)
-        download = self.downloads[index]
+        def install_download(download):
+            if not download.sane:
+                # Sanitize the download name to guarantee compatibility with 7z syntax.
+                fixed_name = download.name.replace(" ", "_")
+                fixed_name = "".join(
+                    [i for i in fixed_name if i.isalnum() or i in [".", "_", "-"]]
+                )
+                parent_folder = os.path.split(download.location)[0]
+                new_location = os.path.join(parent_folder, fixed_name)
+                os.rename(download.location, new_location)
+                download.location = new_location
+                download.name = fixed_name
+                download.sane = True
 
-        if not download.sane:
-            # Sanitize the download name to guarantee compatibility with 7z syntax.
-            fixed_name = download.name.replace(" ", "_")
-            fixed_name = "".join(
-                [i for i in fixed_name if i.isalnum() or i in [".", "_", "-"]]
-            )
-            parent_folder = os.path.split(download.location)[0]
-            new_location = os.path.join(parent_folder, fixed_name)
-            os.rename(download.location, new_location)
-            download.location = new_location
-            download.name = fixed_name
-            download.sane = True
+            # Get a decent name for the output folder.
+            # This has to be done for a safe 7z call.
+            output_folder = "".join(
+                [
+                    i
+                    for i in os.path.splitext(download.name)[0]
+                    if i.isalnum() or i == "_"
+                ]
+            ).strip("_")
+            if not output_folder:
+                output_folder = os.path.splitext(download.name)[0]
 
-        # Get a decent name for the output folder.
-        # This has to be done for a safe 7z call.
-        output_folder = "".join(
-            [i for i in os.path.splitext(download.name)[0] if i.isalnum() or i == "_"]
-        ).strip("_")
-        if not output_folder:
-            output_folder = os.path.splitext(download.name)[0]
+            extract_to = os.path.join(self.game.ammo_mods_dir, output_folder)
+            if os.path.exists(extract_to):
+                raise FileExistsError
 
-        extract_to = os.path.join(self.game.ammo_mods_dir, output_folder)
-        if os.path.exists(extract_to):
-            raise FileExistsError
+            extracted_files = []
+            os.system(f"7z x '{download.location}' -o'{extract_to}'")
+            extracted_files = os.listdir(extract_to)
 
-        extracted_files = []
-        os.system(f"7z x '{download.location}' -o'{extract_to}'")
-        extracted_files = os.listdir(extract_to)
+            if (
+                len(extracted_files) == 1
+                and extracted_files[0].lower()
+                not in [
+                    "data",
+                    "skse",
+                    "bashtags",
+                    "docs",
+                    "meshes",
+                    "textures",
+                    "animations",
+                    "interface",
+                    "misc",
+                    "shaders",
+                    "sounds",
+                    "voices",
+                ]
+                and os.path.splitext(extracted_files[0])[-1]
+                not in [".esp", ".esl", ".esm"]
+                and Path(os.path.join(extract_to, extracted_files[0])).is_dir()
+            ):
+                # It is reasonable to conclude an extra directory can be eliminated.
+                # This is needed for mods like skse that have a version directory
+                # between the mod's root folder and the Data folder.
+                for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
+                    filename = os.path.join(extract_to, extracted_files[0], file)
+                    shutil.move(filename, extract_to)
 
-        if (
-            len(extracted_files) == 1
-            and extracted_files[0].lower()
-            not in [
-                "data",
-                "skse",
-                "bashtags",
-                "docs",
-                "meshes",
-                "textures",
-                "animations",
-                "interface",
-                "misc",
-                "shaders",
-                "sounds",
-                "voices",
-            ]
-            and os.path.splitext(extracted_files[0])[-1] not in [".esp", ".esl", ".esm"]
-            and Path(os.path.join(extract_to, extracted_files[0])).is_dir()
-        ):
-            # It is reasonable to conclude an extra directory can be eliminated.
-            # This is needed for mods like skse that have a version directory
-            # between the mod's root folder and the Data folder.
-            for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
-                filename = os.path.join(extract_to, extracted_files[0], file)
-                shutil.move(filename, extract_to)
+        if index == "all":
+            for download in self.downloads:
+                if download.visible:
+                    install_download(download)
+        else:
+            index = int(index)
+            download = self.downloads[index]
+            install_download(download)
 
         self.refresh()
         return True
