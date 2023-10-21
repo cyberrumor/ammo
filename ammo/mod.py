@@ -55,25 +55,6 @@ class Mod:
     files: dict[Path] = field(default_factory=dict)
     plugins: list[str] = field(default_factory=list)
 
-    def populate_from(self, parent_dir, files):
-        """
-        Takes a parent directory and a list of files. If the file is a plugin,
-        ensure it's in the proper place before adding it to self.files.
-        If it's not a plugin, always add it.
-        """
-        for file in files:
-            f = Path(file)
-            loc_parent = Path(parent_dir)
-
-            if f.suffix.lower() in [".esp", ".esl", ".esm"]:
-                if loc_parent != self.location and loc_parent != self.location / "Data":
-                    # Skip plugins in the wrong place
-                    continue
-                self.plugins.append(file)
-                self.files[file] = loc_parent / f
-                continue
-            self.files[file] = loc_parent / f
-
     def __post_init__(self):
         # Overrides for whether a mod should install inside Data,
         # or inside the game dir go here.
@@ -84,40 +65,55 @@ class Mod:
         if (self.location / "Edit Scripts").exists():
             self.has_data_dir = True
 
-        # Get the files, set some flags.
+        # Scan the mod, see if this is a fomod, and whether
+        # it has a data dir.
         for parent_dir, folders, files in os.walk(self.location):
+            if self.fomod and self.has_data_dir:
+                break
+
             loc_parent = Path(parent_dir)
-            # If there is a data dir, remember it.
             if loc_parent in [
                 self.location / "Data",
                 self.location / "data",
             ]:
                 self.has_data_dir = True
 
-            if "fomod" in [i.lower() for i in folders]:
-                # find the ModuleConfig.xml if it exists.
-                for parent, _dirs, filenames in os.walk(self.location):
-                    p = Path(parent)
-                    for filename in filenames:
-                        if filename.lower() == "moduleconfig.xml":
-                            self.modconf = p / filename
-                            self.fomod = True
-                            break
-
-                    if self.fomod:
+            fomod_dirs = [i for i in folders if i.lower() == "fomod"]
+            if not fomod_dirs:
+                continue
+            fomod_dir = fomod_dirs.pop()
+            # find the ModuleConfig.xml if it exists.
+            for parent, _dirs, filenames in os.walk(self.location / fomod_dir):
+                if self.fomod:
+                    break
+                p = Path(parent)
+                for filename in filenames:
+                    if filename.lower() == "moduleconfig.xml":
+                        self.modconf = p / filename
+                        self.fomod = True
                         break
 
-            # Find plugin in the Data folder or top level and add them to self.plugins.
-            if not self.fomod:
-                for file in files:
-                    self.populate_from(parent_dir, files)
-
-        # Fomods only get stuff insalled if it's beneath the data folder.
+        location = self.location
         if self.fomod:
-            for parent_dir, folders, files in os.walk(self.location / "Data"):
-                self.populate_from(parent_dir, files)
+            location = location / "Data"
 
-        else:
+        # Populate self.files
+        for parent_dir, folders, files in os.walk(location):
+            for file in files:
+                f = Path(file)
+                loc_parent = Path(parent_dir)
+
+                if f.suffix.lower() in (".esp", ".esl", ".esm"):
+                    if (
+                        loc_parent != self.location
+                        and loc_parent != self.location / "Data"
+                    ):
+                        # Skip plugins in the wrong place
+                        continue
+                    self.plugins.append(file)
+                self.files[file] = loc_parent / f
+
+        if not self.fomod and not self.has_data_dir:
             # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
             # Don't do this to fomods because they might put things in a different location,
             # then associate them with SKSE/Plugins in the 'destination' directive.
@@ -125,10 +121,9 @@ class Mod:
                 if self.has_data_dir:
                     break
                 for file in files:
-                    p = Path(file)
-                    if p.suffix.lower() == ".dll":
+                    if file.lower().endswith(".dll"):
                         # This needs more robust handling.
-                        if "se/plugins" not in parent_dir.lower():
+                        if not parent_dir.lower().endswith("se/plugins"):
                             self.has_data_dir = True
                             break
 
