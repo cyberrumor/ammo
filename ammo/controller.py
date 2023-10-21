@@ -988,24 +988,14 @@ class Controller:
         """
         Show only components with any keyword. `find` without args resets.
         """
-        if not args:
-            keywords = []
-        else:
-            keywords = args
+        keywords = [*args]
 
         for component in self.mods + self.plugins + self.downloads:
             component.visible = True
-            component_keywords = (
-                component.name.replace("_", " ").replace("-", " ").lower().split()
-            )
-
+            name = component.name.lower()
             for keyword in keywords:
                 component.visible = False
-                if any(
-                    (
-                        component_keyword.count(keyword.lower())
-                        for component_keyword in component_keywords
-                    )
-                ):
+                if name.count(keyword):
                     component.visible = True
+                    break
         return True
