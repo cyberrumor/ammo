@@ -113,3 +113,19 @@ def test_find_deactivate_all_plugins():
         assert [i.name for i in controller.plugins if i.enabled] == [
             "no_data_folder_plugin.esp"
         ]
+
+
+def test_find_delete_all_mods():
+    """
+    Test that narrowing visible mods with 'find'
+    then deleting all will only delete visible mods.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "conflict_1")
+        install_mod(controller, "no_data_folder_plugin")
+
+        controller.find("normal", "conflict")
+        controller.delete("mod", "all")
+
+        assert [i.name for i in controller.mods] == ["no_data_folder_plugin"]
