@@ -259,30 +259,29 @@ class Controller:
         # destination: (mod_name, source)
         result = {}
         # Iterate through enabled mods in order.
-        for mod in [i for i in self.mods if i.enabled]:
+        for mod in (i for i in self.mods if i.enabled):
             # Iterate through the source files of the mod
             for src in mod.files.values():
                 # Get the sanitized full path relative to the game.directory.
                 corrected_name = str(src).split(mod.name, 1)[-1]
 
                 # Don't install fomod folders.
-                if "fomod" in corrected_name.lower():
+                if corrected_name.lower() == "fomod":
                     continue
 
                 # It is possible to make a mod install in the game.directory instead
                 # of the data dir by setting mod.has_data_dir = True.
+                dest = Path(
+                    os.path.join(
+                        self.game.directory,
+                        "Data" + corrected_name,
+                    )
+                )
                 if mod.has_data_dir:
                     dest = Path(
                         os.path.join(
                             self.game.directory,
                             corrected_name.replace("/data", "/Data").lstrip("/"),
-                        )
-                    )
-                else:
-                    dest = Path(
-                        os.path.join(
-                            self.game.directory,
-                            "Data" + corrected_name,
                         )
                     )
                 # Add the sanitized full path to the stage, resolving
@@ -553,27 +552,19 @@ class Controller:
         for node in selected_nodes:
             pre_stage = {}
 
-            # convert the 'source' folder form the xml into a full path
+            # convert the 'source' folder form the xml into a full path.
+            # Use case sensitivity correction because mod authors
+            # might have said a resource was at "00 Core/Meshes" in
+            # ModuleConfig.xml when the actual file itself might be
+            # "00 Core/meshes".
             s = node.get("source")
-            """
             full_source = reduce(
-                lambda path, name: path / name.lower() if name.lower() in path.iterdir() else path / name,
+                lambda path, name: path / name
+                if any(map(lambda p: p.name == name, path.iterdir()))
+                else path / name.lower(),
                 s.split("\\"),
                 mod.location,
             )
-            """
-            full_source = mod.location
-            for i in s.split("\\"):
-                # i requires case-sensitivity correction because mod authors
-                # might have said a resource was at "00 Core/Meshes" in
-                # ModuleConfig.xml when the actual file itself might be
-                # "00 Core/meshes".
-                folder = i
-                for file in os.listdir(full_source):
-                    if file.lower() == i.lower():
-                        folder = file
-                        break
-                full_source = full_source / folder
 
             # get the 'destination' folder form the xml. This path is relative to Data.
             full_destination = reduce(
@@ -591,20 +582,21 @@ class Controller:
             # isn't implemented here yet.
             pre_stage[full_source] = full_destination
 
-            for dest, src in pre_stage.items():
-                if dest.is_dir():
-                    # Handle directories
-                    for parent_dir, _folders, files in os.walk(dest):
-                        for file in files:
-                            source = Path(parent_dir) / str(file)
-                            local_parent_dir = parent_dir.split(str(dest))[-1].strip(
-                                "/"
-                            )
-                            destination = src / local_parent_dir / str(file)
-                            stage[destination] = source
-                else:
-                    # Handle files
-                    stage[src] = dest
+            for src, dest in pre_stage.items():
+                if src.is_file():
+                    stage[dest] = src
+                    continue
+
+                # Subsurface files require path localization.
+                for parent_dir, _, files in os.walk(src):
+                    for file in files:
+                        # Determine the local directory structure
+                        local_parent_dir = parent_dir.split(str(src))[-1].strip("/")
+
+                        # Build the destination and source paths
+                        destination = dest / local_parent_dir / file
+                        source = Path(parent_dir) / file
+                        stage[destination] = source
 
         # install the new files
         for k, v in stage.items():
@@ -962,7 +954,6 @@ class Controller:
             (name, src) = source
             try:
                 dest.symlink_to(src)
-                # dest.hardlink_to(src)
             except FileExistsError:
                 skipped_files.append(
                     f"{name} skipped overwriting an unmanaged file: \
