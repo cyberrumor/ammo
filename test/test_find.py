@@ -184,3 +184,19 @@ def test_find_filter_persists_after_refresh():
         assert set([m.name for m in controller.mods if m.visible]) == set(
             ["conflict_1", "conflict_2"]
         )
+
+
+def test_find_fomods():
+    """
+    Test that "find fomod" or "find fomods" will match all fomods.
+    """
+    with AmmoController() as controller:
+        install_everything(controller)
+
+        controller.find("fomods")
+
+        for i in controller.mods:
+            if i.fomod:
+                assert i.visible
+                continue
+            assert i.visible is False

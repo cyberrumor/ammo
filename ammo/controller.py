@@ -634,13 +634,14 @@ class Controller:
         # the user could re-configure a fomod (thereby changing mod.location/Data),
         # and quit ammo without running 'commit', which could leave broken symlinks in their
         # game.directoryectory.
-        self.deactivate("mod", index)
-        self.commit()
-        self.refresh()
 
         mod = self.mods[int(index)]
         if not mod.fomod:
             raise TypeError
+
+        self.deactivate("mod", index)
+        self.commit()
+        self.refresh()
 
         # Clean up previous configuration, if it exists.
         try:
@@ -1001,6 +1002,12 @@ class Controller:
 
             for keyword in self.keywords:
                 component.visible = False
+
+                # Hack to filter by fomods
+                if isinstance(component, Mod) and keyword.lower() == "fomods":
+                    if component.fomod:
+                        component.visible = True
+
                 if name.count(keyword.lower()):
                     component.visible = True
 
