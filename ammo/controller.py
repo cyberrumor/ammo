@@ -574,7 +574,7 @@ class Controller:
                     if file.lower() == i.lower():
                         folder = file
                         break
-                full_source= full_source / folder
+                full_source = full_source / folder
 
             # get the 'destination' folder form the xml. This path is relative to Data.
             full_destination = reduce(

@@ -49,7 +49,6 @@ class UI:
             "doc": str(self.controller.find.__doc__).strip(),
         }
 
-
     def help(self):
         """
         Show this menu.
