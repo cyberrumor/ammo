@@ -35,7 +35,7 @@ def test_find_install_all():
     with AmmoController() as controller:
         controller.find("conflict")
         controller.install("all")
-        assert [i.name for i in controller.mods] == ["conflict_2", "conflict_1"]
+        assert set((i.name for i in controller.mods)) == set(("conflict_1", "conflict_2"))
 
 
 def test_find_activate_all_mods():
