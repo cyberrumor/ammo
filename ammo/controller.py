@@ -14,13 +14,14 @@ from .mod import (
 
 
 class Controller:
-    def __init__(self, downloads_dir: Path, game: Game):
+    def __init__(self, downloads_dir: Path, game: Game, *args):
         self.downloads_dir: Path = downloads_dir
         self.game: Game = game
         self.changes: bool = False
         self.downloads: list[Download] = []
         self.mods: list[Mod] = []
         self.plugins: list[Plugin] = []
+        self.keywords = [*args]
 
         # Create required directories for testing. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
@@ -150,6 +151,7 @@ class Controller:
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
+        self.find(*self.keywords)
 
     def _save_order(self) -> bool:
         """
@@ -212,7 +214,9 @@ class Controller:
                 # Hide plugins owned by this mod and not another mod
                 for plugin in component.associated_plugins(self.plugins):
                     provided_elsewhere = False
-                    for mod in [i for i in self.mods if i.name != component.name]:
+                    for mod in [
+                        i for i in self.mods if i.name != component.name and i.enabled
+                    ]:
                         if plugin in mod.associated_plugins(self.plugins):
                             provided_elsewhere = True
                             break
@@ -982,19 +986,19 @@ class Controller:
         """
         Abandon pending changes.
         """
-        self.__init__(self.downloads_dir, self.game)
+        self.__init__(self.downloads_dir, self.game, *self.keywords)
         return True
 
     def find(self, *args):
         """
         Show only components with any keyword. `find` without args resets.
         """
-        keywords = [*args]
+        self.keywords = [*args]
 
         for component in self.mods + self.plugins + self.downloads:
             component.visible = True
             name = component.name.lower()
-            for keyword in keywords:
+            for keyword in self.keywords:
                 component.visible = False
                 if name.count(keyword):
                     component.visible = True

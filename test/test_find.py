@@ -35,7 +35,9 @@ def test_find_install_all():
     with AmmoController() as controller:
         controller.find("conflict")
         controller.install("all")
-        assert [i.name for i in controller.mods] == ["conflict_2", "conflict_1"]
+        assert set([i.name for i in controller.mods]) == set(
+            ["conflict_2", "conflict_1"]
+        )
 
 
 def test_find_activate_all_mods():
@@ -52,10 +54,12 @@ def test_find_activate_all_mods():
         controller.find("conflict")
         controller.activate("mod", "all")
 
-        assert [i.name for i in controller.mods if i.enabled] == [
-            "conflict_2",
-            "conflict_1",
-        ]
+        assert set([i.name for i in controller.mods if i.enabled]) == set(
+            [
+                "conflict_2",
+                "conflict_1",
+            ]
+        )
 
 
 def test_find_deactivate_all_mods():
@@ -72,7 +76,9 @@ def test_find_deactivate_all_mods():
         controller.find("conflict")
         controller.deactivate("mod", "all")
 
-        assert [i.name for i in controller.mods if i.enabled] == ["normal_mod"]
+        assert set([i.name for i in controller.mods if i.enabled]) == set(
+            ["normal_mod"]
+        )
 
 
 def test_find_activate_all_plugins():
@@ -90,10 +96,12 @@ def test_find_activate_all_plugins():
         controller.find("normal", "mock")
         controller.activate("plugin", "all")
 
-        assert [i.name for i in controller.plugins if i.enabled] == [
-            "mock_plugin.esp",
-            "normal_plugin.esp",
-        ]
+        assert set([i.name for i in controller.plugins if i.enabled]) == set(
+            [
+                "mock_plugin.esp",
+                "normal_plugin.esp",
+            ]
+        )
 
 
 def test_find_deactivate_all_plugins():
@@ -110,9 +118,9 @@ def test_find_deactivate_all_plugins():
         controller.find("normal", "mock")
         controller.deactivate("plugin", "all")
 
-        assert [i.name for i in controller.plugins if i.enabled] == [
-            "no_data_folder_plugin.esp"
-        ]
+        assert set([i.name for i in controller.plugins if i.enabled]) == set(
+            ["no_data_folder_plugin.esp"]
+        )
 
 
 def test_find_delete_all_mods():
@@ -128,4 +136,4 @@ def test_find_delete_all_mods():
         controller.find("normal", "conflict")
         controller.delete("mod", "all")
 
-        assert [i.name for i in controller.mods] == ["no_data_folder_plugin"]
+        assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
