@@ -74,41 +74,40 @@ refresh                                       Abandon pending changes.
 
 # Tips and Tricks
 
-Note that the `de/activate mod|plugin` command supports `all` in place of `<index>`.
-This will activate or deactivate all mods or plugins that are visible. Combine this
-with the `find` command to quickly organize groups of components with related names.
-You can leverage this to automatically sort your plugins to the same order as your
-mod list:
-```
-deactivate mod all
-# sort your mods with the move command
-activate mod all
-activate plugin all
-commit
-```
+- Note that the `de/activate mod|plugin` command supports `all` in place of `<index>`.
+  This will activate or deactivate all mods or plugins that are visible. Combine this
+  with the `find` command to quickly organize groups of components with related names.
+  You can leverage this to automatically sort your plugins to the same order as your
+  mod list:
+  ```
+  deactivate mod all
+  # sort your mods with the move command
+  activate mod all
+  activate plugin all
+  commit
+  ```
+- The `find` command accepts a special `fomods` argument that will filter by fomods.
 
-The `find` command accepts a special `fomods` argument that will filter by fomods.
+- The `find` command allows you to locate plugins owned by a particular mod, or mods
+  that have a particular plugin. It also lets you find mods / plugins / downloads via
+  keyword. This is an additive filter, so more words equals more matches.
 
-The `find` command allows you to locate plugins owned by a particular mod, or mods
-that have a particular plugin. It also lets you find mods / plugins / downloads via
-keyword. This is an additive filter, so more words equals more matches.
+- You can easily return to vanilla like this:
+  ```
+  deactivate mod all
+  commit
+  ```
 
-You can easily return to vanilla like this:
-```
-deactivate mod all
-commit
-```
+- If you don't know how many components are in your list and you want to move a
+  component to the bottom, you can throw in an arbitrarily large number as the
+  `<to index>` for the `move` command, and it will be moved to the last position.
+  This only works for the `move` command.
 
-If you don't know how many components are in your list and you want to move a
-component to the bottom, you can throw in an arbitrarily large number as the
-`<to index>` for the `move` command, and it will be moved to the last position.
-This only works for the `move` command.
+- If you have several downloads and you want to install all of them at once, simply
+  `install all`.
 
-If you have several downloads and you want to install all of them at once, simply
-`install all`.
-
-Combining `find` filters with `all` is a great way to quickly manage groups of
-related components, as the `all` keyword only operates on visible components.
+- Combining `find` filters with `all` is a great way to quickly manage groups of
+  related components, as the `all` keyword only operates on visible components.
 
 # Technical Details
 - AMMO works via creating symlinks in your game directory pointing to your mod files.
