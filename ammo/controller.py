@@ -259,7 +259,7 @@ class Controller:
         # destination: (mod_name, source)
         result = {}
         # Iterate through enabled mods in order.
-        for mod in (i for i in self.mods if i.enabled):
+        for mod in [i for i in self.mods if i.enabled]:
             # Iterate through the source files of the mod
             for src in mod.files.values():
                 # Get the sanitized full path relative to the game.directory.
