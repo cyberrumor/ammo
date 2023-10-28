@@ -552,12 +552,13 @@ class Controller:
         for node in selected_nodes:
             pre_stage = {}
 
-            # convert the 'source' folder form the xml into a full path.
+            # convert the 'source' folder from the xml into a full path.
             # Use case sensitivity correction because mod authors
             # might have said a resource was at "00 Core/Meshes" in
             # ModuleConfig.xml when the actual file itself might be
             # "00 Core/meshes".
             s = node.get("source")
+            """
             full_source = reduce(
                 lambda path, name: path / name
                 if any(map(lambda p: p.name == name, path.iterdir()))
@@ -565,6 +566,15 @@ class Controller:
                 s.split("\\"),
                 mod.location,
             )
+            """
+            full_source = mod.location
+            for i in s.split("\\"):
+                folder = i
+                for file in os.listdir(full_source):
+                    if file.lower() == i.lower():
+                        folder = file
+                        break
+                full_source= full_source / folder
 
             # get the 'destination' folder form the xml. This path is relative to Data.
             full_destination = reduce(
