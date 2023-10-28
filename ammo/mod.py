@@ -104,10 +104,10 @@ class Mod:
                 loc_parent = Path(parent_dir)
 
                 if f.suffix.lower() in (".esp", ".esl", ".esm"):
-                    if (
-                        loc_parent != self.location
-                        and loc_parent != self.location / "Data"
-                    ):
+                    if loc_parent != self.location and loc_parent not in [
+                        self.location / "Data",
+                        self.location / "data",
+                    ]:
                         # Skip plugins in the wrong place
                         continue
                     self.plugins.append(file)
