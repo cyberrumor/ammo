@@ -35,19 +35,23 @@ def test_move_validation():
             controller.move("plugin", highest, 0) is True
         ), "valid input was considered an error"
 
-        # Test invalid move mod input
+        # 'to index' that is too high for move should
+        # automatically correct to highest location.
+        # Test this on mods.
         highest = len(controller.mods)
-        with pytest.raises(IndexError):
-            controller.move("mod", 0, highest)
+        controller.move("mod", 0, highest)
 
+        # Test invalid 'from index' for mods.
         with pytest.raises(IndexError):
             controller.move("mod", highest, 0)
 
-        # Test invalid move plugin input
+        # 'to index' that is too high for move should
+        # automatically correct to highest location.
+        # Test this on plugins.
         highest = len(controller.plugins)
-        with pytest.raises(IndexError):
-            controller.move("plugin", 0, highest)
+        controller.move("plugin", 0, highest)
 
+        # Test invalid 'from index' for plugins.
         with pytest.raises(IndexError):
             controller.move("plugin", highest, 0)
 

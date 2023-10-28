@@ -926,7 +926,7 @@ class Controller:
         if old_ind == new_ind:
             return True
         if new_ind > len(components) - 1:
-            raise IndexError
+            new_ind = len(components) - 1
         if old_ind > len(components) - 1:
             raise IndexError
         component = components.pop(old_ind)
