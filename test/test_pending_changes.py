@@ -19,10 +19,10 @@ def test_pending_change_restrictions():
         install_mod(controller, "normal_mod")
         controller.changes = True
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(Warning):
             controller.delete("mod", 0)
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(Warning):
             controller.install(1)
 
 

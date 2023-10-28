@@ -153,7 +153,7 @@ class Controller:
         self.changes = False
         self.find(*self.keywords)
 
-    def _save_order(self) -> bool:
+    def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
         """
@@ -163,7 +163,6 @@ class Controller:
         with open(self.game.ammo_conf, "w") as file:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
-        return True
 
     def _get_validated_components(self, component_type: str) -> list:
         """
@@ -173,14 +172,12 @@ class Controller:
         Otherwise, return False.
         """
         if component_type not in ["plugin", "mod"]:
-            raise TypeError
+            raise Warning("Only plugins and mods can be de/activated.")
 
         components = self.plugins if component_type == "plugin" else self.mods
         return components
 
-    def _set_component_state(
-        self, component_type: str, mod_index: int, state: bool
-    ) -> bool:
+    def _set_component_state(self, component_type: str, mod_index: int, state: bool):
         """
         Activate or deactivate a component.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
@@ -199,9 +196,7 @@ class Controller:
                 and state
                 and not component.has_data_dir
             ):
-                print("Fomods must be configured before they can be enabled.")
-                print(f"Please run 'configure {mod_index}', refresh, and try again.")
-                return False
+                raise Warning("Fomods must be configured before they can be enabled.")
 
             component.enabled = state
             if component.enabled:
@@ -231,7 +226,6 @@ class Controller:
             component.enabled = state
 
         self.changes = starting_state != component.enabled
-        return True
 
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
         """
@@ -295,7 +289,7 @@ class Controller:
 
         return result
 
-    def _clean_data_dir(self) -> bool:
+    def _clean_data_dir(self):
         """
         Removes all links and deletes empty folders.
         """
@@ -321,7 +315,6 @@ class Controller:
                         pass
 
         remove_empty_dirs(self.game.directory)
-        return True
 
     def _fomod_get_flags(self, steps) -> dict:
         """
@@ -499,6 +492,9 @@ class Controller:
             else:
                 selected_nodes.append(file)
 
+        assert (
+            len(selected_nodes) > 0
+        ), "The selected options failed to map to installable components."
         return selected_nodes
 
     def _fomod_flags_match(self, flags: dict, expected_flags: dict) -> bool:
@@ -622,12 +618,13 @@ class Controller:
 
         mod.has_data_dir = True
 
-    def configure(self, index) -> bool:
+    def configure(self, index):
         """
         Configure a fomod.
         """
         # This has to run a hard refresh for now, so warn if there are uncommitted changes
-        assert self.changes is False
+        if self.changes is True:
+            raise Warning("You must `commit` changes before configuring a fomod.")
 
         # Since there must be a hard refresh after the fomod wizard to load the mod's new
         # files, deactivate this mod and commit changes. This prevents a scenario where
@@ -637,7 +634,7 @@ class Controller:
 
         mod = self.mods[int(index)]
         if not mod.fomod:
-            raise TypeError
+            raise Warning("Only fomods can be configured.")
 
         self.deactivate("mod", index)
         self.commit()
@@ -713,7 +710,7 @@ class Controller:
 
             if "exit" == selection:
                 self.refresh()
-                return True
+                return
 
             if "n" == selection:
                 page_index += 1
@@ -755,9 +752,7 @@ class Controller:
             # Whenever a plugin is unselected, re-assess all flags.
             self._fomod_select(page, selection)
 
-        if not (install_nodes := self._fomod_get_nodes(xml_root_node, steps, flags)):
-            print("The configured options failed to map to installable components!")
-            return False
+        install_nodes = self._fomod_get_nodes(xml_root_node, steps, flags)
 
         # Let the controller stage the chosen files and copy them to the mod's local Data dir.
         self._fomod_install_files(index, install_nodes)
@@ -766,79 +761,95 @@ class Controller:
         # resetting the controller and preventing configuration when there are unsaved changes
         # will no longer be required.
         self.refresh()
-        return True
 
-    def activate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
+    def activate(self, mod_or_plugin: Mod | Plugin, index):
         """
         Enabled components will be loaded by game.
         """
-        if index == "all" and mod_or_plugin in ["mod", "plugin"]:
+        if mod_or_plugin not in ["mod", "plugin"]:
+            raise Warning("You can only activate mods or plugins")
+        if index == "all":
             for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
                 if self.__dict__[f"{mod_or_plugin}s"][i].visible:
-                    if self._set_component_state(mod_or_plugin, i, True) is False:
-                        return False
-            return True
+                    self._set_component_state(mod_or_plugin, i, True)
+        else:
+            try:
+                self._set_component_state(mod_or_plugin, index, True)
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
 
-        return self._set_component_state(mod_or_plugin, index, True)
-
-    def deactivate(self, mod_or_plugin: Mod | Plugin, index) -> bool:
+    def deactivate(self, mod_or_plugin: Mod | Plugin, index):
         """
         Disabled components will not be loaded by game.
         """
-        if index == "all" and mod_or_plugin in ["mod", "plugin"]:
+        if mod_or_plugin not in ["mod", "plugin"]:
+            raise Warning("You can only deactivate mods or plugins")
+        if index == "all":
             for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
                 if self.__dict__[f"{mod_or_plugin}s"][i].visible:
-                    if self._set_component_state(mod_or_plugin, i, False) is False:
-                        return False
-            return True
+                    self._set_component_state(mod_or_plugin, i, False)
+        else:
+            try:
+                self._set_component_state(mod_or_plugin, index, False)
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
 
-        return self._set_component_state(mod_or_plugin, index, False)
-
-    def delete(self, mod_or_download: Mod | Download, index) -> bool:
+    def delete(self, mod_or_download: Mod | Download, index):
         """
         Removes specified file from the filesystem.
         """
-        assert self.changes is False
+        if self.changes is True:
+            raise Warning("You must `commit` changes before deleting a mod.")
 
         if mod_or_download not in ["download", "mod"]:
-            raise TypeError
+            raise Warning("Only downloads and mods may be deleted.")
 
         if mod_or_download == "mod":
             if index == "all":
                 visible_mods = [i for i in self.mods if i.visible]
                 for mod in visible_mods:
-                    if not self.deactivate("mod", self.mods.index(mod)):
-                        # Don't get rid of stuff if we can't hide plugins
-                        return False
+                    self.deactivate("mod", self.mods.index(mod))
                 for mod in visible_mods:
                     self.mods.pop(self.mods.index(mod))
                     shutil.rmtree(mod.location)
             else:
-                if not self.deactivate("mod", index):
-                    # validation error
-                    return False
+                try:
+                    self.deactivate("mod", index)
+                except IndexError as e:
+                    # Demote IndexErrors
+                    raise Warning(e)
 
                 # Remove the mod from the controller then delete it.
                 mod = self.mods.pop(int(index))
                 shutil.rmtree(mod.location)
             self.commit()
-        else:
+            return
+        elif mod_or_download == "download":
             if index == "all":
                 visible_downloads = [i for i in self.downloads if i.visible]
                 for download in visible_downloads:
                     os.remove(self.downloads[self.downloads.index(download)].location)
                     self.downloads.pop(self.downloads.index(download))
-            else:
-                index = int(index)
-                os.remove(self.downloads[index].location)
-                self.downloads.pop(index)
-        return True
+                return
+            index = int(index)
+            try:
+                download = self.downloads.pop(index)
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+            os.remove(download.location)
+            return
 
-    def install(self, index) -> bool:
+        raise Warning(f"Expected 'mod' or 'download' but got {mod_or_download}")
+
+    def install(self, index):
         """
         Extract and manage an archive from ~/Downloads.
         """
-        assert self.changes is False
+        if self.changes is True:
+            raise Warning("You must `commit` changes before installing a mod.")
 
         def install_download(download):
             if not download.sane:
@@ -868,7 +879,9 @@ class Controller:
 
             extract_to = os.path.join(self.game.ammo_mods_dir, output_folder)
             if os.path.exists(extract_to):
-                raise FileExistsError
+                raise Warning(
+                    "This mod appears to already be installed. Please delete it before reinstalling."
+                )
 
             extracted_files = []
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
@@ -908,13 +921,17 @@ class Controller:
                     install_download(download)
         else:
             index = int(index)
-            download = self.downloads[index]
+            try:
+                download = self.downloads[index]
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+
             install_download(download)
 
         self.refresh()
-        return True
 
-    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index) -> bool:
+    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index):
         """
         Larger numbers win file conflicts.
         """
@@ -924,37 +941,18 @@ class Controller:
         old_ind = int(from_index)
         new_ind = int(to_index)
         if old_ind == new_ind:
-            return True
+            # no op
+            return
         if new_ind > len(components) - 1:
+            # Auto correct astronomical <to index> to max.
             new_ind = len(components) - 1
         if old_ind > len(components) - 1:
-            raise IndexError
+            raise Warning("Index out of range.")
         component = components.pop(old_ind)
         components.insert(new_ind, component)
         self.changes = True
-        return True
 
-    def vanilla(self) -> bool:
-        """
-        Disable all managed components and clean up.
-        """
-        print(
-            "This will disable all mods and plugins, and remove all symlinks, \
-                hardlinks, and empty folders from the game.directory."
-        )
-        print("ammo will remember th mod load order but not the plugin load order.")
-        print("These changes will take place immediately.")
-        if input("continue? [y/n]").lower() != "y":
-            print("Not cleaned.")
-            return False
-
-        for mod in range(len(self.mods)):
-            self._set_component_state("mod", mod, False)
-        self._save_order()
-        self._clean_data_dir()
-        return True
-
-    def commit(self) -> bool:
+    def commit(self):
         """
         Apply pending changes.
         """
@@ -980,15 +978,12 @@ class Controller:
         for skipped_file in skipped_files:
             print(skipped_file)
         self.changes = False
-        # Always return False so status messages persist.
-        return False
 
-    def refresh(self) -> bool:
+    def refresh(self):
         """
         Abandon pending changes.
         """
         self.__init__(self.downloads_dir, self.game, *self.keywords)
-        return True
 
     def find(self, *args):
         """
@@ -1027,5 +1022,3 @@ class Controller:
             for mod in self.mods:
                 if plugin.name in mod.plugins:
                     mod.visible = True
-
-        return True

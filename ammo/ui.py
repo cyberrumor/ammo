@@ -86,6 +86,7 @@ class UI:
             print(
                 f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}"
             )
+        input("[Enter]")
 
     def exit(self):
         """
@@ -163,40 +164,9 @@ class UI:
                     args.insert(0, command["instance"])
 
                 try:
-                    ret = command["func"](*args)
-                    if not ret:
-                        input("[Enter]")
-
-                except IndexError:
-                    print("Index out of range.")
-                    input("[Enter]")
-
-                except ValueError:
-                    print("Expected a number and got a string.")
-                    input("[Enter]")
-
-                except FileExistsError:
-                    print("Resource exists. Try removing it first.")
-                    input("[Enter]")
-
-                except FileNotFoundError:
-                    print("Failed to extract. Is this a real archive?")
-                    input("[Enter]")
-
-                except IsADirectoryError:
-                    print("Failed to delete directory disguised as archive.")
-                    input("[Enter]")
-
-                except AssertionError:
-                    print("Changes must be committed first.")
-                    input("[Enter]")
-
-                except TypeError:
-                    print("invalid component for that command")
-                    input("[Enter]")
-
-                except ElementTree.ParseError:
-                    print("This mod's ModuleConfig.xml is malformed.")
+                    command["func"](*args)
+                except Warning as w:
+                    print(w.message)
                     input("[Enter]")
 
         except KeyboardInterrupt:
