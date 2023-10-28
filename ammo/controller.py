@@ -991,16 +991,34 @@ class Controller:
 
     def find(self, *args):
         """
-        Show only components with any keyword. `find` without args resets.
+        Fuzzy filter. `find` without args removes filter.
         """
         self.keywords = [*args]
 
         for component in self.mods + self.plugins + self.downloads:
             component.visible = True
             name = component.name.lower()
+
             for keyword in self.keywords:
                 component.visible = False
-                if name.count(keyword):
+                if name.count(keyword.lower()):
                     component.visible = True
+
+                # Show plugins of visible mods.
+                if isinstance(component, Plugin):
+                    if component.parent_mod.name.lower().count(keyword.lower()):
+                        component.visible = True
+
+                if component.visible:
                     break
+
+        # Show mods that contain plugins named like the visible plugins.
+        # This shows all associated mods, not just conflict winners.
+        for plugin in [p for p in self.plugins if p.visible]:
+            # We can't simply plugin.parent_mod.visible = True because parent_mod
+            # does not care about conflict winners. This also means we can't break.
+            for mod in self.mods:
+                if plugin.name in mod.plugins:
+                    mod.visible = True
+
         return True

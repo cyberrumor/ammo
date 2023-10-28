@@ -65,7 +65,7 @@ configure  <index>                            Configure a fomod.
 deactivate mod|plugin <index>                 Disabled components will not be loaded by game.
 delete     mod|download <index>               Removes specified file from the filesystem.
 exit                                          Quit. Prompts if there are changes.
-find       [<keyword> ...]                    Show only components with any keyword. `find` without args resets.
+find       [<keyword> ...]                    Fuzzy filter. `find` without args removes filter.
 help                                          Show this menu.
 install    <index>                            Extract and manage an archive from ~/Downloads.
 move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.

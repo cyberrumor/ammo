@@ -137,3 +137,32 @@ def test_find_delete_all_mods():
         controller.delete("mod", "all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
+
+
+def test_find_plugin_by_mod_name():
+    """
+    Test that finding a mod will show the plugins associated
+    with it, even if the plugin names don't have anything
+    to do with the mod's name.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "conflict_1")
+
+        controller.find("conflict")
+
+        assert set([i.name for i in controller.plugins if i.visible]) == set(["mock_plugin.esp"])
+
+
+def test_find_mod_by_plugin_name():
+    """
+    Test that finding a plugin will show the mods it belongs to,
+    even if the mod names don't have anything to do with the
+    plugin's name.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "conflict_1")
+        install_mod(controller, "conflict_2")
+        controller.find("mock_plugin.esp")
+
+        assert set([i.name for i in controller.mods if i.visible]) == set(["conflict_1", "conflict_2"])
