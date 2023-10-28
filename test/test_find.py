@@ -150,7 +150,9 @@ def test_find_plugin_by_mod_name():
 
         controller.find("conflict")
 
-        assert set([i.name for i in controller.plugins if i.visible]) == set(["mock_plugin.esp"])
+        assert set([i.name for i in controller.plugins if i.visible]) == set(
+            ["mock_plugin.esp"]
+        )
 
 
 def test_find_mod_by_plugin_name():
@@ -165,4 +167,20 @@ def test_find_mod_by_plugin_name():
         install_mod(controller, "conflict_2")
         controller.find("mock_plugin.esp")
 
-        assert set([i.name for i in controller.mods if i.visible]) == set(["conflict_1", "conflict_2"])
+        assert set([i.name for i in controller.mods if i.visible]) == set(
+            ["conflict_1", "conflict_2"]
+        )
+
+
+def test_find_filter_persists_after_refresh():
+    """
+    Test that installing a mod doesn't remove the filter.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.find("conflict")
+        controller.install("all")
+
+        assert set([m.name for m in controller.mods if m.visible]) == set(
+            ["conflict_1", "conflict_2"]
+        )
