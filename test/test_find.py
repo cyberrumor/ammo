@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import os
 from pathlib import Path
+from ammo.mod import (
+    ComponentEnum,
+    DeleteEnum,
+)
 from common import (
     AmmoController,
     install_mod,
@@ -52,7 +56,7 @@ def test_find_activate_all_mods():
         extract_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.activate("mod", "all")
+        controller.activate(ComponentEnum("mod"), "all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -74,7 +78,7 @@ def test_find_deactivate_all_mods():
         install_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.deactivate("mod", "all")
+        controller.deactivate(ComponentEnum("mod"), "all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -91,10 +95,10 @@ def test_find_activate_all_plugins():
         extract_mod(controller, "normal_mod")
         extract_mod(controller, "conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
-        controller.activate("mod", "all")
+        controller.activate(ComponentEnum("mod"), "all")
 
         controller.find("normal", "mock")
-        controller.activate("plugin", "all")
+        controller.activate(ComponentEnum("plugin"), "all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             [
@@ -116,7 +120,7 @@ def test_find_deactivate_all_plugins():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "mock")
-        controller.deactivate("plugin", "all")
+        controller.deactivate(ComponentEnum("plugin"), "all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             ["no_data_folder_plugin.esp"]
@@ -134,7 +138,7 @@ def test_find_delete_all_mods():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "conflict")
-        controller.delete("mod", "all")
+        controller.delete(DeleteEnum("mod"), "all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

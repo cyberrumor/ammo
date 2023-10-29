@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from enum import Enum
 from pathlib import (
     Path,
     PurePath,
@@ -8,6 +9,16 @@ from dataclasses import (
     dataclass,
     field,
 )
+
+
+class ComponentEnum(str, Enum):
+    MOD = "mod"
+    PLUGIN = "plugin"
+
+
+class DeleteEnum(str, Enum):
+    MOD = "mod"
+    DOWNLOAD = "download"
 
 
 @dataclass

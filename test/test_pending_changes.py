@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 import pytest
+from ammo.mod import (
+    ComponentEnum,
+    DeleteEnum,
+)
 from common import (
     AmmoController,
     install_everything,
@@ -20,7 +24,7 @@ def test_pending_change_restrictions():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.delete("mod", 0)
+            controller.delete(ComponentEnum("mod"), 0)
 
         with pytest.raises(Warning):
             controller.install(1)
@@ -58,14 +62,14 @@ def test_pending_change_activate():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.activate("mod", 0)
+        controller.activate(ComponentEnum("mod"), 0)
         assert (
             controller.changes is False
         ), "activate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.activate("mod", 0)
+        controller.activate(ComponentEnum("mod"), 0)
         assert (
             controller.changes is True
         ), "activate command failed to create a pending change."
@@ -78,14 +82,14 @@ def test_pending_change_deactivate():
     """
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.deactivate("mod", 0)
+        controller.deactivate(ComponentEnum("mod"), 0)
         assert (
             controller.changes is False
         ), "deactivate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.deactivate("mod", 0)
+        controller.deactivate(ComponentEnum("mod"), 0)
         assert (
             controller.changes is True
         ), "deactivate command failed to create a pending change."
@@ -130,5 +134,5 @@ def test_pending_change_delete():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.delete("mod", 0)
+        controller.delete(ComponentEnum("mod"), 0)
         assert controller.changes is False, "Delete command created a pending change."

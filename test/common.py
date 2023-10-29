@@ -6,6 +6,10 @@ from xml.etree import ElementTree
 
 from ammo.game import Game
 from ammo.controller import Controller
+from ammo.mod import (
+    ComponentEnum,
+    DeleteEnum,
+)
 
 
 # Create a configuration for the mock controller to use.
@@ -121,11 +125,11 @@ def mod_installs_files(mod_name, files):
         )
         controller.install(mod_index_download)
         mod_index = [i.name for i in controller.mods].index(mod_name)
-        controller.activate("mod", mod_index)
+        controller.activate(ComponentEnum("mod"), mod_index)
 
         # activate any plugins this mod has
         for plugin in range(len(controller.plugins)):
-            controller.activate("plugin", plugin)
+            controller.activate(ComponentEnum("plugin"), plugin)
 
         controller.commit()
 
@@ -226,11 +230,11 @@ def install_everything(controller):
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            controller.activate("mod", index)
+            controller.activate(ComponentEnum("mod"), index)
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)
-        controller.activate("plugin", index)
+        controller.activate(ComponentEnum("plugin"), index)
 
     controller.commit()
 
@@ -262,11 +266,11 @@ def install_mod(controller, mod_name: str):
     controller.install(index)
 
     mod_index = [i.name for i in controller.mods].index(mod_name)
-    controller.activate("mod", mod_index)
+    controller.activate(ComponentEnum("mod"), mod_index)
 
     for plugin in controller.mods[mod_index].plugins:
         plugin_index = [i.name for i in controller.plugins].index(plugin)
-        controller.activate("plugin", plugin_index)
+        controller.activate(ComponentEnum("plugin"), plugin_index)
 
     controller.commit()
 

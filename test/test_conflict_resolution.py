@@ -2,6 +2,10 @@
 import os
 from pathlib import Path
 from common import AmmoController
+from ammo.mod import (
+    ComponentEnum,
+    DeleteEnum,
+)
 
 MOD_1 = "conflict_1"
 MOD_2 = "conflict_2"
@@ -28,7 +32,7 @@ def test_duplicate_plugin():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate("mod", mod_index)
+            controller.activate(ComponentEnum("mod"), mod_index)
             # Ensure there is only one esp
             assert len(controller.plugins) == 1
             controller.commit()
@@ -52,11 +56,11 @@ def test_conflict_resolution():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate("mod", mod_index)
+            controller.activate(ComponentEnum("mod"), mod_index)
             controller.commit()
 
         # Activate the plugin
-        controller.activate("plugin", 0)
+        controller.activate(ComponentEnum("plugin"), 0)
 
         # Commit changes
         controller.commit()
@@ -84,7 +88,7 @@ def test_conflict_resolution():
             check_links(expected_game_file, expected_mod_file)
 
         # Rearrange the mods
-        controller.move("mod", 1, 0)
+        controller.move(ComponentEnum("mod"), 1, 0)
         controller.commit()
 
         # Assert that the symlinks point to MOD_1 now.
@@ -114,20 +118,20 @@ def test_conflicting_plugins_disable():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate("mod", mod_index)
+            controller.activate(ComponentEnum("mod"), mod_index)
             controller.commit()
 
         # plugin is disabled, changes were not / are not committed
-        controller.deactivate("mod", 1)
+        controller.deactivate(ComponentEnum("mod"), 1)
         assert (
             len(controller.plugins) == 1
         ), "Deactivating a mod hid a plugin provided by another mod"
 
         # plugin is enabled, changes were / are committed
-        controller.activate("mod", 1)
-        controller.activate("plugin", 0)
+        controller.activate(ComponentEnum("mod"), 1)
+        controller.activate(ComponentEnum("plugin"), 0)
         controller.commit()
-        controller.deactivate("mod", 1)
+        controller.deactivate(ComponentEnum("mod"), 1)
         controller.commit()
         assert (
             len(controller.plugins) == 1
@@ -165,11 +169,11 @@ def test_conflicting_plugins_delete():
             )
             controller.install(mod_index_download)
             mod_index = [i.name for i in controller.mods].index(mod)
-            controller.activate("mod", mod_index)
+            controller.activate(ComponentEnum("mod"), mod_index)
             controller.commit()
 
         # plugin is disabled, changes were not / are not committed
-        controller.delete("mod", 1)
+        controller.delete(DeleteEnum("mod"), 1)
         assert (
             len(controller.plugins) == 1
         ), "Deleting a mod hid a plugin provided by another mod"

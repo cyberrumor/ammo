@@ -10,6 +10,8 @@ from .mod import (
     Download,
     Plugin,
     DLC,
+    DeleteEnum,
+    ComponentEnum,
 )
 
 
@@ -153,6 +155,35 @@ class Controller:
         self.changes = False
         self.find(*self.keywords)
 
+    def __str__(self) -> str:
+        """
+        Output a string representing all downloads, mods and plugins.
+        """
+        result = ""
+        if len(self.downloads):
+            result += "Downloads\n"
+            result += "----------\n"
+
+            for index, download in enumerate(self.downloads):
+                if download.visible:
+                    result += f"[{index}] {download}\n"
+            result += "\n"
+
+        for index, components in enumerate([self.mods, self.plugins]):
+            result += (
+                f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}\n"
+            )
+            result += "-----|----------|-----\n"
+            for priority, component in enumerate(components):
+                if component.visible:
+                    num = f"[{priority}]     "
+                    length = len(str(priority)) + 1
+                    num = num[0:-length]
+                    result += f"{num} {component}\n"
+            if index == 0:
+                result += "\n"
+        return result
+
     def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
@@ -164,53 +195,58 @@ class Controller:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
 
-    def _get_validated_components(self, component_type: str) -> list:
+    def _get_validated_components(self, component: ComponentEnum) -> list:
         """
-        Expects either the string "plugin" or the string "mod",
-        and an index. If the index is within the valid range
-        for that type of component, return that entire component list.
-        Otherwise, return False.
+        Turn a ComponentEnum into either self.mods or self.plugins.
         """
-        if component_type not in ["plugin", "mod"]:
-            raise Warning("Only plugins and mods can be de/activated.")
+        if component not in list(ComponentEnum):
+            raise Warning(
+                f"Can only do that with {[i.value for i in list(ComponentEnum)]}, not {component}"
+            )
 
-        components = self.plugins if component_type == "plugin" else self.mods
+        components = self.plugins if component == ComponentEnum.PLUGIN else self.mods
         return components
 
-    def _set_component_state(self, component_type: str, mod_index: int, state: bool):
+    def _set_component_state(self, component: ComponentEnum, index: int, state: bool):
         """
         Activate or deactivate a component.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
         if they aren't also provided by another mod.
         """
-        components = self._get_validated_components(component_type)
-        component = components[int(mod_index)]
+        if not isinstance(index, int):
+            index = int(index)
 
-        starting_state = component.enabled
+        if not isinstance(component, ComponentEnum):
+            raise TypeError(f"Expected ComponentEnum, got '{component}' of type '{type(component)}'")
+
+        components = self._get_validated_components(component)
+        subject = components[index]
+
+        starting_state = subject.enabled
         # Handle mods
-        if isinstance(component, Mod):
+        if isinstance(subject, Mod):
             # Handle configuration of fomods
             if (
-                hasattr(component, "fomod")
-                and component.fomod
+                hasattr(subject, "fomod")
+                and subject.fomod
                 and state
-                and not component.has_data_dir
+                and not subject.has_data_dir
             ):
                 raise Warning("Fomods must be configured before they can be enabled.")
 
-            component.enabled = state
-            if component.enabled:
+            subject.enabled = state
+            if subject.enabled:
                 # Show plugins owned by this mod
-                for name in component.plugins:
+                for name in subject.plugins:
                     if name not in [i.name for i in self.plugins]:
-                        plugin = Plugin(name, False, component)
+                        plugin = Plugin(name, False, subject)
                         self.plugins.append(plugin)
             else:
                 # Hide plugins owned by this mod and not another mod
-                for plugin in component.associated_plugins(self.plugins):
+                for plugin in subject.associated_plugins(self.plugins):
                     provided_elsewhere = False
                     for mod in [
-                        i for i in self.mods if i.name != component.name and i.enabled
+                        i for i in self.mods if i.name != subject.name and i.enabled
                     ]:
                         if plugin in mod.associated_plugins(self.plugins):
                             provided_elsewhere = True
@@ -222,10 +258,12 @@ class Controller:
                             self.plugins.remove(plugin)
 
         # Handle plugins
-        if isinstance(component, Plugin):
-            component.enabled = state
+        elif isinstance(subject, Plugin):
+            subject.enabled = state
+        else:
+            raise NotImplementedError
 
-        self.changes = starting_state != component.enabled
+        self.changes = starting_state != subject.enabled
 
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
         """
@@ -618,7 +656,7 @@ class Controller:
 
         mod.has_data_dir = True
 
-    def configure(self, index):
+    def configure(self, index: int):
         """
         Configure a fomod.
         """
@@ -632,11 +670,11 @@ class Controller:
         # and quit ammo without running 'commit', which could leave broken symlinks in their
         # game.directoryectory.
 
-        mod = self.mods[int(index)]
+        mod = self.mods[index]
         if not mod.fomod:
             raise Warning("Only fomods can be configured.")
 
-        self.deactivate("mod", index)
+        self.deactivate(ComponentEnum("mod"), index)
         self.commit()
         self.refresh()
 
@@ -762,71 +800,94 @@ class Controller:
         # will no longer be required.
         self.refresh()
 
-    def activate(self, mod_or_plugin: Mod | Plugin, index):
+    def activate(self, component: ComponentEnum, index: type[int | str]):
         """
         Enabled components will be loaded by game.
         """
-        if mod_or_plugin not in ["mod", "plugin"]:
+        if component not in list(ComponentEnum):
             raise Warning("You can only activate mods or plugins")
+
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got '{index}'")
+
         if index == "all":
-            for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
-                if self.__dict__[f"{mod_or_plugin}s"][i].visible:
-                    self._set_component_state(mod_or_plugin, i, True)
+            for i in range(len(self.__dict__[f"{component.value}s"])):
+                if self.__dict__[f"{component.value}s"][i].visible:
+                    self._set_component_state(component, i, True)
         else:
             try:
-                self._set_component_state(mod_or_plugin, index, True)
+                self._set_component_state(component, index, True)
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def deactivate(self, mod_or_plugin: Mod | Plugin, index):
+    def deactivate(self, component: ComponentEnum, index: type[int | str]):
         """
         Disabled components will not be loaded by game.
         """
-        if mod_or_plugin not in ["mod", "plugin"]:
+        if component not in list(ComponentEnum):
             raise Warning("You can only deactivate mods or plugins")
+
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got '{index}'")
+
         if index == "all":
-            for i in range(len(self.__dict__[f"{mod_or_plugin}s"])):
-                if self.__dict__[f"{mod_or_plugin}s"][i].visible:
-                    self._set_component_state(mod_or_plugin, i, False)
+            for i in range(len(self.__dict__[f"{component.value}s"])):
+                if self.__dict__[f"{component.value}s"][i].visible:
+                    self._set_component_state(component, i, False)
         else:
             try:
-                self._set_component_state(mod_or_plugin, index, False)
+                self._set_component_state(component, index, False)
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def delete(self, mod_or_download: Mod | Download, index):
+    def delete(self, component: DeleteEnum, index: type[int | str]):
         """
         Removes specified file from the filesystem.
         """
         if self.changes is True:
             raise Warning("You must `commit` changes before deleting a mod.")
 
-        if mod_or_download not in ["download", "mod"]:
-            raise Warning("Only downloads and mods may be deleted.")
+        if component not in list(DeleteEnum):
+            raise Warning(
+                f"Can only delete components of types {[i.value for i in list(DeleteEnum)]}, not {component}"
+            )
 
-        if mod_or_download == "mod":
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got '{index}'")
+
+        if component == DeleteEnum.MOD:
             if index == "all":
                 visible_mods = [i for i in self.mods if i.visible]
                 for mod in visible_mods:
-                    self.deactivate("mod", self.mods.index(mod))
+                    self.deactivate(ComponentEnum("mod"), self.mods.index(mod))
                 for mod in visible_mods:
                     self.mods.pop(self.mods.index(mod))
                     shutil.rmtree(mod.location)
-            else:
-                try:
-                    self.deactivate("mod", index)
-                except IndexError as e:
-                    # Demote IndexErrors
-                    raise Warning(e)
+                return
+            try:
+                self.deactivate(ComponentEnum("mod"), index)
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
 
-                # Remove the mod from the controller then delete it.
-                mod = self.mods.pop(int(index))
-                shutil.rmtree(mod.location)
+            # Remove the mod from the controller then delete it.
+            mod = self.mods.pop(index)
+            shutil.rmtree(mod.location)
             self.commit()
             return
-        elif mod_or_download == "download":
+
+        elif component == DeleteEnum.DOWNLOAD:
             if index == "all":
                 visible_downloads = [i for i in self.downloads if i.visible]
                 for download in visible_downloads:
@@ -842,14 +903,20 @@ class Controller:
             os.remove(download.location)
             return
 
-        raise Warning(f"Expected 'mod' or 'download' but got {mod_or_download}")
+        raise Warning(f"Expected 'mod' or 'download' but got {component}")
 
-    def install(self, index):
+    def install(self, index: type[int | str]):
         """
         Extract and manage an archive from ~/Downloads.
         """
         if self.changes is True:
             raise Warning("You must `commit` changes before installing a mod.")
+
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got '{index}'")
 
         def install_download(download):
             if not download.sane:
@@ -931,11 +998,11 @@ class Controller:
 
         self.refresh()
 
-    def move(self, mod_or_plugin: Mod | Plugin, from_index, to_index):
+    def move(self, component: ComponentEnum, from_index: int, to_index: int):
         """
         Larger numbers win file conflicts.
         """
-        components = self._get_validated_components(mod_or_plugin)
+        components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
         old_ind = int(from_index)
@@ -948,8 +1015,8 @@ class Controller:
             new_ind = len(components) - 1
         if old_ind > len(components) - 1:
             raise Warning("Index out of range.")
-        component = components.pop(old_ind)
-        components.insert(new_ind, component)
+        comp = components.pop(old_ind)
+        components.insert(new_ind, comp)
         self.changes = True
 
     def commit(self):
@@ -985,30 +1052,30 @@ class Controller:
         """
         self.__init__(self.downloads_dir, self.game, *self.keywords)
 
-    def find(self, *args):
+    def find(self, *keyword: str):
         """
         Fuzzy filter. `find` without args removes filter.
         """
-        self.keywords = [*args]
+        self.keywords = [*keyword]
 
         for component in self.mods + self.plugins + self.downloads:
             component.visible = True
             name = component.name.lower()
 
-            for keyword in self.keywords:
+            for kw in self.keywords:
                 component.visible = False
 
                 # Hack to filter by fomods
-                if isinstance(component, Mod) and keyword.lower() == "fomods":
+                if isinstance(component, Mod) and kw.lower() == "fomods":
                     if component.fomod:
                         component.visible = True
 
-                if name.count(keyword.lower()):
+                if name.count(kw.lower()):
                     component.visible = True
 
                 # Show plugins of visible mods.
                 if isinstance(component, Plugin):
-                    if component.parent_mod.name.lower().count(keyword.lower()):
+                    if component.parent_mod.name.lower().count(kw.lower()):
                         component.visible = True
 
                 if component.visible:
