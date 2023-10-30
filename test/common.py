@@ -6,7 +6,7 @@ from pathlib import Path
 from ammo.game import Game
 from ammo.mod_controller import ModController
 from ammo.fomod_controller import FomodController
-from ammo.mod import (
+from ammo.component import (
     Mod,
     ComponentEnum,
 )

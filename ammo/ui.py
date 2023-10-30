@@ -13,6 +13,7 @@ from abc import (
     abstractmethod,
 )
 
+
 class Controller(ABC):
     """
     Public methods of class derivatives will be exposed
@@ -29,6 +30,7 @@ class Controller(ABC):
     text and prompt the user to [Enter] before the next frame
     is drawn.
     """
+
     @abstractmethod
     def _prompt(self) -> str:
         """
@@ -65,6 +67,7 @@ class UI:
     type hints of the controller's public methods, and is presented in
     a typical POSIX usage format.
     """
+
     def __init__(self, controller: Controller):
         self.controller = controller
 
@@ -136,7 +139,6 @@ class UI:
                 "instance": self.controller,
             }
 
-
     def help(self):
         """
         Show this menu.
@@ -145,19 +147,18 @@ class UI:
         column_arg = []
         column_doc = []
 
-        for k, v in sorted(self.command.items()):
-            column_cmd.append(k)
-            column_arg.append(" ".join([arg["description"] for arg in v["args"]]))
-            column_doc.append(v["doc"])
+        for name, command in sorted(self.command.items()):
+            column_cmd.append(name)
+            column_arg.append(" ".join([arg["description"] for arg in command["args"]]))
+            column_doc.append(command["doc"])
 
         pad_cmd = max(len(cmd) for cmd in column_cmd) + 1
         pad_arg = max(len(arg) for arg in column_arg) + 1
 
+        out = ""
         for cmd, arg, doc in zip(column_cmd, column_arg, column_doc):
-            print(
-                f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}"
-            )
-
+            out += f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}\n"
+        print(out)
         input("[Enter]")
 
     def exit(self):
@@ -165,7 +166,6 @@ class UI:
         Quit.
         """
         sys.exit(0)
-
 
     def cast_to_type(self, arg, target_type):
         """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import pytest
-from ammo.mod import (
+from ammo.component import (
     ComponentEnum,
 )
 from common import (

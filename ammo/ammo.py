@@ -2,8 +2,10 @@
 import sys
 from pathlib import Path
 from .ui import UI
-from .mod_controller import ModController
-from .game import Game
+from .mod_controller import (
+    Game,
+    ModController,
+)
 
 IDS = {
     "Skyrim Special Edition": "489830",

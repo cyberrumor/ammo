@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from common import AmmoController
-from ammo.mod import (
+from ammo.component import (
     ComponentEnum,
     DeleteEnum,
 )

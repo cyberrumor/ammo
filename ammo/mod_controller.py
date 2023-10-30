@@ -2,13 +2,13 @@
 import os
 import shutil
 from pathlib import Path
+from dataclasses import dataclass
 from .ui import (
     UI,
     Controller,
 )
 from .fomod_controller import FomodController
-from .game import Game
-from .mod import (
+from .component import (
     Mod,
     Download,
     Plugin,
@@ -18,6 +18,17 @@ from .mod import (
 )
 
 
+@dataclass
+class Game:
+    name: str
+    directory: Path
+    data: Path
+    ammo_conf: Path
+    dlc_file: Path
+    plugin_file: Path
+    ammo_mods_dir: Path
+
+
 class ModController(Controller):
     """
     ModController is responsible for managing mods. It exposes
@@ -25,6 +36,7 @@ class ModController(Controller):
     Private methods here are private simply so the UI doesn't
     display them.
     """
+
     def __init__(self, downloads_dir: Path, game: Game, *keywords):
         self.downloads_dir: Path = downloads_dir
         self.game: Game = game

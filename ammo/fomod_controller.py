@@ -5,11 +5,11 @@ from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
 from .ui import Controller
-from .mod import Mod
+from .component import Mod
 
 
 class FomodController(Controller):
-    def __init__(self, mod: Mod, *args, **kwargs):
+    def __init__(self, mod: Mod):
         self.mod = mod
 
         # Parse the fomod installer.
@@ -31,9 +31,10 @@ class FomodController(Controller):
         self.do_exit = False
 
     def __str__(self) -> str:
+        num_pages = len(self.visible_pages)
         result = f"{self.module_name}\n"
         result += "---------------\n"
-        result += f"Page {self.page_index + 1} / {len(self.visible_pages)}: {self.visible_pages[self.page_index]}\n\n"
+        result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index]}\n\n"
         result += " ### | Selected | Option Name\n"
         result += "-----|----------|------------\n"
 
