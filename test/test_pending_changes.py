@@ -2,7 +2,6 @@
 import pytest
 from ammo.mod import (
     ComponentEnum,
-    DeleteEnum,
 )
 from common import (
     AmmoController,

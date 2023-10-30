@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import os
-from pathlib import Path
 from ammo.mod import (
     ComponentEnum,
     DeleteEnum,

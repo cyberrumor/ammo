@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 import os
 from enum import Enum
-from pathlib import (
-    Path,
-    PurePath,
-)
+from pathlib import Path
 from dataclasses import (
     dataclass,
     field,

@@ -27,7 +27,6 @@ class UI:
             signature = inspect.signature(func)
             type_hints = typing.get_type_hints(func)
             parameters = list(signature.parameters.values())[1:]
-            num_args = 0
 
             args = []
             for param in parameters:

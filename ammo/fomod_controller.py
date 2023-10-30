@@ -5,18 +5,11 @@ from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
 from .controller import Controller
-from .mod import (
-    Mod,
-    Download,
-    Plugin,
-    DLC,
-    DeleteEnum,
-    ComponentEnum,
-)
+from .mod import Mod
 
 
 class FomodController(Controller):
-    def __init__(self, mod, *args, **kwargs):
+    def __init__(self, mod: Mod, *args, **kwargs):
         self.mod = mod
 
         # Parse the fomod installer.

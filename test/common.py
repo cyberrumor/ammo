@@ -2,7 +2,6 @@
 import os
 import shutil
 from pathlib import Path
-from xml.etree import ElementTree
 
 from ammo.game import Game
 from ammo.mod_controller import ModController
@@ -10,7 +9,6 @@ from ammo.fomod_controller import FomodController
 from ammo.mod import (
     Mod,
     ComponentEnum,
-    DeleteEnum,
 )
 
 
