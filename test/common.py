@@ -5,7 +5,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from ammo.game import Game
-from ammo.controller import Controller
+from ammo.mod_organizer import ModOrganizer
 from ammo.mod import (
     ComponentEnum,
     DeleteEnum,
@@ -30,7 +30,7 @@ class AmmoController:
     """
     Context manager for ammo's controller class.
 
-    Builds a Controller instance to run against /tmp/MockGame.
+    Builds a ModOrganizer instance to run against /tmp/MockGame.
     Ammo's configuration directory will be set up as AMMO_DIR,
     if it doesn't already exist.
 
@@ -47,7 +47,7 @@ class AmmoController:
         Return an instance of ammo's controller for tests to
         interact with.
         """
-        return Controller(self.downloads_dir, self.game)
+        return ModOrganizer(self.downloads_dir, self.game)
 
     def __exit__(self, *args, **kwargs):
         """

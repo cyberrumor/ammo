@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 from .ui import UI
-from .controller import Controller
+from .mod_organizer import ModOrganizer
 from .game import Game
 
 IDS = {
@@ -83,7 +83,7 @@ def main():
     )
 
     # Create an instance of the controller.
-    controller = Controller(DOWNLOADS, game)
+    controller = ModOrganizer(DOWNLOADS, game)
 
     # Run the UI against the controller.
     ui = UI(controller)

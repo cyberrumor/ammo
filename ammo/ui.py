@@ -8,12 +8,10 @@ from enum import (
     Enum,
     EnumType,
 )
-from dataclasses import dataclass
-from xml.etree import ElementTree
-
+from .controller import Controller
 
 class UI:
-    def __init__(self, controller):
+    def __init__(self, controller: Controller):
         self.controller = controller
 
         # get a map of commands to functions and the amount of args they expect
