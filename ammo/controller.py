@@ -861,7 +861,7 @@ class Controller:
             )
 
         try:
-            int(index)
+            index = int(index)
         except ValueError:
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
@@ -885,7 +885,6 @@ class Controller:
             mod = self.mods.pop(index)
             shutil.rmtree(mod.location)
             self.commit()
-            return
 
         elif component == DeleteEnum.DOWNLOAD:
             if index == "all":
@@ -901,9 +900,8 @@ class Controller:
                 # Demote IndexErrors
                 raise Warning(e)
             os.remove(download.location)
-            return
-
-        raise Warning(f"Expected 'mod' or 'download' but got {component}")
+        else:
+            raise Warning(f"Expected 'mod' or 'download' but got {component}")
 
     def install(self, index: type[int | str]):
         """
