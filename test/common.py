@@ -3,8 +3,10 @@ import os
 import shutil
 from pathlib import Path
 
-from ammo.game import Game
-from ammo.mod_controller import ModController
+from ammo.mod_controller import (
+    ModController,
+    Game,
+)
 from ammo.fomod_controller import FomodController
 from ammo.component import (
     Mod,
