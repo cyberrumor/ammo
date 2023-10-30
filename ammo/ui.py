@@ -22,8 +22,11 @@ class Controller(ABC):
 
     The UI performs validation and type casting based on type
     hinting and doc inspection, so type hints for public methods
-    are required. Doc strings for public methods should typically
-    fit on one line.
+    are required. It is required to use Union hinting instead of
+    shorthand for ambiguous types.
+    E.g. do Union[int, str] instead of type[int, str].
+
+    Doc strings for public methods should fit on one line.
 
     A recoverable error from any public methods should be raised
     as a Warning(). This will cause the UI to display the warning
@@ -167,29 +170,21 @@ class UI:
         """
         sys.exit(0)
 
-    def cast_to_type(self, arg, target_type):
+    def cast_to_type(self, arg: str, target_type: typing.Type):
         """
         This method is responsible for casting user input into
-        the type that the command expects. If target_type is
-        type[str|int], it may not be cast correctly.
+        the type that the command expects.
         """
-        if target_type is int:
-            try:
-                return int(arg)
+        if hasattr(target_type, '__args__'):
+            # Handle unions
+                for T in target_type.__args__:
+                    try:
+                        return T(arg)
+                    except ValueError:
+                        pass
+                raise ValueError(f"Could not cast {arg} to any {target_type}")
 
-            except ValueError as e:
-                # If we can't parse it, let the function figure it out,
-                # but only if there was a union type at play (type[int | str])
-                if target_type is str:
-                    return str(arg)
-                raise (e)
-
-        elif issubclass(target_type, Enum):
-            return target_type(arg)
-
-        else:
-            # Probably str
-            return arg
+        return target_type(arg)
 
     def repl(self):
         """
@@ -238,7 +233,6 @@ class UI:
                 while len(args) > 0:
                     arg = args.pop(0)
                     target_type = expected_arg["type"]
-
                     prepared_arg = self.cast_to_type(arg, target_type)
                     prepared_args.append(prepared_arg)
 

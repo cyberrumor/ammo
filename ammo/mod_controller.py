@@ -3,6 +3,7 @@ import os
 import shutil
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Union
 from .ui import (
     UI,
     Controller,
@@ -242,9 +243,6 @@ class ModController(Controller):
         If a mod with plugins was deactivated, remove those plugins from self.plugins
         if they aren't also provided by another mod.
         """
-        if not isinstance(index, int):
-            index = int(index)
-
         if not isinstance(component, ComponentEnum):
             raise TypeError(
                 f"Expected ComponentEnum, got '{component}' of type '{type(component)}'"
@@ -425,7 +423,7 @@ class ModController(Controller):
         # will no longer be required.
         self.refresh()
 
-    def activate(self, component: ComponentEnum, index: type[int | str]):
+    def activate(self, component: ComponentEnum, index: Union[int, str]):
         """
         Enabled components will be loaded by game.
         """
@@ -449,7 +447,7 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def deactivate(self, component: ComponentEnum, index: type[int | str]):
+    def deactivate(self, component: ComponentEnum, index: Union[int, str]):
         """
         Disabled components will not be loaded by game.
         """
@@ -473,12 +471,12 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def delete(self, component: DeleteEnum, index: type[int | str]):
+    def delete(self, component: DeleteEnum, index: Union[int, str]):
         """
         Removes specified file from the filesystem.
         """
         if self.changes is True:
-            raise Warning("You must `commit` changes before deleting a mod.")
+            raise Warning("You must `commit` changes before deleting files.")
 
         if component not in list(DeleteEnum):
             raise Warning(
@@ -528,7 +526,7 @@ class ModController(Controller):
         else:
             raise Warning(f"Expected 'mod' or 'download' but got {component}")
 
-    def install(self, index: type[int | str]):
+    def install(self, index: Union[int, str]):
         """
         Extract and manage an archive from ~/Downloads.
         """
