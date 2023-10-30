@@ -57,7 +57,7 @@ class Controller(ABC):
         with the prompt. This should return a 'frame' of your
         interface.
         """
-        return str(self)
+        return ""
 
 
 class UI:
