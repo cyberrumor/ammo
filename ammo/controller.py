@@ -29,7 +29,7 @@ class Controller(ABC):
         This function is executed after every command.
         It returns whether the UI should break from repl.
         """
-        return True
+        return False
 
     @abstractmethod
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
