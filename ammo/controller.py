@@ -6,7 +6,8 @@ from abc import (
 
 class Controller(ABC):
     """
-    Public methods of this class are exposed to the UI.
+    Public methods of this class will be exposed
+    to the UI.
     """
     @abstractmethod
     def __init__(self, *args, **kwargs):
@@ -14,4 +15,4 @@ class Controller(ABC):
 
     @abstractmethod
     def _prompt(self) -> str:
-        pass
+        return ""

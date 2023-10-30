@@ -16,8 +16,8 @@ from .mod import (
 )
 
 
-class ModOrganizer(Controller):
-    def __init__(self, downloads_dir: Path, game: Game, *args):
+class ModController(Controller):
+    def __init__(self, downloads_dir: Path, game: Game, *args, **kwargs):
         self.downloads_dir: Path = downloads_dir
         self.game: Game = game
         self.changes: bool = False
