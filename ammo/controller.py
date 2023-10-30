@@ -184,6 +184,11 @@ class Controller:
                 result += "\n"
         return result
 
+    def _prompt(self):
+        changes = "*" if self.changes else "_"
+        name = self.game.name
+        return f"{name} >{changes}: "
+
     def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.

@@ -142,12 +142,9 @@ class UI:
         while True:
             os.system("clear")
             print(self.controller)
-
-            changes = "*" if self.controller.changes else "_"
-            if not (cmd := input(f"{self.controller.game.name} >{changes}: ")):
+            if not (stdin := input(f"{self.controller._prompt()}")):
                 continue
-
-            cmds = cmd.split()
+            cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
             func = cmds[0]
 
