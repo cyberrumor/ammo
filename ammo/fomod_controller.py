@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
-from .controller import Controller
+from .ui import Controller
 from .mod import Mod
 
 
@@ -65,7 +65,27 @@ class FomodController(Controller):
         return False
 
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
-        return super()._normalize(destination, dest_prefix)
+        """
+        Prevent folders with the same name but different case
+        from being created.
+        """
+        path = destination.parent
+        file = destination.name
+        local_path: str = str(path).split(str(dest_prefix))[-1].lower()
+        for i in [
+            "Data",
+            "DynDOLOD",
+            "Plugins",
+            "SKSE",
+            "Edit Scripts",
+            "Docs",
+            "Scripts",
+            "Source",
+        ]:
+            local_path = local_path.replace(i.lower(), i)
+        new_dest: Path = Path(dest_prefix / local_path.lstrip("/"))
+        result = new_dest / file
+        return result
 
     def _get_steps(self) -> dict:
         """

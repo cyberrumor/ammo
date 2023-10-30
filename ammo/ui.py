@@ -8,10 +8,47 @@ from enum import (
     Enum,
     EnumType,
 )
-from .controller import Controller
+from abc import (
+    ABC,
+    abstractmethod,
+)
+
+class Controller(ABC):
+    """
+    Public methods of class derivatives will be exposed
+    to the UI. A Controller must implement the following
+    methods, as they are consumed by the UI.
+
+    The UI performs validation and type casting based on type
+    hinting and inspection, so type hints for public methods
+    are required.
+    """
+    @abstractmethod
+    def _prompt(self) -> str:
+        """
+        This returns the prompt for user input.
+        """
+        return ">_: "
+
+    @abstractmethod
+    def _post_exec(self) -> bool:
+        """
+        This function is executed after every command.
+        It returns whether the UI should break from repl.
+        """
+        return False
 
 
 class UI:
+    """
+    The UI class stores a controller. On UI init, it will map all currently
+    defined public methods of the controller to a dictionary of commands.
+
+    It then presents a CLI interface, offering default commands for 'exit'
+    and 'help'. The help menu is generated automatically via inspecting
+    type hints of the controller's public methods, and is presented in
+    a typical POSIX usage format.
+    """
     def __init__(self, controller: Controller):
         self.controller = controller
 

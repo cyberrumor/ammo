@@ -2,9 +2,11 @@
 import os
 import shutil
 from pathlib import Path
-from .controller import Controller
+from .ui import (
+    UI,
+    Controller,
+)
 from .fomod_controller import FomodController
-from .ui import UI
 from .game import Game
 from .mod import (
     Mod,
@@ -277,7 +279,27 @@ class ModController(Controller):
         self.changes = starting_state != subject.enabled
 
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
-        return super()._normalize(destination, dest_prefix)
+        """
+        Prevent folders with the same name but different case
+        from being created.
+        """
+        path = destination.parent
+        file = destination.name
+        local_path: str = str(path).split(str(dest_prefix))[-1].lower()
+        for i in [
+            "Data",
+            "DynDOLOD",
+            "Plugins",
+            "SKSE",
+            "Edit Scripts",
+            "Docs",
+            "Scripts",
+            "Source",
+        ]:
+            local_path = local_path.replace(i.lower(), i)
+        new_dest: Path = Path(dest_prefix / local_path.lstrip("/"))
+        result = new_dest / file
+        return result
 
     def _stage(self) -> dict:
         """
