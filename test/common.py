@@ -6,7 +6,9 @@ from xml.etree import ElementTree
 
 from ammo.game import Game
 from ammo.mod_controller import ModController
+from ammo.fomod_controller import FomodController
 from ammo.mod import (
+    Mod,
     ComponentEnum,
     DeleteEnum,
 )
@@ -79,6 +81,17 @@ class AmmoController:
             shutil.rmtree(self.game.directory)
         if AMMO_DIR.exists():
             shutil.rmtree(AMMO_DIR)
+
+
+class FomodContextManager:
+    def __init__(self, mod: Mod):
+        self.mod = mod
+
+    def __enter__(self):
+        return FomodController(self.mod)
+
+    def __exit__(self, *args, **kwargs):
+        pass
 
 
 def mod_extracts_files(mod_name, files):
@@ -181,18 +194,16 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
         except FileNotFoundError:
             pass
 
-        tree = ElementTree.parse(mod.modconf)
-        xml_root_node = tree.getroot()
-        steps = controller._fomod_get_steps(xml_root_node)
-        for selection in selections:
-            flags = controller._fomod_get_flags(steps)
-            visible_pages = controller._fomod_get_pages(steps, flags)
-            page = steps[visible_pages[selection["page"]]]
-            controller._fomod_select(page, selection["option"])
+        with FomodContextManager(mod) as fomod_controller:
+            for selection in selections:
+                fomod_controller.page = fomod_controller.steps[
+                    fomod_controller.visible_pages[selection["page"]]
+                ]
+                fomod_controller._select(selection["option"])
 
-        flags = controller._fomod_get_flags(steps)
-        install_nodes = controller._fomod_get_nodes(xml_root_node, steps, flags)
-        controller._fomod_install_files(mod_index, install_nodes)
+            fomod_controller.flags = fomod_controller._get_flags()
+            install_nodes = fomod_controller._get_nodes()
+            fomod_controller._install_files(install_nodes)
 
         # Check that all the expected files exist.
         for file in files:

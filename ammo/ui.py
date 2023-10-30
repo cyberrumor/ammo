@@ -10,6 +10,7 @@ from enum import (
 )
 from .controller import Controller
 
+
 class UI:
     def __init__(self, controller: Controller):
         self.controller = controller
@@ -123,7 +124,7 @@ class UI:
                 # but only if there was a union type at play (type[int | str])
                 if target_type is str:
                     return str(arg)
-                raise(e)
+                raise (e)
 
         elif issubclass(target_type, Enum):
             return target_type(arg)
@@ -156,8 +157,10 @@ class UI:
             num_optional_args = len(
                 [arg for arg in command["args"] if not arg["required"]]
             )
-            if num_required_args > len(args) or (
-                num_required_args > len(args) and len(num_optional_args) == 0
+            if (
+                num_required_args > len(args)
+                or (num_required_args > len(args) and num_optional_args == 0)
+                or (len(args) > num_required_args and num_optional_args == 0)
             ):
                 print(
                     f"{func} expected at least {len(command['args'])} arg(s) but received {len(args)}"
@@ -197,6 +200,11 @@ class UI:
 
             try:
                 command["func"](*prepared_args)
+                if "instance" in command:
+                    controller_instance = command["instance"]
+                    if controller_instance._post_exec():
+                        break
+
             except Warning as warning:
                 print(warning)
                 input("[Enter]")
