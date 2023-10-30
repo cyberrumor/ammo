@@ -20,8 +20,14 @@ class Controller(ABC):
     methods, as they are consumed by the UI.
 
     The UI performs validation and type casting based on type
-    hinting and inspection, so type hints for public methods
-    are required.
+    hinting and doc inspection, so type hints for public methods
+    are required. Doc strings for public methods should typically
+    fit on one line.
+
+    A recoverable error from any public methods should be raised
+    as a Warning(). This will cause the UI to display the warning
+    text and prompt the user to [Enter] before the next frame
+    is drawn.
     """
     @abstractmethod
     def _prompt(self) -> str:
@@ -37,6 +43,16 @@ class Controller(ABC):
         It returns whether the UI should break from repl.
         """
         return False
+
+    @abstractmethod
+    def __str__(self) -> str:
+        """
+        Between every command, the screen will be cleared, and
+        controller will be printed before the user is presented
+        with the prompt. This should return a 'frame' of your
+        interface.
+        """
+        return str(self)
 
 
 class UI:
@@ -54,6 +70,20 @@ class UI:
 
         # get a map of commands to functions and the amount of args they expect
         self.command = {}
+
+        # Default 'help', may be overridden.
+        self.command["help"] = {
+            "func": self.help,
+            "args": [],
+            "doc": str(self.help.__doc__).strip(),
+        }
+
+        # Default 'exit', may be overridden.
+        self.command["exit"] = {
+            "func": self.exit,
+            "args": [],
+            "doc": str(self.exit.__doc__).strip(),
+        }
 
         for name, func in inspect.getmembers(
             self.controller.__class__, predicate=inspect.isfunction
@@ -106,17 +136,6 @@ class UI:
                 "instance": self.controller,
             }
 
-        self.command["help"] = {
-            "func": self.help,
-            "args": [],
-            "doc": str(self.help.__doc__).strip(),
-        }
-
-        self.command["exit"] = {
-            "func": self.exit,
-            "args": [],
-            "doc": str(self.exit.__doc__).strip(),
-        }
 
     def help(self):
         """
@@ -143,14 +162,17 @@ class UI:
 
     def exit(self):
         """
-        Quit. Prompts if there are changes.
+        Quit.
         """
-        if self.controller.changes:
-            if input("There are unapplied changes. Quit? [y/n]: ").lower() != "y":
-                return True
         sys.exit(0)
 
+
     def cast_to_type(self, arg, target_type):
+        """
+        This method is responsible for casting user input into
+        the type that the command expects. If target_type is
+        type[str|int], it may not be cast correctly.
+        """
         if target_type is int:
             try:
                 return int(arg)

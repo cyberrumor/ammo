@@ -19,14 +19,20 @@ from .mod import (
 
 
 class ModController(Controller):
-    def __init__(self, downloads_dir: Path, game: Game, *args, **kwargs):
+    """
+    ModController is responsible for managing mods. It exposes
+    methods to the UI that allow the user to easily manage mods.
+    Private methods here are private simply so the UI doesn't
+    display them.
+    """
+    def __init__(self, downloads_dir: Path, game: Game, *keywords):
         self.downloads_dir: Path = downloads_dir
         self.game: Game = game
         self.changes: bool = False
         self.downloads: list[Download] = []
         self.mods: list[Mod] = []
         self.plugins: list[Plugin] = []
-        self.keywords = [*args]
+        self.keywords = [*keywords]
 
         # Create required directories for testing. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
