@@ -401,6 +401,8 @@ class ModController(Controller):
         if not mod.fomod:
             raise Warning("Only fomods can be configured.")
 
+        assert mod.modconf is not None
+
         self.deactivate(ComponentEnum("mod"), index)
         self.commit()
         self.refresh()
