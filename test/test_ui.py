@@ -72,6 +72,8 @@ def test_cast_to_bool():
     assert ui.cast_to_type("FALSE", bool) is False
     assert ui.cast_to_type("true", bool) is True
     assert ui.cast_to_type("false", bool) is False
+    with pytest.raises(ValueError):
+        ui.cast_to_type("This should error", bool)
 
 
 def test_cast_to_bool_union():
