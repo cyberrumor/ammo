@@ -62,19 +62,16 @@ class Controller(ABC):
 
 class UI:
     """
-    The UI class stores a controller. On UI init, it will map all currently
-    defined public methods of the controller to a dictionary of commands.
-
-    It then presents a CLI interface, offering default commands for 'exit'
-    and 'help'. The help menu is generated automatically via inspecting
-    type hints of the controller's public methods, and is presented in
-    a typical POSIX usage format.
+    Expose public methods of whatever class (derived from Controller)
+    you provide as an argument as commands in an interactive CLI.
     """
 
     def __init__(self, controller: Controller):
+        """
+        On UI init, map all presently defined public methods of the controller
+        into a dictionary of commands.
+        """
         self.controller = controller
-
-        # get a map of commands to functions and the amount of args they expect
         self.command = {}
 
         # Default 'help', may be overridden.
