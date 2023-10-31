@@ -175,15 +175,35 @@ class UI:
         This method is responsible for casting user input into
         the type that the command expects.
         """
-        if hasattr(target_type, '__args__'):
-            # Handle unions
-                for T in target_type.__args__:
-                    try:
-                        return T(arg)
-                    except ValueError:
-                        pass
-                raise ValueError(f"Could not cast {arg} to any {target_type}")
+        # If we have a union type, iterate through them,
+        # returning the first successful cast.
+        if hasattr(target_type, "__args__"):
+            for T in target_type.__args__:
+                try:
+                    # Attention to bools
+                    if T is bool:
+                        if arg.lower() in ("true", "false"):
+                            return arg.lower() == "true"
+                    # Attention to Enums
+                    if issubclass(T, Enum):
+                        return T[arg.upper()]
 
+                    # Anything else is a primitive type.
+                    return T(arg)
+                except (KeyError, ValueError):
+                    pass
+            raise ValueError(f"Could not cast {arg} to any {target_type}")
+
+        # Attention to bools
+        if target_type is bool:
+            if arg.lower() in ("true", "false"):
+                return arg.lower() == "true"
+
+        # Attention to Enums
+        if issubclass(target_type, Enum):
+            return target_type[arg.upper()]
+
+        # Anything else is a primitive type.
         return target_type(arg)
 
     def repl(self):
