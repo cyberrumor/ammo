@@ -109,10 +109,58 @@ refresh                                       Abandon pending changes.
 - Combining `find` filters with `all` is a great way to quickly manage groups of
   related components, as the `all` keyword only operates on visible components.
 
-# Technical Details
-- AMMO works via creating symlinks in your game directory pointing to your mod files.
-- When you install an archive, the archive may be renamed to remove special characters.
-- This will remove symlinks and empty directories from your game dir, and reinstall them whenever you commit.
+# Contributing
+
+- Fork the repository, make changes on your fork, then open a PR.
+- Format patches with ruff or black.
+
+# AMMO is Simple
+
+Please observe the following criteria when considering whether
+a change would be acceptable:
+
+- Python only.
+- Standard lib imports only.
+- Unix filesystems only.
+- Single threaded.
+- Offline.
+- Databaseless.
+- Daemonless.
+- Testable without the UI.
+- Installs mod files via symlink.
+- Only UI is terminal based.
+- AMMO is not:
+  - a download manager.
+  - an API client.
+  - a program launcher.
+
+# Why Symlinks?
+
+- The configured state is discovered via file inspection and logic. This avoids
+  entire classes of bugs that organizers relying on databases must contend with.
+- Vast reduction in code and test complexity.
+- It's easy to identify which mod provides a particular file.
+- We can return to vanilla game state by simply unlinking all symlinks then
+  removing empty folders. This actually occurs every time you commit, which
+  provides a plethora of benefits also.
+- They consume an insignificant amount of storage.
+
+# Code Organization
+
+- UI is responsible for mapping user input to methods of a controller, ensuring
+  user input is converted to the argument types that those methods expect,
+  displaying errors, and drawing to the screen.
+- ModController exposes an interface to install, delete, activate, deactivate,
+  and reorder mods. Committing changes builds a conflict-resolved hashmap
+  of all mod file's sources and their intended destinations, then creates symlinks.
+  ModController can 'configure' a fomod, which instantiates a FomodController and
+  runs a nested UI with it.
+- FomodController exposes an interface to switch pages and selections of a fomod's
+  configurable options. When you advance past the last page, the selected files
+  are put in a conflict-resolved hashmap hashmap and _copied_ to a Data folder
+  local to that fomod. At this point, the FomodController's UI will break from
+  the read/exec/print loop and execution will pick back up from the end of
+  ModController.configure.
 
 # License
 GNU General Public License v2, with the exception of some of the mock mods used for testing,
