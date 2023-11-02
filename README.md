@@ -157,7 +157,7 @@ a change would be acceptable:
   runs a nested UI with it.
 - FomodController exposes an interface to switch pages and selections of a fomod's
   configurable options. When you advance past the last page, the selected files
-  are put in a conflict-resolved hashmap hashmap and _copied_ to a Data folder
+  are put in a conflict-resolved hashmap and _copied_ to a Data folder
   local to that fomod. At this point, the FomodController's UI will break from
   the read/exec/print loop and execution will pick back up from the end of
   ModController.configure.
