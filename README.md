@@ -128,7 +128,7 @@ a change would be acceptable:
 - Daemonless.
 - Testable without the UI.
 - Installs mod files via symlink.
-- Only UI is terminal based.
+- UI is terminal based only.
 - AMMO is not:
   - a download manager.
   - an API client.
