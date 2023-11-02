@@ -343,7 +343,7 @@ class FomodController(Controller):
                         break
                 full_source = full_source / folder
 
-            # get the 'destination' folder form the xml. This path is relative to Data.
+            # get the 'destination' folder from the xml. This path is relative to Data.
             full_destination = reduce(
                 lambda path, name: path / name,
                 node.get("destination").split("\\"),
@@ -388,11 +388,6 @@ class FomodController(Controller):
         """
         Toggle state
         """
-        try:
-            index = int(index)
-        except ValueError:
-            raise Warning("Expected int, got '{index}'")
-
         if index < 0 or index > len(self.page["plugins"]):
             raise Warning(
                 f"Expected 0 through {len(self.page['plugins']) - 1} (inclusive)"
@@ -404,24 +399,14 @@ class FomodController(Controller):
         """
         Display description
         """
-        try:
-            index = int(index)
-        except ValueError:
-            raise Warning("Expected int, got '{index}'")
-
         if index < 0 or index > len(self.page["plugins"]):
             raise Warning(
                 f"Expected 0 through {len(self.page['plugins']) - 1} (inclusive)"
             )
         raise Warning(self.page["plugins"][index]["description"])
 
-    def b(self):
-        """
-        Return to the previous page
-        """
-        return self.back()
 
-    def back(self):
+    def b(self):
         """
         Return to the previous page
         """
@@ -434,21 +419,9 @@ class FomodController(Controller):
         """
         Advance to the next page
         """
-        return self.next()
-
-    def next(self):
-        """
-        Advance to the next page
-        """
         self.page_index += 1
 
-    def q(self):
-        """
-        Abandon configuration
-        """
-        self.quit()
-
-    def quit(self):
+    def exit(self):
         """
         Abandon configuration
         """
