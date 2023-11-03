@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import sys
 from pathlib import Path
 from ammo.mod_controller import (
@@ -21,14 +22,31 @@ DOWNLOADS = Path.home() / "Downloads"
 STEAM = Path.home() / ".local/share/Steam/steamapps"
 
 
+# parse steam libraries and look for games
+libraries = list()
+games = list()
+with open(STEAM / "libraryfolders.vdf", "r") as libraries_file:
+    libraries = [
+        Path(library) / "steamapps"
+        for library in re.findall(r'"path"\s+"(\S+)"', libraries_file.read())
+    ]
+for library in libraries:
+    for game in [
+        (game.name, library)
+        for game in (library / "common").iterdir()
+        if game.name in IDS
+    ]:
+        games.append(game)
+
 # game selection
-games = [game.name for game in (STEAM / "common").iterdir() if game.name in IDS]
 if not games:
     print("Install a game through steam!")
     print("ammo supports:")
     for i in IDS:
         print(f"- {i}")
-    print(f"ammo looks for games in {STEAM/'common'}")
+    print("ammo looks for games in:")
+    for library in libraries:
+        print(f"- {library / 'common'}")
     print("ammo stores mods in ~/.local/share/ammo")
     print("ammo looks for mods to install in ~/Downloads")
     sys.exit(1)
@@ -41,7 +59,7 @@ else:
         print("Index   |   Game")
         print("----------------")
         for index, game in enumerate(games):
-            print(f"[{index}]         {game}")
+            print(f"[{index}]         {game[0]}")
         CHOICE = input("Index of game to manage: ")
         if CHOICE.strip().lower() == "exit":
             exit()
@@ -57,11 +75,11 @@ else:
         break
 
 # Get the paths and files associated with our game.
-name = games[CHOICE]
+name, library = games[CHOICE]
 app_id = IDS[name]
-pfx = STEAM / f"compatdata/{app_id}/pfx"
-directory = STEAM / f"common/{name}"
-app_data = STEAM / f"{pfx}/drive_c/users/steamuser/AppData/Local"
+pfx = library / f"compatdata/{app_id}/pfx"
+directory = library / f"common/{name}"
+app_data = library / f"{pfx}/drive_c/users/steamuser/AppData/Local"
 dlc_file = app_data / f"{name.replace('t 4', 't4')}/DLCList.txt"
 plugin_file = app_data / f"{name.replace('t 4', 't4')}/Plugins.txt"
 data = directory / "Data"
