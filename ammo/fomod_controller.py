@@ -35,6 +35,9 @@ class FomodController(Controller):
         result = f"{self.module_name}\n"
         result += "---------------\n"
         result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index]}\n\n"
+        for p in self.page["plugins"]:
+            if p["selected"]:
+                result += f'{p["description"]}\n\n'
         result += " ### | Selected | Option Name\n"
         result += "-----|----------|------------\n"
 
@@ -129,12 +132,9 @@ class FomodController(Controller):
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
                         plug_dict["name"] = plugin_name
-                        if (description := plugin.find("description")) and description:
+                        plug_dict["description"] = ""
+                        if (description := plugin.find("description")) is not None:
                             plug_dict["description"] = description.text.strip()
-                        else:
-                            plug_dict[
-                                "description"
-                            ] = "No description for this plugin was provided"
                         plug_dict["flags"] = {}
                         # Automatically mark the first option as selected when
                         # a selection is required.
@@ -394,17 +394,6 @@ class FomodController(Controller):
             )
 
         self._select(index)
-
-    def info(self, index: int):
-        """
-        Display description
-        """
-        if index < 0 or index > len(self.page["plugins"]):
-            raise Warning(
-                f"Expected 0 through {len(self.page['plugins']) - 1} (inclusive)"
-            )
-        raise Warning(self.page["plugins"][index]["description"])
-
 
     def b(self):
         """
