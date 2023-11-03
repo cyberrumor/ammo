@@ -2,7 +2,6 @@
 from typing import Union
 from enum import (
     Enum,
-    EnumType,
 )
 
 import pytest

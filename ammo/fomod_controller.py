@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import shutil
+import textwrap
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
@@ -34,22 +35,24 @@ class FomodController(Controller):
     def __str__(self) -> str:
         num_pages = len(self.visible_pages)
         result = f"{self.module_name}\n"
-        result += "---------------\n"
-        result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index]}\n\n"
+        result += "--------------------------------\n"
+        result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index]}\n"
+        result += "--------------------------------\n\n"
         for p in self.page["plugins"]:
             if p["selected"] and p["description"]:
                 result += f'{p["name"]}\n'
-                result += "---------------\n"
-                result += f'{p["description"]}\n\n'
+                result += "--------------------------------\n"
+                for line in textwrap.wrap(f'{p["description"]}\n\n'):
+                    result += f"{line}\n"
+                result += "\n"
 
-        result += " ### | Selected | Option Name\n"
-        result += "-----|----------|------------\n"
+        result += " index | Activated | Option Name\n"
+        result += "-------|-----------|------------\n"
 
         for i, p in enumerate(self.page["plugins"]):
-            num = f"[{i}]    "
-            num = num[0:-1]
-            enabled = "[True]    " if p["selected"] else "[False]    "
-            result += f"{num} {enabled} {p['name']}\n"
+            index = f"[{i}]"
+            enabled = f"[{p['selected']}]"
+            result += f"{index:<7} {enabled:<11} {p['name']}\n"
         result += "\n"
         return result
 

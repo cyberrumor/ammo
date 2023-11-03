@@ -25,11 +25,16 @@ class DLC:
     is_dlc: bool = True
     visible: bool = True
 
-    def __str__(self):
-        return self.name
-
     def files_in_place(self):
         return True
+
+
+@dataclass
+class Plugin:
+    name: str
+    enabled: bool
+    parent_mod: str
+    visible: bool = True
 
 
 @dataclass
@@ -42,9 +47,6 @@ class Download:
     def __post_init__(self):
         if all(((i.isalnum() or i in [".", "_", "-"]) for i in self.name)):
             self.sane = True
-
-    def __str__(self):
-        return self.name
 
 
 @dataclass
@@ -135,9 +137,6 @@ class Mod:
                             self.has_data_dir = True
                             break
 
-    def __str__(self):
-        return f'{"[True]     " if self.enabled else "[False]    "}{self.name}'
-
     def associated_plugins(self, plugins):
         return [
             plugin
@@ -162,14 +161,3 @@ class Mod:
                 print(f"unable to find expected file '{corrected_location}'")
                 return False
         return True
-
-
-@dataclass
-class Plugin:
-    name: str
-    enabled: bool
-    parent_mod: str
-    visible: bool = True
-
-    def __str__(self):
-        return f'{"[True]     " if self.enabled else "[False]    "}{self.name}'

@@ -183,25 +183,25 @@ class ModController(Controller):
         """
         result = ""
         if len(self.downloads):
-            result += "Downloads\n"
-            result += "----------\n"
+            result += " index | Download\n"
+            result += "-------|---------\n"
 
-            for index, download in enumerate(self.downloads):
+            for i, download in enumerate(self.downloads):
                 if download.visible:
-                    result += f"[{index}] {download}\n"
+                    index = f"[{i}]"
+                    result += f"{index:<7} {download.name}\n"
             result += "\n"
 
         for index, components in enumerate([self.mods, self.plugins]):
             result += (
-                f" ### | Activated | {'Mod name' if index == 0 else 'Plugin name'}\n"
+                f" index | Activated | {'Mod name' if index == 0 else 'Plugin name'}\n"
             )
-            result += "-----|----------|-----\n"
-            for priority, component in enumerate(components):
+            result += "-------|-----------|------------\n"
+            for i, component in enumerate(components):
                 if component.visible:
-                    num = f"[{priority}]     "
-                    length = len(str(priority)) + 1
-                    num = num[0:-length]
-                    result += f"{num} {component}\n"
+                    priority = f"[{i}]"
+                    enabled = f"[{component.enabled}]"
+                    result += f"{priority:<7} {enabled:<11} {component.name}\n"
             if index == 0:
                 result += "\n"
         return result
