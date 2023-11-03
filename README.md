@@ -113,19 +113,13 @@ refresh                                       Abandon pending changes.
 
 - Fork the repository, make changes on your fork, then open a PR.
 - Format patches with ruff or black.
-
-# AMMO is Simple
-
-Please observe the following criteria when considering whether
-a change would be acceptable:
-
 - Python only.
 - Standard lib imports only.
 - Unix filesystems only.
 - Single threaded.
 - Offline.
-- Databaseless.
-- Daemonless.
+- No databases.
+- No deamons.
 - Testable without the UI.
 - Installs mod files via symlink.
 - UI is terminal based only.
@@ -133,6 +127,22 @@ a change would be acceptable:
   - a download manager.
   - an API client.
   - a program launcher.
+
+# Contributing (tips and tricks)
+
+You can run tests from the base directory of the repo with `pytest test`.
+
+It may be useful in your iterations to automate UI input before you've written
+tests. I find the easiest way to do this is with this sort of strategy:
+```
+(echo "command1 arg1"; echo "command2 arg1") | ammo
+```
+
+If you need to recreate a complex set of initial steps then supply manual input,
+you can use input redirection:
+```
+(echo "instruction1"; echo "instruction2"; cat <&0) | ammo
+```
 
 # Why Symlinks?
 
@@ -144,23 +154,6 @@ a change would be acceptable:
   removing empty folders. This actually occurs every time you commit, which
   provides a plethora of benefits also.
 - They consume an insignificant amount of storage.
-
-# Code Organization
-
-- UI is responsible for mapping user input to methods of a controller, ensuring
-  user input is converted to the argument types that those methods expect,
-  displaying errors, and drawing to the screen.
-- ModController exposes an interface to install, delete, activate, deactivate,
-  and reorder mods. Committing changes builds a conflict-resolved hashmap
-  of all mod file's sources and their intended destinations, then creates symlinks.
-  ModController can 'configure' a fomod, which instantiates a FomodController and
-  runs a nested UI with it.
-- FomodController exposes an interface to switch pages and selections of a fomod's
-  configurable options. When you advance past the last page, the selected files
-  are put in a conflict-resolved hashmap and _copied_ to a Data folder
-  local to that fomod. At this point, the FomodController's UI will break from
-  the read/exec/print loop and execution will pick back up from the end of
-  ModController.configure.
 
 # License
 GNU General Public License v2, with the exception of some of the mock mods used for testing,
