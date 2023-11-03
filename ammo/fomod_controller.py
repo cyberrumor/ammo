@@ -74,7 +74,6 @@ class FomodController(Controller):
         self._populate_index_commands()
         return False
 
-
     def _populate_index_commands(self):
         """
         Hack to get dynamically allocated methods which are
@@ -88,13 +87,8 @@ class FomodController(Controller):
             except ValueError:
                 pass
         for i in range(len(self.page["plugins"])):
-            setattr(
-                self,
-                str(i),
-                lambda self, i=i: self._select(i)
-            )
+            setattr(self, str(i), lambda self, i=i: self._select(i))
             self.__dict__[str(i)].__doc__ = f"Toggle {self.page['plugins'][i]['name']}"
-
 
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
         """
