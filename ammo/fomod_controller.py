@@ -36,8 +36,11 @@ class FomodController(Controller):
         result += "---------------\n"
         result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index]}\n\n"
         for p in self.page["plugins"]:
-            if p["selected"]:
+            if p["selected"] and p["description"]:
+                result += f'{p["name"]}\n'
+                result += "---------------\n"
                 result += f'{p["description"]}\n\n'
+
         result += " ### | Selected | Option Name\n"
         result += "-----|----------|------------\n"
 
