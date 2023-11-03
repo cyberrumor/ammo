@@ -593,6 +593,7 @@ class ModController(Controller):
                     "shaders",
                     "sounds",
                     "voices",
+                    "edit scripts",
                 ]
                 and os.path.splitext(extracted_files[0])[-1]
                 not in [".esp", ".esl", ".esm"]
