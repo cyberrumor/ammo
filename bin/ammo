@@ -26,9 +26,16 @@ STEAM = Path.home() / ".local/share/Steam/steamapps"
 libraries = list()
 games = list()
 with open(STEAM / "libraryfolders.vdf", "r") as libraries_file:
-    libraries = [Path(library) / "steamapps" for library in re.findall(r'"path"\s+"(\S+)"', libraries_file.read())]
+    libraries = [
+        Path(library) / "steamapps"
+        for library in re.findall(r'"path"\s+"(\S+)"', libraries_file.read())
+    ]
 for library in libraries:
-    for game in [(game.name, library) for game in (library / "common").iterdir() if game.name in IDS]:
+    for game in [
+        (game.name, library)
+        for game in (library / "common").iterdir()
+        if game.name in IDS
+    ]:
         games.append(game)
 
 # game selection
