@@ -74,6 +74,9 @@ class UI:
         self.controller = controller
         self.command = {}
 
+    def populate_commands(self):
+        self.command = {}
+
         # Default 'help', may be overridden.
         self.command["help"] = {
             "func": self.help,
@@ -88,11 +91,18 @@ class UI:
             "doc": str(self.exit.__doc__).strip(),
         }
 
-        for name, func in inspect.getmembers(
-            self.controller.__class__, predicate=inspect.isfunction
-        ):
+        for name in dir(self.controller):
+            # Collect instance methods (rather than class methods).
             if name.startswith("_"):
                 continue
+
+            attribute = getattr(self.controller, name)
+            if not callable(attribute):
+                continue
+
+            # attribute is a bound method which is transient.
+            # Get the actual function associated with it.
+            func = attribute.__func__
 
             signature = inspect.signature(func)
             type_hints = typing.get_type_hints(func)
@@ -208,10 +218,16 @@ class UI:
         """
         cmd: str = ""
         while True:
+            # Repopulate commands on every iteration so controllers
+            # that dynamically change available methods work.
+            self.populate_commands()
+
             os.system("clear")
             print(self.controller)
+
             if not (stdin := input(f"{self.controller._prompt()}")):
                 continue
+
             cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
             func = cmds[0]
