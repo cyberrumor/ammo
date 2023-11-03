@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import shutil
-from functools import partial
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
@@ -371,11 +370,11 @@ class FomodController(Controller):
                 node.get("destination").split("\\"),
                 data,
             )
+
             # TODO: this is broken :)
             # Normalize the capitalization of folder names
 
             full_destination = self._normalize(full_destination, data.parent)
-
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that
             # isn't implemented here yet.

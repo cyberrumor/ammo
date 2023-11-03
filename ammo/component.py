@@ -60,7 +60,7 @@ class Mod:
     is_dlc: bool = False
     enabled: bool = False
 
-    files: dict[Path] = field(default_factory=dict)
+    files: list[Path] = field(default_factory=list)
     plugins: list[str] = field(default_factory=list)
 
     def __post_init__(self):
@@ -119,7 +119,7 @@ class Mod:
                         # Skip plugins in the wrong place
                         continue
                     self.plugins.append(file)
-                self.files[file] = loc_parent / f
+                self.files.append(loc_parent / f)
 
         if not self.fomod and not self.has_data_dir:
             # If there is a DLL that's not inside SKSE/Plugins, it belongs in the game dir.
@@ -140,7 +140,10 @@ class Mod:
 
     def associated_plugins(self, plugins):
         return [
-            plugin for plugin in plugins for file in self.files if file == plugin.name
+            plugin
+            for plugin in plugins
+            for file in self.files
+            if file.name == plugin.name
         ]
 
     def files_in_place(self):
@@ -149,7 +152,7 @@ class Mod:
         also exists relative to the game's directory. If all files exist,
         return True. Otherwise False.
         """
-        for path in self.files.values():
+        for path in self.files:
             corrected_location = os.path.join(
                 str(path).split(self.name, 1)[-1].strip("/"), self.parent_data_dir
             )

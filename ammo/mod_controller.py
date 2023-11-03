@@ -326,7 +326,7 @@ class ModController(Controller):
         # Iterate through enabled mods in order.
         for mod in [i for i in self.mods if i.enabled]:
             # Iterate through the source files of the mod
-            for src in mod.files.values():
+            for src in mod.files:
                 # Get the sanitized full path relative to the game.directory.
                 corrected_name = str(src).split(mod.name, 1)[-1]
 
@@ -653,8 +653,10 @@ class ModController(Controller):
         count = len(stage)
         skipped_files = []
         for index, (dest, source) in enumerate(stage.items()):
-            Path.mkdir(dest.parent, parents=True, exist_ok=True)
             (name, src) = source
+            assert dest.is_absolute()
+            assert src.is_absolute()
+            Path.mkdir(dest.parent, parents=True, exist_ok=True)
             try:
                 dest.symlink_to(src)
             except FileExistsError:
