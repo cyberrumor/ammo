@@ -100,9 +100,14 @@ class UI:
             if not callable(attribute):
                 continue
 
-            # attribute is a bound method which is transient.
-            # Get the actual function associated with it.
-            func = attribute.__func__
+            if hasattr(attribute, "__func__"):
+                # attribute is a bound method (which is transient).
+                # Get the actual function associated with it instead
+                # of a descriptor.
+                func = attribute.__func__
+            else:
+                # lambdas
+                func = attribute
 
             signature = inspect.signature(func)
             type_hints = typing.get_type_hints(func)
@@ -111,6 +116,7 @@ class UI:
             args = []
             for param in parameters:
                 required = False
+                description = ""
                 if param.default == param.empty:
                     # The argument did not have a default value set.
 

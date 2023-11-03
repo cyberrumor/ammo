@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import shutil
+from functools import partial
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
@@ -29,6 +30,7 @@ class FomodController(Controller):
         self.page = self.steps[self.visible_pages[self.page_index]]
         self.selection = self.page["type"].lower()
         self.do_exit = False
+        self._populate_index_commands()
 
     def __str__(self) -> str:
         num_pages = len(self.visible_pages)
@@ -69,7 +71,30 @@ class FomodController(Controller):
 
         self.page = self.steps[self.visible_pages[self.page_index]]
         self.selection = self.page["type"].lower()
+        self._populate_index_commands()
         return False
+
+
+    def _populate_index_commands(self):
+        """
+        Hack to get dynamically allocated methods which are
+        named after numbers, one for each selectable option.
+        """
+        # Remove all attributes that are numbers
+        for i in list(self.__dict__.keys()):
+            try:
+                int(i)
+                del self.__dict__[i]
+            except ValueError:
+                pass
+        for i in range(len(self.page["plugins"])):
+            setattr(
+                self,
+                str(i),
+                lambda self, i=i: self._select(i)
+            )
+            self.__dict__[str(i)].__doc__ = f"Toggle {self.page['plugins'][i]['name']}"
+
 
     def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
         """
@@ -386,17 +411,6 @@ class FomodController(Controller):
             shutil.copy(v, k)
 
         self.mod.has_data_dir = True
-
-    def select(self, index: int):
-        """
-        Toggle state
-        """
-        if index < 0 or index > len(self.page["plugins"]):
-            raise Warning(
-                f"Expected 0 through {len(self.page['plugins']) - 1} (inclusive)"
-            )
-
-        self._select(index)
 
     def b(self):
         """
