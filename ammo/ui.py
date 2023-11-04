@@ -278,7 +278,7 @@ class UI:
                         expected_arg = expected_args.pop(0)
 
             except (ValueError, KeyError) as e:
-                print(e)
+                print(f"arg was unexpected type: {e}")
                 input("[Enter]")
                 continue
 

@@ -607,18 +607,15 @@ class ModController(Controller):
         components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
-        old_ind = int(from_index)
-        new_ind = int(to_index)
-        if old_ind == new_ind:
-            # no op
+        if from_index == to_index:
             return
-        if new_ind > len(components) - 1:
+        if to_index > len(components) - 1:
             # Auto correct astronomical <to index> to max.
-            new_ind = len(components) - 1
-        if old_ind > len(components) - 1:
+            to_index = len(components) - 1
+        if from_index > len(components) - 1:
             raise Warning("Index out of range.")
-        comp = components.pop(old_ind)
-        components.insert(new_ind, comp)
+        comp = components.pop(from_index)
+        components.insert(to_index, comp)
         self.changes = True
 
     def commit(self):
