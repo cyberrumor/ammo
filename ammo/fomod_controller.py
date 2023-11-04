@@ -7,6 +7,7 @@ from xml.etree import ElementTree
 from functools import reduce
 from .ui import Controller
 from .component import Mod
+from .lib import normalize
 
 
 class FomodController(Controller):
@@ -91,29 +92,6 @@ class FomodController(Controller):
         for i in range(len(self.page["plugins"])):
             setattr(self, str(i), lambda self, i=i: self._select(i))
             self.__dict__[str(i)].__doc__ = f"Toggle {self.page['plugins'][i]['name']}"
-
-    def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
-        """
-        Prevent folders with the same name but different case
-        from being created.
-        """
-        path = destination.parent
-        file = destination.name
-        local_path: str = str(path).split(str(dest_prefix))[-1].lower()
-        for i in [
-            "Data",
-            "DynDOLOD",
-            "Plugins",
-            "SKSE",
-            "Edit Scripts",
-            "Docs",
-            "Scripts",
-            "Source",
-        ]:
-            local_path = local_path.replace(i.lower(), i)
-        new_dest: Path = Path(dest_prefix / local_path.lstrip("/"))
-        result = new_dest / file
-        return result
 
     def _get_steps(self) -> dict:
         """
@@ -377,7 +355,7 @@ class FomodController(Controller):
             # TODO: this is broken :)
             # Normalize the capitalization of folder names
 
-            full_destination = self._normalize(full_destination, data.parent)
+            full_destination = normalize(full_destination, data.parent)
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that
             # isn't implemented here yet.

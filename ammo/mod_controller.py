@@ -17,6 +17,7 @@ from .component import (
     DeleteEnum,
     ComponentEnum,
 )
+from .lib import normalize
 
 
 @dataclass
@@ -294,29 +295,6 @@ class ModController(Controller):
 
         self.changes = starting_state != subject.enabled
 
-    def _normalize(self, destination: Path, dest_prefix: Path) -> Path:
-        """
-        Prevent folders with the same name but different case
-        from being created.
-        """
-        path = destination.parent
-        file = destination.name
-        local_path: str = str(path).split(str(dest_prefix))[-1].lower()
-        for i in [
-            "Data",
-            "DynDOLOD",
-            "Plugins",
-            "SKSE",
-            "Edit Scripts",
-            "Docs",
-            "Scripts",
-            "Source",
-        ]:
-            local_path = local_path.replace(i.lower(), i)
-        new_dest: Path = Path(dest_prefix / local_path.lstrip("/"))
-        result = new_dest / file
-        return result
-
     def _stage(self) -> dict:
         """
         Returns a dict containing the final symlinks that will be installed.
@@ -351,7 +329,7 @@ class ModController(Controller):
                     )
                 # Add the sanitized full path to the stage, resolving
                 # conflicts.
-                dest = self._normalize(dest, self.game.directory)
+                dest = normalize(dest, self.game.directory)
                 result[dest] = (mod.name, src)
 
         return result
