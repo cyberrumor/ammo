@@ -137,13 +137,13 @@ class Mod:
                             self.has_data_dir = True
                             break
 
-    def associated_plugins(self, plugins):
-        return [
-            plugin
-            for plugin in plugins
-            for file in self.files
-            if file.name == plugin.name
-        ]
+    def associated_plugins(self, plugins) -> list:
+        result = []
+        for plugin in plugins:
+            if any(file.name == plugin.name for file in self.files):
+                if plugin not in result:
+                    result.append(plugin)
+        return result
 
     def files_in_place(self):
         """

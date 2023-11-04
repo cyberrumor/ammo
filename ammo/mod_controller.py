@@ -110,50 +110,46 @@ class ModController(Controller):
         for file_with_plugin in files_with_plugins:
             with open(file_with_plugin, "r") as file:
                 for line in file:
-                    # Empty lines, comments
-                    if not line.strip() or line.startswith("#"):
+                    if not line.strip() or line.strip().startswith("#"):
+                        # Ignore empty lines and comments.
                         continue
 
-                    # Initially assign all plugin parents as a DLC.
-                    # If the plugin has a parent mod, assign parent as that Mod.
-                    # This is used to track ownership for when a mod is disabled.
                     name = line.strip("*").strip()
-
-                    # Don't manage order of manually installed mods that were deleted.
                     if not (self.game.data / name).exists():
+                        # Ignore plugins that can't be found. These will automatically
+                        # be removed from DLCList.txt/Plugins.txt on first write.
                         continue
 
+                    # It is required for plugins to not require a parent mod to be able
+                    # to handle DLC. The DLC class here acts as a transient parent,
+                    # and was never added to self.mods.
                     parent_mod = DLC(name)
-                    for mod in self.mods:
+
+                    # Iterate through our mods in reverse so we can assign the conflict
+                    # winning mod as the parent.
+                    for mod in self.mods[::-1]:
                         if name in mod.plugins:
                             parent_mod = mod
                             break
 
-                    enabled = False
-                    pre_existing = False
-                    if line.startswith("*"):
-                        enabled = True
-                        # Attempt to enable the parent mod,
-                        # Only do this if all that mod's files are present.
-                        if parent_mod.files_in_place():
-                            parent_mod.enabled = True
+                    enabled = line.strip().startswith("*")
+                    if enabled and parent_mod.files_in_place():
+                        # If a plugin was enabled and it came from a mod that was
+                        # correctly installed, the parent mod should be enabled,
+                        # even if it wasn't enabled in the config. This avoids
+                        # situations where you 'commit' and suddenly plugins are
+                        # missing. This also ensures DLC plugins can be added
+                        # to self.plugins.
+                        parent_mod.enabled = True
 
-                        for plug in self.plugins:
-                            # Enable DLC if it's already in the plugins list as enabled.
-                            if plug.name == name:
-                                plug.enabled = True
-                                pre_existing = True
-                                break
-
-                    if pre_existing:
-                        # This file was already added from DLCList.txt
+                    if not parent_mod.enabled:
+                        # The parent mod either wasn't enabled or wasn't installed correctly.
+                        # Don't add this plugin to the list of managed plugins. It will be
+                        # added automatically when the parent mod is enabled.
                         continue
 
                     plugin = Plugin(name, enabled, parent_mod)
-                    # Only manage plugins belonging to enabled mods.
-                    if parent_mod.enabled and plugin.name not in [
-                        i.name for i in self.plugins
-                    ]:
+                    if plugin.name not in [p.name for p in self.plugins]:
                         self.plugins.append(plugin)
 
         # Populate self.downloads. Ignore downloads that have a '.part' file that
