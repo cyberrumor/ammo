@@ -48,7 +48,7 @@ class ModController(Controller):
         self.plugins: list[Plugin] = []
         self.keywords = [*keywords]
 
-        # Create required directories for testing. Harmless if exists.
+        # Create required directories. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         Path.mkdir(self.game.data, parents=True, exist_ok=True)
 
