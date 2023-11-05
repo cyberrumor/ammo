@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import sys
+import subprocess
 import shutil
 from pathlib import Path
 from dataclasses import dataclass
@@ -155,20 +157,12 @@ class ModController(Controller):
         # Populate self.downloads. Ignore downloads that have a '.part' file that
         # starts with the same name. This hides downloads that haven't completed yet.
         downloads: list[Path] = []
-        for file in os.listdir(self.downloads_dir):
-            still_downloading = False
-            if any((file.endswith(ext) for ext in (".rar", ".zip", ".7z"))):
-                for other_file in [
-                    i
-                    for i in os.listdir(self.downloads_dir)
-                    if i.rsplit("-")[-1].strip(".part") in file
-                ]:
-                    if other_file.lower().endswith(".part"):
-                        still_downloading = True
-                        break
-                if still_downloading:
-                    continue
-                download = Download(file, self.downloads_dir / file)
+        for file in self.downloads_dir.iterdir():
+            if file.is_dir():
+                # Ignore directories disguised as archives.
+                continue
+            if file.suffix.lower() in [".rar", ".zip", ".7z"]:
+                download = Download(file.name, self.downloads_dir / file)
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
@@ -287,9 +281,12 @@ class ModController(Controller):
         elif isinstance(subject, Plugin):
             subject.enabled = state
         else:
-            raise NotImplementedError
+            raise TypeError(
+                f"Expected type of Mod or Plugin but got '{subject}' of type '{type(subject)}'"
+            )
 
-        self.changes = starting_state != subject.enabled
+        if not self.changes:
+            self.changes = starting_state != subject.enabled
 
     def _stage(self) -> dict:
         """
@@ -516,36 +513,41 @@ class ModController(Controller):
                 raise Warning(f"Expected int, got '{index}'")
 
         def install_download(download):
-            if not download.sane:
-                # Sanitize the download name to guarantee compatibility with 7z syntax.
-                fixed_name = download.name.replace(" ", "_")
-                fixed_name = "".join(
-                    [i for i in fixed_name if i.isalnum() or i in [".", "_", "-"]]
-                )
-                parent_folder = os.path.split(download.location)[0]
-                new_location = os.path.join(parent_folder, fixed_name)
-                os.rename(download.location, new_location)
-                download.location = new_location
-                download.name = fixed_name
-                download.sane = True
+            fixed_name = download.name.replace(" ", "_")
+            fixed_name = "".join(
+                [i for i in fixed_name if i.isalnum() or i in [".", "_", "-"]]
+            )
+            parent_folder = download.location.parent
+            new_location = parent_folder / fixed_name
 
             # Get a decent name for the output folder.
             # This has to be done for a safe 7z call.
             output_folder = "".join(
-                [
-                    i
-                    for i in os.path.splitext(download.name)[0]
-                    if i.isalnum() or i == "_"
-                ]
+                [i for i in download.location.stem if i.isalnum() or i == "_"]
             ).strip("_")
             if not output_folder:
                 output_folder = os.path.splitext(download.name)[0]
 
-            extract_to = os.path.join(self.game.ammo_mods_dir, output_folder)
-            if os.path.exists(extract_to):
+            extract_to = self.game.ammo_mods_dir / output_folder
+
+            if extract_to.exists():
                 raise Warning(
-                    "This mod appears to already be installed. Please delete it before reinstalling."
+                    "This mod is already installed. Please delete it before reinstalling."
                 )
+
+            if "pytest" not in sys.modules:
+                # This is slow, so only do it when not running tests.
+                try:
+                    # Don't try to install incomplete downloads.
+                    print("Checking integrity...")
+                    subprocess.check_output(["7z", "t", f"{download.location}"])
+                    print("Done.")
+                except subprocess.CalledProcessError:
+                    raise Warning("Extraction test failed. Is the download incomplete?")
+
+            download.location.rename(new_location)
+            download.name = fixed_name
+            download.sane = True
 
             extracted_files = []
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
