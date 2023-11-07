@@ -441,6 +441,59 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
+    def rename(self, component: DeleteEnum, index: int, name: str):
+        """
+        Names may contain [a-zA-Z0-9_].
+        """
+        if self.changes is True:
+            raise Warning("You must `commit` changes before renaming.")
+        if component not in list(DeleteEnum):
+            raise Warning(
+                f"Can only rename components of types {[i.value for i in list(DeleteEnum)]}, not {component}"
+            )
+
+        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+            raise Warning(
+                f"Names can only contain alphanumeric characters or underscores"
+            )
+
+        if component == DeleteEnum.DOWNLOAD:
+            try:
+                download = self.downloads.pop(index)
+            except IndexError as e:
+                raise Warning(e)
+
+            new_location = (
+                download.location.parent / f"{name}{download.location.suffix}"
+            )
+            download.location.rename(new_location)
+            self.refresh()
+            return
+
+        assert component == DeleteEnum.MOD
+        try:
+            mod = self.mods[index]
+        except IndexError as e:
+            raise Warning(e)
+
+        new_location = self.game.ammo_mods_dir / name
+        if new_location.exists():
+            raise Warning(f"A mod named {str(new_location)} already exists!")
+
+        # Remove symlinks instead of breaking them.
+        self._clean_data_dir()
+
+        # Move the folder, update the mod.
+        mod.location.rename(new_location)
+        mod.location = new_location
+        mod.name = name
+
+        # re-assess mod files
+        mod.__post_init__()
+
+        # re-install symlinks
+        self.commit()
+
     def delete(self, component: DeleteEnum, index: Union[int, str]):
         """
         Removes specified file from the filesystem.
@@ -558,9 +611,7 @@ class ModController(Controller):
                         f"Extraction of {index} failed at integrity check. Incomplete download?"
                     )
 
-            os.system(
-                f"7z x '{download.location}' -o'{extract_to}'"
-            )
+            os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
             if has_extra_folder(extract_to):
                 # It is reasonable to conclude an extra directory can be eliminated.
