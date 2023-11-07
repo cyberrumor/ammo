@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
 import shutil
+import shlex
+import subprocess
+import sys
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Union
@@ -155,20 +158,11 @@ class ModController(Controller):
         # Populate self.downloads. Ignore downloads that have a '.part' file that
         # starts with the same name. This hides downloads that haven't completed yet.
         downloads: list[Path] = []
-        for file in os.listdir(self.downloads_dir):
-            still_downloading = False
-            if any((file.endswith(ext) for ext in (".rar", ".zip", ".7z"))):
-                for other_file in [
-                    i
-                    for i in os.listdir(self.downloads_dir)
-                    if i.rsplit("-")[-1].strip(".part") in file
-                ]:
-                    if other_file.lower().endswith(".part"):
-                        still_downloading = True
-                        break
-                if still_downloading:
-                    continue
-                download = Download(file, self.downloads_dir / file)
+        for file in self.downloads_dir.iterdir():
+            if file.is_dir():
+                continue
+            if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
+                download = Download(file.name, file)
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
@@ -484,23 +478,22 @@ class ModController(Controller):
             mod = self.mods.pop(index)
             shutil.rmtree(mod.location)
             self.commit()
+            return
 
-        elif component == DeleteEnum.DOWNLOAD:
-            if index == "all":
-                visible_downloads = [i for i in self.downloads if i.visible]
-                for download in visible_downloads:
-                    os.remove(self.downloads[self.downloads.index(download)].location)
-                    self.downloads.pop(self.downloads.index(download))
-                return
-            index = int(index)
-            try:
-                download = self.downloads.pop(index)
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
-            os.remove(download.location)
-        else:
-            raise Warning(f"Expected 'mod' or 'download' but got {component}")
+        assert component == DeleteEnum.DOWNLOAD
+        if index == "all":
+            visible_downloads = [i for i in self.downloads if i.visible]
+            for visible_download in visible_downloads:
+                download = self.downloads.pop(self.downloads.index(visible_download))
+                download.location.unlink()
+            return
+        index = int(index)
+        try:
+            download = self.downloads.pop(index)
+        except IndexError as e:
+            # Demote IndexErrors
+            raise Warning(e)
+        download.location.unlink()
 
     def install(self, index: Union[int, str]):
         """
@@ -515,75 +508,87 @@ class ModController(Controller):
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
-        def install_download(download):
-            if not download.sane:
-                # Sanitize the download name to guarantee compatibility with 7z syntax.
-                fixed_name = download.name.replace(" ", "_")
-                fixed_name = "".join(
-                    [i for i in fixed_name if i.isalnum() or i in [".", "_", "-"]]
-                )
-                parent_folder = os.path.split(download.location)[0]
-                new_location = os.path.join(parent_folder, fixed_name)
-                os.rename(download.location, new_location)
-                download.location = new_location
-                download.name = fixed_name
-                download.sane = True
+        def has_extra_folder(path):
+            files = list(path.iterdir())
+            return all(
+                [
+                    len(files) == 1,
+                    files[0].is_dir(),
+                    files[0].name.lower()
+                    not in [
+                        "data",
+                        "skse",
+                        "bashtags",
+                        "docs",
+                        "meshes",
+                        "textures",
+                        "animations",
+                        "interface",
+                        "misc",
+                        "shaders",
+                        "sounds",
+                        "voices",
+                        "edit scripts",
+                    ],
+                    files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
+                ]
+            )
 
-            # Get a decent name for the output folder.
-            # This has to be done for a safe 7z call.
-            output_folder = "".join(
+        def install_download(index, download):
+            extract_to = "".join(
                 [
                     i
-                    for i in os.path.splitext(download.name)[0]
+                    for i in download.location.stem.replace(" ", "_")
                     if i.isalnum() or i == "_"
                 ]
-            ).strip("_")
-            if not output_folder:
-                output_folder = os.path.splitext(download.name)[0]
-
-            extract_to = os.path.join(self.game.ammo_mods_dir, output_folder)
-            if os.path.exists(extract_to):
+            ).strip()
+            extract_to = self.game.ammo_mods_dir / extract_to
+            if extract_to.exists():
                 raise Warning(
-                    "This mod appears to already be installed. Please delete it before reinstalling."
+                    f"Extraction of {index} failed since mod '{extract_to.name}' exists."
                 )
 
-            extracted_files = []
-            os.system(f"7z x '{download.location}' -o'{extract_to}'")
-            extracted_files = os.listdir(extract_to)
+            if "pytest" not in sys.modules:
+                # Don't run this during tests because it's slow.
+                try:
+                    print("Verifying archive integrity...")
+                    subprocess.check_output(["7z", "t", f"{download.location}"])
+                except subprocess.CalledProcessError:
+                    raise Warning(
+                        f"Extraction of {index} failed at integrity check. Incomplete download?"
+                    )
 
-            if (
-                len(extracted_files) == 1
-                and extracted_files[0].lower()
-                not in [
-                    "data",
-                    "skse",
-                    "bashtags",
-                    "docs",
-                    "meshes",
-                    "textures",
-                    "animations",
-                    "interface",
-                    "misc",
-                    "shaders",
-                    "sounds",
-                    "voices",
-                    "edit scripts",
-                ]
-                and os.path.splitext(extracted_files[0])[-1]
-                not in [".esp", ".esl", ".esm"]
-                and Path(os.path.join(extract_to, extracted_files[0])).is_dir()
-            ):
+            os.system(
+                f"7z x '{download.location}' -o'{extract_to}'"
+            )
+
+            if has_extra_folder(extract_to):
                 # It is reasonable to conclude an extra directory can be eliminated.
                 # This is needed for mods like skse that have a version directory
-                # between the mod's root folder and the Data folder.
-                for file in os.listdir(os.path.join(extract_to, extracted_files[0])):
-                    filename = os.path.join(extract_to, extracted_files[0], file)
-                    shutil.move(filename, extract_to)
+                # between the mod's base folder and the Data folder.
+                for file in next(extract_to.iterdir()).iterdir():
+                    file.rename(extract_to / file.name)
+
+            # Add the freshly install mod to self.mods so that an error doesn't prevent
+            # any successfully installed mods from appearing during 'install all'.
+            self.mods.append(
+                Mod(
+                    name=extract_to.stem,
+                    location=extract_to,
+                    parent_data_dir=self.game.data,
+                )
+            )
 
         if index == "all":
-            for download in self.downloads:
+            errors = []
+            for index, download in enumerate(self.downloads):
                 if download.visible:
-                    install_download(download)
+                    try:
+                        install_download(index, download)
+                    except Warning as e:
+                        errors.append(str(e))
+            if errors:
+                raise Warning("\n".join(errors))
         else:
             index = int(index)
             try:
@@ -592,7 +597,7 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-            install_download(download)
+            install_download(index, download)
 
         self.refresh()
 
