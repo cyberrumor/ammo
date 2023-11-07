@@ -59,17 +59,18 @@ pip3 install --force-reinstall . || pip3 install --break-system-packages --force
 `ammo` - Launch the interactive shell. Select a game via index if prompted.
 
 ```
-activate   mod|plugin <index>                 Enabled components will be loaded by game.
-commit                                        Apply pending changes.
-configure  <index>                            Configure a fomod.
-deactivate mod|plugin <index>                 Disabled components will not be loaded by game.
-delete     mod|download <index>               Removes specified file from the filesystem.
-exit                                          Quit. Prompts if there are changes.
-find       [<keyword> ...]                    Fuzzy filter. `find` without args removes filter.
-help                                          Show this menu.
-install    <index>                            Extract and manage an archive from ~/Downloads.
-move       mod|plugin <from_index> <to_index> Larger numbers win file conflicts.
-refresh                                       Abandon pending changes.
+activate   mod|plugin <index>             Enabled components will be loaded by game.
+commit                                    Apply pending changes.
+configure  <index>                        Configure a fomod.
+deactivate mod|plugin <index>             Disabled components will not be loaded by game.
+delete     mod|download <index>           Removes specified file from the filesystem.
+exit                                      Quit.
+find       [<keyword> ... ]               Fuzzy filter. 'find' without args removes filter.
+help                                      Show this menu.
+install    <index>                        Extract and manage an archive from ~/Downloads.
+move       mod|plugin <index> <new_index> Larger numbers win file conflicts.
+refresh                                   Abandon pending changes.
+rename     mod|download <index> <name>    Names may contain alphanumerics and underscores.
 ```
 
 # Tips and Tricks

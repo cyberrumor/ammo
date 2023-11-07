@@ -443,7 +443,7 @@ class ModController(Controller):
 
     def rename(self, component: DeleteEnum, index: int, name: str):
         """
-        Names may contain [a-zA-Z0-9_].
+        Names may contain alphanumerics and underscores.
         """
         if self.changes is True:
             raise Warning("You must `commit` changes before renaming.")
@@ -652,22 +652,22 @@ class ModController(Controller):
 
         self.refresh()
 
-    def move(self, component: ComponentEnum, from_index: int, to_index: int):
+    def move(self, component: ComponentEnum, index: int, new_index: int):
         """
         Larger numbers win file conflicts.
         """
         components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
-        if from_index == to_index:
+        if index == new_index:
             return
-        if to_index > len(components) - 1:
+        if new_index > len(components) - 1:
             # Auto correct astronomical <to index> to max.
-            to_index = len(components) - 1
-        if from_index > len(components) - 1:
+            new_index = len(components) - 1
+        if index > len(components) - 1:
             raise Warning("Index out of range.")
-        comp = components.pop(from_index)
-        components.insert(to_index, comp)
+        comp = components.pop(index)
+        components.insert(new_index, comp)
         self.changes = True
 
     def commit(self):
@@ -707,7 +707,7 @@ class ModController(Controller):
 
     def find(self, *keyword: str):
         """
-        Fuzzy filter. `find` without args removes filter.
+        Fuzzy filter. 'find' without args removes filter.
         """
         self.keywords = [*keyword]
 

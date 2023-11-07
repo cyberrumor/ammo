@@ -3,6 +3,7 @@ import os
 import sys
 import typing
 import inspect
+import textwrap
 from copy import deepcopy
 from enum import (
     Enum,
@@ -25,8 +26,6 @@ class Controller(ABC):
     are required. It is required to use Union hinting instead of
     shorthand for ambiguous types.
     E.g. do Union[int, str] instead of type[int, str].
-
-    Doc strings for public methods should fit on one line.
 
     A recoverable error from any public methods should be raised
     as a Warning(). This will cause the UI to display the warning
@@ -171,9 +170,20 @@ class UI:
         pad_cmd = max(len(cmd) for cmd in column_cmd) + 1
         pad_arg = max(len(arg) for arg in column_arg) + 1
 
-        out = ""
+        out = "\n"
         for cmd, arg, doc in zip(column_cmd, column_arg, column_doc):
-            out += f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}{doc}\n"
+            line = f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}"
+            # Treat linebreaks, tabs and multiple spaces as a single space.
+            docstring = " ".join(doc.split())
+            # Wrap the document so it stays in the description column.
+            out += (
+                textwrap.fill(
+                    line + docstring,
+                    subsequent_indent=" " * (pad_cmd + pad_arg),
+                    width=100,
+                )
+                + "\n"
+            )
         print(out)
         input("[Enter]")
 
