@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import re
-import sys
 from pathlib import Path
 from .mod_controller import (
     Game,
@@ -34,22 +33,41 @@ class GameController(Controller):
         }
         self.downloads = Path.home() / "Downloads"
         self.steam = Path.home() / ".local/share/Steam/steamapps"
+        self.flatpak_steam = Path.home() / ".var/app/com.valvesoftware.Steam/data/Steam/steamapps"
         self.libraries = []
         self.games = []
 
-        # parse steam libraries and look for games
-        with open(self.steam / "libraryfolders.vdf", "r") as libraries_file:
-            self.libraries = [
-                Path(library) / "steamapps"
-                for library in re.findall(r'"path"\s+"(\S+)"', libraries_file.read())
-            ]
-        for library in self.libraries:
-            for game in [
-                (game.name, library)
-                for game in (library / "common").iterdir()
-                if game.name in self.ids
-            ]:
-                self.games.append(game)
+        # Check both Steam directories
+        standard_exists = (self.steam / "libraryfolders.vdf").exists()
+        flatpak_exists = (self.flatpak_steam / "libraryfolders.vdf").exists()
+
+        steam_directory = None
+        if standard_exists and flatpak_exists:
+            choice = input("Select Steam installation to manage (1: Standard, 2: Flatpak): ")
+            steam_directory = self.steam if choice == "1" else self.flatpak_steam
+        elif standard_exists:
+            steam_directory = self.steam
+        elif flatpak_exists:
+            steam_directory = self.flatpak_steam
+
+        if steam_directory:
+            with open(steam_directory / "libraryfolders.vdf", "r") as libraries_file:
+                library_paths = re.findall(r'"path"\s+"(\S+)"', libraries_file.read())
+                self.libraries = [
+                    Path(library) / "steamapps"
+                    for library in library_paths
+                    if Path(library).exists()
+                ]
+
+            for library in self.libraries:
+                common_path = library / "common"
+                if common_path.exists():
+                    for game in [
+                        (game.name, library)
+                        for game in common_path.iterdir()
+                        if game.name in self.ids
+                    ]:
+                        self.games.append(game)
 
         if len(self.games) == 0:
             raise FileNotFoundError(
