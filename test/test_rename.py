@@ -116,9 +116,10 @@ def test_rename_mod_name_exists():
     causes a warning to be raised and no rename to take place.
     """
     with AmmoController() as controller:
-        index_1 = extract_mod(controller, "conflict_1")
-        index_2 = extract_mod(controller, "conflict_2")
-        assert index_1 != index_2
+        extract_mod(controller, "conflict_1")
+        extract_mod(controller, "conflict_2")
+        index_1 = [i.name for i in controller.mods].index("conflict_1")
+        index_2 = [i.name for i in controller.mods].index("conflict_2")
 
         with pytest.raises(Warning):
             controller.rename(DeleteEnum("mod"), index_1, "conflict_2")
@@ -151,7 +152,7 @@ def test_rename_download_moves_file():
             controller.rename(DeleteEnum("download"), index, "i_was_renamed")
 
             new_index = [i.name for i in controller.downloads].index("i_was_renamed.7z")
-            new_download = controller.downloads[index]
+            new_download = controller.downloads[new_index]
 
             # Ensure the old download is gone.
             assert original_download.location.exists() is False
