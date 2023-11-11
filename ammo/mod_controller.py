@@ -324,6 +324,21 @@ class ModController(Controller):
 
         return result
 
+    def _remove_empty_dirs(self):
+        """
+        Removes empty folders.
+        """
+        path = self.game.directory
+        for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
+            for dirname in dirnames:
+                d = Path(dirname)
+                try:
+                    (d / dirname).resolve().rmdir()
+                except OSError:
+                    # directory wasn't empty, ignore this
+                    pass
+
+
     def _clean_data_dir(self):
         """
         Removes all links and deletes empty folders.
@@ -338,18 +353,7 @@ class ModController(Controller):
                 elif os.stat(full_path).st_nlink > 1:
                     full_path.unlink()
 
-        # remove empty directories
-        def remove_empty_dirs(path: Path):
-            for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
-                for dirname in dirnames:
-                    d = Path(dirname)
-                    try:
-                        (d / dirname).resolve().rmdir()
-                    except OSError:
-                        # directory wasn't empty, ignore this
-                        pass
-
-        remove_empty_dirs(self.game.directory)
+        self._remove_empty_dirs()
 
     def configure(self, index: int):
         """
@@ -698,6 +702,9 @@ class ModController(Controller):
         print()
         for skipped_file in skipped_files:
             print(skipped_file)
+
+        # Don't leave empty folders lying around
+        self._remove_empty_dirs()
         self.changes = False
 
     def refresh(self):
