@@ -16,7 +16,7 @@ def test_pending_change_restrictions():
     Actions that require the persistent state and in-memory state to be the
     same should not be possible to perform when there are pending changes.
 
-    Test that the commands configure, delete, and install are blocked.
+    Test that the commands configure, delete, install and rename are blocked.
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
@@ -27,6 +27,9 @@ def test_pending_change_restrictions():
 
         with pytest.raises(Warning):
             controller.install(1)
+
+        with pytest.raises(Warning):
+            controller.rename(ComponentEnum("mod"), 0, "new name")
 
 
 def test_pending_change_move():

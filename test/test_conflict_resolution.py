@@ -7,24 +7,20 @@ from ammo.component import (
     DeleteEnum,
 )
 
-MOD_1 = "conflict_1"
-MOD_2 = "conflict_2"
-
-FILES = [
-    Path("Data/textures/mock_texture.nif"),
-    Path("Data/mock_plugin.esp"),
-    Path("file.dll"),
-]
-
 
 def test_duplicate_plugin():
     """
     Test that installing two mods with the same plugin
     doesn't show more than one plugin in the plugins list.
     """
+    files = [
+        Path("Data/textures/mock_texture.nif"),
+        Path("Data/mock_plugin.esp"),
+        Path("file.dll"),
+    ]
     with AmmoController() as controller:
         # Install both mods
-        for mod in [MOD_1, MOD_2]:
+        for mod in ["conflict_1", "conflict_2"]:
             mod_index_download = [i.name for i in controller.downloads].index(
                 mod + ".7z"
             )
@@ -46,9 +42,14 @@ def test_conflict_resolution():
 
     Conflicts for all files and plugins are won by a single mod.
     """
+    files = [
+        Path("Data/textures/mock_texture.nif"),
+        Path("Data/mock_plugin.esp"),
+        Path("file.dll"),
+    ]
     with AmmoController() as controller:
         # Install both mods
-        for mod in [MOD_1, MOD_2]:
+        for mod in ["conflict_1", "conflict_2"]:
             mod_index_download = [i.name for i in controller.downloads].index(
                 mod + ".7z"
             )
@@ -78,10 +79,10 @@ def test_conflict_resolution():
                 actual_stat = os.stat(expected_mod_file)
                 assert expected_stat.st_ino == actual_stat.st_ino
 
-        # Assert that the symlinks point to MOD_2.
+        # Assert that the symlinks point to "conflict_2".
         # Since it was installed last, it will be last
         # in both mods/plugins load order.
-        for file in FILES:
+        for file in files:
             expected_game_file = controller.game.directory / file
             expected_mod_file = controller.mods[1].location / file
             uniques.append(expected_mod_file)
@@ -91,8 +92,8 @@ def test_conflict_resolution():
         controller.move(ComponentEnum("mod"), 1, 0)
         controller.commit()
 
-        # Assert that the symlinks point to MOD_1 now.
-        for file in FILES:
+        # Assert that the symlinks point to "conflict_1" now.
+        for file in files:
             expected_game_file = controller.game.directory / file
             expected_mod_file = controller.mods[1].location / file
 
@@ -108,9 +109,14 @@ def test_conflicting_plugins_disable():
 
     Test that the plugin isn't removed from the controller's plugins.
     """
+    files = [
+        Path("Data/textures/mock_texture.nif"),
+        Path("Data/mock_plugin.esp"),
+        Path("file.dll"),
+    ]
     with AmmoController() as controller:
         # Install both mods
-        for mod in [MOD_1, MOD_2]:
+        for mod in ["conflict_1", "conflict_2"]:
             mod_index_download = [i.name for i in controller.downloads].index(
                 mod + ".7z"
             )
@@ -161,9 +167,14 @@ def test_conflicting_plugins_delete():
 
     Test that the plugin isn't removed from the controller's plugins.
     """
+    files = [
+        Path("Data/textures/mock_texture.nif"),
+        Path("Data/mock_plugin.esp"),
+        Path("file.dll"),
+    ]
     with AmmoController() as controller:
         # Install both mods
-        for mod in [MOD_1, MOD_2]:
+        for mod in ["conflict_1", "conflict_2"]:
             mod_index_download = [i.name for i in controller.downloads].index(
                 mod + ".7z"
             )

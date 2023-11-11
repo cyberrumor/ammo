@@ -719,7 +719,7 @@ class ModController(Controller):
                 component.visible = False
 
                 # Hack to filter by fomods
-                if isinstance(component, Mod) and kw.lower() == "fomods":
+                if kw.lower() == "fomods" and isinstance(component, Mod):
                     if component.fomod:
                         component.visible = True
 
