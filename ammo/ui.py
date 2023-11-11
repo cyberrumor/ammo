@@ -306,5 +306,5 @@ class UI:
                         break
 
             except Warning as warning:
-                print(warning)
+                print(f"\n{warning}")
                 input("[Enter]")
