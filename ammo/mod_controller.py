@@ -520,6 +520,7 @@ class ModController(Controller):
                 for mod in visible_mods:
                     self.mods.pop(self.mods.index(mod))
                     shutil.rmtree(mod.location)
+                self.commit()
                 return
             try:
                 self.deactivate(ComponentEnum("mod"), index)
@@ -742,3 +743,23 @@ class ModController(Controller):
             for mod in self.mods:
                 if plugin.name in mod.plugins:
                     mod.visible = True
+
+        if len(self.keywords) == 1:
+            kw = self.keywords[0].lower()
+            if kw == "downloads":
+                for component in self.mods + self.plugins:
+                    component.visible = False
+                for component in self.downloads:
+                    component.visible = True
+
+            if kw == "mods":
+                for component in self.plugins + self.downloads:
+                    component.visible = False
+                for component in self.mods:
+                    component.visible = True
+
+            if kw == "plugins":
+                for component in self.mods + self.downloads:
+                    component.visible = False
+                for component in self.mods:
+                    component.visible = True
