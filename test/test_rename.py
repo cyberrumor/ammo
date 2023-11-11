@@ -41,6 +41,34 @@ def test_rename_mod_moves_folder():
         assert controller.mods[index].parent_data_dir == controller.game.data
 
 
+def test_rename_mod_fomod():
+    """
+    Test that renaming a fomod also moves fomod specific data
+    like where the ModuleConfix.txt is located.
+    """
+    with AmmoController() as controller:
+        original_index = extract_mod(controller, "mock_base_object_swapper")
+        # Verify original ModuleConfig.xml exists
+        original_mod = controller.mods[original_index]
+        original_modconf = original_mod.modconf
+        assert original_modconf.exists() is True
+
+        # Rename.
+        controller.rename(DeleteEnum("mod"), original_index, "bos")
+
+        # Verify the original modconf doesn't exist
+        assert original_modconf.exists() is False
+
+        # Verify that the new modconf isn't the old modconf
+        new_index = [i.name for i in controller.mods].index("bos")
+        new_mod = controller.mods[new_index]
+        new_modconf = new_mod.modconf
+        assert original_modconf != new_modconf
+
+        # Verify new modconf exists
+        assert new_modconf.exists() is True
+
+
 def test_rename_mod_preserves_enabled_state():
     """
     Test that renaming an enabled mod keeps mod enabled.

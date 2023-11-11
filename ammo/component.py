@@ -78,9 +78,6 @@ class Mod:
         # Scan the mod, see if this is a fomod, and whether
         # it has a data dir.
         for parent_dir, folders, files in os.walk(self.location):
-            if self.fomod and self.has_data_dir:
-                break
-
             loc_parent = Path(parent_dir)
             if loc_parent in [
                 self.location / "Data",
@@ -94,8 +91,6 @@ class Mod:
             fomod_dir = fomod_dirs.pop()
             # find the ModuleConfig.xml if it exists.
             for parent, _dirs, filenames in os.walk(self.location / fomod_dir):
-                if self.fomod:
-                    break
                 p = Path(parent)
                 for filename in filenames:
                     if filename.lower() == "moduleconfig.xml":
