@@ -135,7 +135,8 @@ def test_delete_validation():
             controller.delete(DeleteEnum("mod"), 1000)
 
         # delete mod in range
-        controller.delete(DeleteEnum("mod"), 0)
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum("mod"), 0)
 
         # delete download out of range
         with pytest.raises(Warning):

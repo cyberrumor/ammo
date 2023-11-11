@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pytest
+
 from ammo.component import (
     ComponentEnum,
 )
@@ -136,5 +137,6 @@ def test_pending_change_delete():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.delete(ComponentEnum("mod"), 0)
+        with pytest.raises(Warning):
+            controller.delete(ComponentEnum("mod"), 0)
         assert controller.changes is False, "Delete command created a pending change."

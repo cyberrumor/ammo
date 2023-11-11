@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 from ammo.component import (
     ComponentEnum,
     DeleteEnum,
@@ -136,7 +138,8 @@ def test_find_delete_all_mods():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "conflict")
-        controller.delete(DeleteEnum("mod"), "all")
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum("mod"), "all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

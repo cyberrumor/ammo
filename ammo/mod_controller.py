@@ -338,7 +338,6 @@ class ModController(Controller):
                     # directory wasn't empty, ignore this
                     pass
 
-
     def _clean_data_dir(self):
         """
         Removes all links and deletes empty folders.
@@ -515,6 +514,7 @@ class ModController(Controller):
                 raise Warning(f"Expected int, got '{index}'")
 
         if component == DeleteEnum.MOD:
+            deleted_mods = ""
             if index == "all":
                 visible_mods = [i for i in self.mods if i.visible]
                 for mod in visible_mods:
@@ -522,8 +522,9 @@ class ModController(Controller):
                 for mod in visible_mods:
                     self.mods.pop(self.mods.index(mod))
                     shutil.rmtree(mod.location)
+                    deleted_mods += f"{mod.name}\n"
                 self.commit()
-                return
+                raise Warning(f"Deleted mods:\n{deleted_mods}")
             try:
                 self.deactivate(ComponentEnum("mod"), index)
             except IndexError as e:
@@ -534,7 +535,7 @@ class ModController(Controller):
             mod = self.mods.pop(index)
             shutil.rmtree(mod.location)
             self.commit()
-            return
+            raise Warning(f"Deleted mod: {mod.name}")
 
         assert component == DeleteEnum.DOWNLOAD
         if index == "all":

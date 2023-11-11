@@ -155,6 +155,8 @@ you can use input redirection:
   removing empty folders. This actually occurs every time you commit, which
   provides a plethora of benefits also.
 - They consume an insignificant amount of storage.
+- They make it possible to use external tools that rely on mod data without
+  coupling ammo to those tools.
 
 # License
 GNU General Public License v2, with the exception of some of the mock mods used for testing,

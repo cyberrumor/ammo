@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
 from pathlib import Path
+
+import pytest
+
 from common import AmmoController
 from ammo.component import (
     ComponentEnum,
@@ -184,7 +187,8 @@ def test_conflicting_plugins_delete():
             controller.commit()
 
         # plugin is disabled, changes were not / are not committed
-        controller.delete(DeleteEnum("mod"), 1)
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum("mod"), 1)
         assert (
             len(controller.plugins) == 1
         ), "Deleting a mod hid a plugin provided by another mod"
