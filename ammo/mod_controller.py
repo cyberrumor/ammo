@@ -331,9 +331,9 @@ class ModController(Controller):
         path = self.game.directory
         for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
             for dirname in dirnames:
-                d = Path(dirname)
+                d = Path(dirpath) / dirname
                 try:
-                    (d / dirname).resolve().rmdir()
+                    d.resolve().rmdir()
                 except OSError:
                     # directory wasn't empty, ignore this
                     pass
@@ -349,8 +349,6 @@ class ModController(Controller):
             for file in filenames:
                 full_path = d / file
                 if full_path.is_symlink():
-                    full_path.unlink()
-                elif os.stat(full_path).st_nlink > 1:
                     full_path.unlink()
 
         self._remove_empty_dirs()
@@ -699,13 +697,16 @@ class ModController(Controller):
                 )
             finally:
                 print(f"files processed: {index+1}/{count}", end="\r", flush=True)
-        print()
+
+        warn = ""
         for skipped_file in skipped_files:
-            print(skipped_file)
+            warn += f"{skipped_file}\n"
 
         # Don't leave empty folders lying around
         self._remove_empty_dirs()
         self.changes = False
+        if warn:
+            raise Warning(warn)
 
     def refresh(self):
         """
