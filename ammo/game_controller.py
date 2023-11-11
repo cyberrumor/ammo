@@ -37,11 +37,17 @@ class GameController(Controller):
         self.libraries = []
         self.games = []
 
-        # Determine which Steam directory to use
+        # Check both Steam directories
+        standard_exists = (self.steam / "libraryfolders.vdf").exists()
+        flatpak_exists = (self.flatpak_steam / "libraryfolders.vdf").exists()
+
         steam_directory = None
-        if (self.steam / "libraryfolders.vdf").exists():
+        if standard_exists and flatpak_exists:
+            choice = input("Select Steam installation to manage (1: Standard, 2: Flatpak): ")
+            steam_directory = self.steam if choice == "1" else self.flatpak_steam
+        elif standard_exists:
             steam_directory = self.steam
-        elif (self.flatpak_steam / "libraryfolders.vdf").exists():
+        elif flatpak_exists:
             steam_directory = self.flatpak_steam
 
         if steam_directory:
@@ -55,7 +61,7 @@ class GameController(Controller):
 
             for library in self.libraries:
                 common_path = library / "common"
-                if common_path.exists(): 
+                if common_path.exists():
                     for game in [
                         (game.name, library)
                         for game in common_path.iterdir()
