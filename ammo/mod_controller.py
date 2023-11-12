@@ -460,13 +460,26 @@ class ModController(Controller):
 
         if component == DeleteEnum.DOWNLOAD:
             try:
-                download = self.downloads.pop(index)
+                download = self.downloads[index]
             except IndexError as e:
                 raise Warning(e)
+
+            if "pytest" not in sys.modules:
+                # Don't run this during tests because it's slow.
+                try:
+                    print("Verifying archive integrity...")
+                    subprocess.check_output(["7z", "t", f"{download.location}"])
+                except subprocess.CalledProcessError:
+                    raise Warning(
+                        f"Rename of {index} failed at integrity check. Incomplete download?"
+                    )
 
             new_location = (
                 download.location.parent / f"{name}{download.location.suffix}"
             )
+            if new_location.exists():
+                raise Warning(f"Can't rename because download {new_location} exists.")
+
             download.location.rename(new_location)
             self.refresh()
             return
