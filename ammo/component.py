@@ -41,12 +41,7 @@ class Plugin:
 class Download:
     name: str
     location: Path
-    sane: bool = False
     visible: bool = True
-
-    def __post_init__(self):
-        if all(((i.isalnum() or i in [".", "_", "-"]) for i in self.name)):
-            self.sane = True
 
 
 @dataclass
