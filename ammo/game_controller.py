@@ -33,7 +33,9 @@ class GameController(Controller):
         }
         self.downloads = Path.home() / "Downloads"
         self.steam = Path.home() / ".local/share/Steam/steamapps"
-        self.flatpak_steam = Path.home() / ".var/app/com.valvesoftware.Steam/data/Steam/steamapps"
+        self.flatpak_steam = (
+            Path.home() / ".var/app/com.valvesoftware.Steam/data/Steam/steamapps"
+        )
         self.libraries = []
         self.games = []
 
@@ -43,7 +45,9 @@ class GameController(Controller):
 
         steam_directory = None
         if standard_exists and flatpak_exists:
-            choice = input("Select Steam installation to manage (1: Standard, 2: Flatpak): ")
+            choice = input(
+                "Select Steam installation to manage (1: Standard, 2: Flatpak): "
+            )
             steam_directory = self.steam if choice == "1" else self.flatpak_steam
         elif standard_exists:
             steam_directory = self.steam

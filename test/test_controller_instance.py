@@ -9,6 +9,7 @@ from common import (
     install_everything,
 )
 
+
 def test_controller_first_launch():
     """
     Sanity check the ammo_controller fixture, that it creates

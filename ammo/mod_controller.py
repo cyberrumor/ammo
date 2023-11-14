@@ -16,14 +16,13 @@ from .component import (
     Mod,
     Download,
     Plugin,
-    DLC,
     DeleteEnum,
     ComponentEnum,
 )
 from .lib import normalize
 
 
-@dataclass
+@dataclass(frozen=True)
 class Game:
     name: str
     directory: Path
@@ -61,7 +60,6 @@ class ModController(Controller):
         mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
         for path in mod_folders:
             mod = Mod(
-                path.name,
                 location=self.game.ammo_mods_dir / path.name,
                 parent_data_dir=self.game.data,
             )
@@ -96,7 +94,7 @@ class ModController(Controller):
 
             self.mods = ordered_mods
 
-        # Read the DLCList.txt and Plugins.txt files.
+        # Read the Plugins.txt and DLCList.txt files.
         # Add Plugins from these files to the list of managed plugins,
         # with attention to the order and enabled state.
         # Create the plugins file if it didn't already exist.
@@ -105,7 +103,6 @@ class ModController(Controller):
             with open(self.game.plugin_file, "w") as file:
                 file.write("")
 
-        # Detect whether DLCList.txt needs parsing.
         files_with_plugins: list[Path] = [self.game.plugin_file]
         if self.game.dlc_file.exists():
             files_with_plugins.append(self.game.dlc_file)
@@ -123,46 +120,44 @@ class ModController(Controller):
                         # be removed from DLCList.txt/Plugins.txt on first write.
                         continue
 
-                    # It is required for plugins to not require a parent mod to be able
-                    # to handle DLC. The DLC class here acts as a transient parent,
-                    # and was never added to self.mods.
-                    parent_mod = DLC(name)
-
                     # Iterate through our mods in reverse so we can assign the conflict
                     # winning mod as the parent.
+                    mod = None
                     for mod in self.mods[::-1]:
                         if name in mod.plugins:
-                            parent_mod = mod
+                            mod = mod
                             break
 
                     enabled = line.strip().startswith("*")
-                    if enabled and parent_mod.files_in_place():
+                    if enabled and mod and mod.files_in_place():
                         # If a plugin was enabled and it came from a mod that was
                         # correctly installed, the parent mod should be enabled,
                         # even if it wasn't enabled in the config. This avoids
                         # situations where you 'commit' and suddenly plugins are
                         # missing. This also ensures DLC plugins can be added
                         # to self.plugins.
-                        parent_mod.enabled = True
+                        mod.enabled = True
 
-                    if not parent_mod.enabled:
+                    if mod and not mod.enabled:
                         # The parent mod either wasn't enabled or wasn't installed correctly.
                         # Don't add this plugin to the list of managed plugins. It will be
                         # added automatically when the parent mod is enabled.
                         continue
 
-                    plugin = Plugin(name, enabled, parent_mod)
+                    plugin = Plugin(
+                        name=name,
+                        mod=mod,
+                        enabled=enabled,
+                    )
                     if plugin.name not in [p.name for p in self.plugins]:
                         self.plugins.append(plugin)
 
-        # Populate self.downloads. Ignore downloads that have a '.part' file that
-        # starts with the same name. This hides downloads that haven't completed yet.
         downloads: list[Path] = []
         for file in self.downloads_dir.iterdir():
             if file.is_dir():
                 continue
             if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
-                download = Download(file.name, file)
+                download = Download(file)
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
@@ -259,7 +254,11 @@ class ModController(Controller):
                 # Show plugins owned by this mod
                 for name in subject.plugins:
                     if name not in [i.name for i in self.plugins]:
-                        plugin = Plugin(name, False, subject)
+                        plugin = Plugin(
+                            name=name,
+                            mod=subject,
+                            enabled=False,
+                        )
                         self.plugins.append(plugin)
             else:
                 # Hide plugins owned by this mod and not another mod
@@ -634,7 +633,6 @@ class ModController(Controller):
             # any successfully installed mods from appearing during 'install all'.
             self.mods.append(
                 Mod(
-                    name=extract_to.stem,
                     location=extract_to,
                     parent_data_dir=self.game.data,
                 )
@@ -748,7 +746,7 @@ class ModController(Controller):
 
                 # Show plugins of visible mods.
                 if isinstance(component, Plugin):
-                    if component.parent_mod.name.lower().count(kw.lower()):
+                    if component.mod.name.lower().count(kw.lower()):
                         component.visible = True
 
                 if component.visible:
@@ -757,7 +755,7 @@ class ModController(Controller):
         # Show mods that contain plugins named like the visible plugins.
         # This shows all associated mods, not just conflict winners.
         for plugin in [p for p in self.plugins if p.visible]:
-            # We can't simply plugin.parent_mod.visible = True because parent_mod
+            # We can't simply plugin.mod.visible = True because plugin.mod
             # does not care about conflict winners. This also means we can't break.
             for mod in self.mods:
                 if plugin.name in mod.plugins:

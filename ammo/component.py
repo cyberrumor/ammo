@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from typing import Union
 from enum import Enum
 from pathlib import Path
 from dataclasses import (
@@ -18,47 +19,19 @@ class DeleteEnum(str, Enum):
     DOWNLOAD = "download"
 
 
-@dataclass
-class DLC:
-    name: str
-    enabled: bool = True
-    is_dlc: bool = True
-    visible: bool = True
-
-    def files_in_place(self):
-        return True
-
-
-@dataclass
-class Plugin:
-    name: str
-    enabled: bool
-    parent_mod: str
-    visible: bool = True
-
-
-@dataclass
-class Download:
-    name: str
-    location: Path
-    visible: bool = True
-
-
-@dataclass
+@dataclass(kw_only=True, slots=True)
 class Mod:
-    name: str
     location: Path
     parent_data_dir: Path
 
-    visible: bool = True
-    modconf: None | Path = None
-    has_data_dir: bool = False
-    fomod: bool = False
-    is_dlc: bool = False
-    enabled: bool = False
-
-    files: list[Path] = field(default_factory=list)
-    plugins: list[str] = field(default_factory=list)
+    visible: bool = field(init=False, default=True)
+    modconf: Union[None, Path] = field(init=False, default=None)
+    has_data_dir: bool = field(init=False, default=False)
+    fomod: bool = field(init=False, default=False)
+    enabled: bool = field(init=False, default=False)
+    files: list[Path] = field(default_factory=list, init=False)
+    plugins: list[str] = field(default_factory=list, init=False)
+    name: str = field(default_factory=str, init=False)
 
     def __post_init__(self):
         # Overrides for whether a mod should install inside Data,
@@ -67,6 +40,7 @@ class Mod:
         # If there is an Edit Scripts folder at the top level,
         # don't put all the mod files inside Data even if there's no
         # Data folder.
+        self.name = self.location.name
         if (self.location / "Edit Scripts").exists():
             self.has_data_dir = True
 
@@ -151,3 +125,20 @@ class Mod:
                 print(f"unable to find expected file '{corrected_location}'")
                 return False
         return True
+
+@dataclass(kw_only=True, slots=True)
+class Plugin:
+    name: str
+    mod: Union[None, Mod]
+    enabled: bool
+    visible: bool = field(init=False, default=True)
+
+
+@dataclass(slots=True)
+class Download:
+    location: Path
+    name: str = field(default_factory=str, init=False)
+    visible: bool = field(init=False, default=True)
+
+    def __post_init__(self):
+        self.name = self.location.name
