@@ -283,7 +283,8 @@ class ModController(Controller):
         else:
             raise NotImplementedError
 
-        self.changes = starting_state != subject.enabled
+        if not self.changes:
+            self.changes = starting_state != subject.enabled
 
     def _stage(self) -> dict:
         """
@@ -372,7 +373,7 @@ class ModController(Controller):
 
         assert mod.modconf is not None
 
-        self.deactivate(ComponentEnum("mod"), index)
+        self.deactivate(ComponentEnum.MOD, index)
         self.commit()
         self.refresh()
 
@@ -398,9 +399,6 @@ class ModController(Controller):
         """
         Enabled components will be loaded by game.
         """
-        if component not in list(ComponentEnum):
-            raise Warning("You can only activate mods or plugins")
-
         try:
             int(index)
         except ValueError:
@@ -422,9 +420,6 @@ class ModController(Controller):
         """
         Disabled components will not be loaded by game.
         """
-        if component not in list(ComponentEnum):
-            raise Warning("You can only deactivate mods or plugins")
-
         try:
             int(index)
         except ValueError:
@@ -446,12 +441,12 @@ class ModController(Controller):
         """
         Names may contain alphanumerics and underscores.
         """
-        if self.changes is True:
-            raise Warning("You must `commit` changes before renaming.")
         if component not in list(DeleteEnum):
             raise Warning(
                 f"Can only rename components of types {[i.value for i in list(DeleteEnum)]}, not {component}"
             )
+        if self.changes is True:
+            raise Warning("You must `commit` changes before renaming.")
 
         if name != "".join([i for i in name if i.isalnum() or i == "_"]):
             raise Warning(
@@ -512,14 +507,12 @@ class ModController(Controller):
         """
         Removes specified file from the filesystem.
         """
+        if not isinstance(component, DeleteEnum):
+            raise TypeError(
+                f"Expected DeleteEnum, got '{component}' of type '{type(component)}'"
+            )
         if self.changes is True:
             raise Warning("You must `commit` changes before deleting files.")
-
-        if component not in list(DeleteEnum):
-            raise Warning(
-                f"Can only delete components of types {[i.value for i in list(DeleteEnum)]}, not {component}"
-            )
-
         try:
             index = int(index)
         except ValueError:
@@ -531,7 +524,7 @@ class ModController(Controller):
             if index == "all":
                 visible_mods = [i for i in self.mods if i.visible]
                 for mod in visible_mods:
-                    self.deactivate(ComponentEnum("mod"), self.mods.index(mod))
+                    self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
                 for mod in visible_mods:
                     self.mods.pop(self.mods.index(mod))
                     shutil.rmtree(mod.location)
@@ -539,7 +532,7 @@ class ModController(Controller):
                 self.commit()
                 raise Warning(f"Deleted mods:\n{deleted_mods}")
             try:
-                self.deactivate(ComponentEnum("mod"), index)
+                self.deactivate(ComponentEnum.MOD, index)
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
@@ -673,6 +666,10 @@ class ModController(Controller):
         """
         Larger numbers win file conflicts.
         """
+        if not isinstance(component, ComponentEnum):
+            raise TypeError(
+                f"Expected ComponentEnum, got '{component}' of type '{type(component)}'"
+            )
         components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.

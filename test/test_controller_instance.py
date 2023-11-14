@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 import os
-from common import AmmoController, install_everything
-
+from ammo.component import (
+    ComponentEnum,
+    DeleteEnum,
+)
+from common import (
+    AmmoController,
+    install_everything,
+)
 
 def test_controller_first_launch():
     """
@@ -57,8 +63,8 @@ def test_controller_subsequent_launch():
         install_everything(first_launch)
 
         # change some config to ensure it's not just alphabetic
-        first_launch.move("plugin", 0, 2)
-        first_launch.move("mod", 2, 0)
+        first_launch.move(ComponentEnum.PLUGIN, 0, 2)
+        first_launch.move(ComponentEnum.MOD, 2, 0)
         first_launch.commit()
 
         mods = [i.name for i in first_launch.mods]

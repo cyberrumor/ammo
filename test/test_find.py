@@ -56,7 +56,7 @@ def test_find_activate_all_mods():
         extract_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.activate(ComponentEnum("mod"), "all")
+        controller.activate(ComponentEnum.MOD, "all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -78,7 +78,7 @@ def test_find_deactivate_all_mods():
         install_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.deactivate(ComponentEnum("mod"), "all")
+        controller.deactivate(ComponentEnum.MOD, "all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -95,10 +95,10 @@ def test_find_activate_all_plugins():
         extract_mod(controller, "normal_mod")
         extract_mod(controller, "conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
-        controller.activate(ComponentEnum("mod"), "all")
+        controller.activate(ComponentEnum.MOD, "all")
 
         controller.find("normal", "mock")
-        controller.activate(ComponentEnum("plugin"), "all")
+        controller.activate(ComponentEnum.PLUGIN, "all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             [
@@ -120,7 +120,7 @@ def test_find_deactivate_all_plugins():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "mock")
-        controller.deactivate(ComponentEnum("plugin"), "all")
+        controller.deactivate(ComponentEnum.PLUGIN, "all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             ["no_data_folder_plugin.esp"]
@@ -139,7 +139,7 @@ def test_find_delete_all_mods():
 
         controller.find("normal", "conflict")
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum("mod"), "all")
+            controller.delete(DeleteEnum.MOD, "all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

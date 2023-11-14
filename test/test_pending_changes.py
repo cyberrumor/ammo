@@ -3,6 +3,7 @@ import pytest
 
 from ammo.component import (
     ComponentEnum,
+    DeleteEnum,
 )
 from common import (
     AmmoController,
@@ -24,13 +25,13 @@ def test_pending_change_restrictions():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.delete(ComponentEnum("mod"), 0)
+            controller.delete(DeleteEnum.MOD, 0)
 
         with pytest.raises(Warning):
             controller.install(1)
 
         with pytest.raises(Warning):
-            controller.rename(ComponentEnum("mod"), 0, "new name")
+            controller.rename(ComponentEnum.MOD, 0, "new name")
 
 
 def test_pending_change_move():
@@ -39,7 +40,7 @@ def test_pending_change_move():
     """
     with AmmoController() as controller:
         install_everything(controller)
-        controller.move("mod", 0, 1)
+        controller.move(ComponentEnum.MOD, 0, 1)
         assert (
             controller.changes is True
         ), "move command did not create a pending change"
@@ -52,7 +53,7 @@ def test_pending_change_move_nowhere():
     """
     with AmmoController() as controller:
         install_everything(controller)
-        controller.move("mod", 0, 0)
+        controller.move(ComponentEnum.MOD, 0, 0)
         assert (
             controller.changes is False
         ), "move command created a pending change when it shouldn't have."
@@ -65,14 +66,14 @@ def test_pending_change_activate():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.activate(ComponentEnum("mod"), 0)
+        controller.activate(ComponentEnum.MOD, 0)
         assert (
             controller.changes is False
         ), "activate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.activate(ComponentEnum("mod"), 0)
+        controller.activate(ComponentEnum.MOD, 0)
         assert (
             controller.changes is True
         ), "activate command failed to create a pending change."
@@ -85,14 +86,14 @@ def test_pending_change_deactivate():
     """
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.deactivate(ComponentEnum("mod"), 0)
+        controller.deactivate(ComponentEnum.MOD, 0)
         assert (
             controller.changes is False
         ), "deactivate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.deactivate(ComponentEnum("mod"), 0)
+        controller.deactivate(ComponentEnum.MOD, 0)
         assert (
             controller.changes is True
         ), "deactivate command failed to create a pending change."
@@ -137,6 +138,6 @@ def test_pending_change_delete():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        with pytest.raises(Warning):
-            controller.delete(ComponentEnum("mod"), 0)
+        with pytest.raises(TypeError):
+            controller.delete(ComponentEnum.MOD, 0)
         assert controller.changes is False, "Delete command created a pending change."
