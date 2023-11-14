@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import re
+from dataclasses import (
+    dataclass,
+    field,
+)
+from enum import Enum
 from pathlib import Path
 from .mod_controller import (
     Game,
@@ -9,6 +14,19 @@ from .ui import (
     Controller,
     UI,
 )
+
+
+class Source(str, Enum):
+    UNKNOWN = "unknown"
+    STEAM = "steam"
+    FLATPAK = "flatpak"
+
+
+@dataclass(frozen=True, kw_only=True)
+class GameSelection:
+    name: field(default_factory=str)
+    source: field(default_factory=Source)
+    library: field(default_factory=Path, repr=False)
 
 
 class GameController(Controller):
@@ -33,45 +51,47 @@ class GameController(Controller):
         }
         self.downloads = Path.home() / "Downloads"
         self.steam = Path.home() / ".local/share/Steam/steamapps"
-        self.flatpak_steam = (
-            Path.home() / ".var/app/com.valvesoftware.Steam/data/Steam/steamapps"
+        self.flatpak = (
+            Path.home()
+            / ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"
         )
-        self.libraries = []
-        self.games = []
+        self.libraries: list[Path] = []
+        self.games: list[GameSelection] = []
 
-        # Check both Steam directories
-        standard_exists = (self.steam / "libraryfolders.vdf").exists()
-        flatpak_exists = (self.flatpak_steam / "libraryfolders.vdf").exists()
+        for source in [self.steam, self.flatpak]:
+            if (source / "libraryfolders.vdf").exists() is False:
+                continue
 
-        steam_directory = None
-        if standard_exists and flatpak_exists:
-            choice = input(
-                "Select Steam installation to manage (1: Standard, 2: Flatpak): "
-            )
-            steam_directory = self.steam if choice == "1" else self.flatpak_steam
-        elif standard_exists:
-            steam_directory = self.steam
-        elif flatpak_exists:
-            steam_directory = self.flatpak_steam
-
-        if steam_directory:
-            with open(steam_directory / "libraryfolders.vdf", "r") as libraries_file:
+            with open(source / "libraryfolders.vdf", "r") as libraries_file:
                 library_paths = re.findall(r'"path"\s+"(\S+)"', libraries_file.read())
-                self.libraries = [
-                    Path(library) / "steamapps"
-                    for library in library_paths
-                    if Path(library).exists()
-                ]
+                self.libraries.extend(
+                    [
+                        Path(library) / "steamapps"
+                        for library in library_paths
+                        if Path(library).exists()
+                    ]
+                )
 
-            for library in self.libraries:
-                common_path = library / "common"
-                if common_path.exists():
-                    for game in [
-                        (game.name, library)
-                        for game in common_path.iterdir()
-                        if game.name in self.ids
-                    ]:
-                        self.games.append(game)
+        for library in self.libraries:
+            common_path = library / "common"
+            if common_path.exists():
+                for game in common_path.iterdir():
+                    if game.name not in self.ids:
+                        continue
+
+                    source = Source.UNKNOWN
+                    if self.steam in [library, library.parents]:
+                        source = Source.STEAM
+                    elif self.flatpak in [library, library.parents]:
+                        source = Source.FLATPAK
+
+                    game_selection = GameSelection(
+                        name=game.name,
+                        source=source,
+                        library=library,
+                    )
+
+                    self.games.append(game_selection)
 
         if len(self.games) == 0:
             raise FileNotFoundError(
@@ -93,9 +113,9 @@ class GameController(Controller):
         result = ""
         result += " index | Game\n"
         result += "-------|-----\n"
-        for i, (game, _) in enumerate(self.games):
+        for i, game in enumerate(self.games):
             index = f"[{i}]"
-            result += f"{index:<7} {game}\n"
+            result += f"{index:<7} {game.name} ({game.source.value})\n"
         return result
 
     def _populate_index_commands(self):
@@ -103,30 +123,37 @@ class GameController(Controller):
         Hack to get methods named after numbers,
         one for each selectable option.
         """
-        for i in range(len(self.games)):
+        for i, game in enumerate(self.games):
             setattr(self, str(i), lambda self, i=i: self._manage_game(i))
-            self.__dict__[str(i)].__doc__ = f"Manage {self.games[i]}"
+            full_location = str((game.library / game.name)).replace(
+                str(Path.home()), "~"
+            )
+            self.__dict__[str(i)].__doc__ = full_location
 
     def _manage_game(self, index: int):
         """
         Gather paths for the game at <index>. Create an instance of
         ModController for that game, then run it under the UI.
         """
-        name, library = self.games[index]
+        game_selection = self.games[index]
 
-        app_id = self.ids[name]
-        pfx = library / f"compatdata/{app_id}/pfx"
-        directory = library / f"common/{name}"
-        app_data = library / f"{pfx}/drive_c/users/steamuser/AppData/Local"
-        dlc_file = app_data / f"{name.replace('t 4', 't4')}/DLCList.txt"
-        plugin_file = app_data / f"{name.replace('t 4', 't4')}/Plugins.txt"
+        app_id = self.ids[game_selection.name]
+        pfx = game_selection.library / f"compatdata/{app_id}/pfx"
+        directory = game_selection.library / f"common/{game_selection.name}"
+        app_data = (
+            game_selection.library / f"{pfx}/drive_c/users/steamuser/AppData/Local"
+        )
+        dlc_file = app_data / f"{game_selection.name.replace('t 4', 't4')}/DLCList.txt"
+        plugin_file = (
+            app_data / f"{game_selection.name.replace('t 4', 't4')}/Plugins.txt"
+        )
         data = directory / "Data"
-        ammo_mods_dir = Path.home() / f".local/share/ammo/{name}/mods"
-        ammo_conf_dir = Path.home() / f".local/share/ammo/{name}"
+        ammo_mods_dir = Path.home() / f".local/share/ammo/{game_selection.name}/mods"
+        ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
         ammo_conf = ammo_conf_dir / "ammo.conf"
 
         game = Game(
-            name,
+            game_selection.name,
             directory,
             data,
             ammo_conf,

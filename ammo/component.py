@@ -126,6 +126,7 @@ class Mod:
                 return False
         return True
 
+
 @dataclass(kw_only=True, slots=True)
 class Plugin:
     name: str
