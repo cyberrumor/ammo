@@ -125,8 +125,8 @@ class GameController(Controller):
         """
         for i, game in enumerate(self.games):
             setattr(self, str(i), lambda self, i=i: self._manage_game(i))
-            full_location = str((game.library / game.name)).replace(
-                str(Path.home()), "~"
+            full_location = str((game.library / "common" / game.name)).replace(
+                str(Path.home()), "~", 1
             )
             self.__dict__[str(i)].__doc__ = full_location
 
@@ -148,8 +148,15 @@ class GameController(Controller):
             app_data / f"{game_selection.name.replace('t 4', 't4')}/Plugins.txt"
         )
         data = directory / "Data"
-        ammo_mods_dir = Path.home() / f".local/share/ammo/{game_selection.name}/mods"
-        ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
+        if game_selection.source == Source.FLATPAK:
+            ammo_conf_dir = Path.home() / f".var/app/com.valvesoftware.Steam/.local/share/ammo/{game_selection.name}"
+        elif game_selection.source == Source.STEAM:
+            ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
+        else:
+            raise TypeError(
+                f"Expected {list(Source)} but got {game_selection.source} of type {type(game_selection.source)}"
+            )
+        ammo_mods_dir = ammo_conf_dir / "mods"
         ammo_conf = ammo_conf_dir / "ammo.conf"
 
         game = Game(

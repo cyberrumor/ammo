@@ -25,7 +25,8 @@ A Simple Terminal-Based Mod Organizer for Linux
   - Returning to vanilla requires nuke/pave/reinstall.
 
 # Dependencies
-- Linux version of Steam, Proton.
+- Games installed through Steam
+- Steam is either distro version or from Flatpak com.valvesoftware.Steam
 - Python3
 - p7z (or something else that puts 7z in your PATH).
 
