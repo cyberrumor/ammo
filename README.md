@@ -95,7 +95,7 @@ with the `find` command to quickly organize groups of components with related na
   You can leverage this to automatically sort your plugins to the same order as your
   mod list:
 
-    ```bash
+    ```sh
     deactivate mod all
     # sort your mods with the move command
     activate mod all
@@ -111,7 +111,7 @@ with the `find` command to quickly organize groups of components with related na
 
 - You can easily return to vanilla like this:
   
-  ```bash
+  ```sh
   deactivate mod all
   commit
   ```
@@ -150,14 +150,14 @@ You can run tests from the base directory of the repo with `pytest test`.
 It may be useful in your iterations to automate UI input before you've written
 tests. I find the easiest way to do this is with this sort of strategy:
 
-```bash
+```sh
 (echo "command1 arg1"; echo "command2 arg1") | ammo
 ```
 
 If you need to recreate a complex set of initial steps then supply manual input,
 you can use input redirection:
 
-```bash
+```sh
 (echo "instruction1"; echo "instruction2"; cat <&0) | ammo
 ```
 
