@@ -1,9 +1,11 @@
 # AMMO
+
 Almost Manual Mod Organizer
 
 A Simple Terminal-Based Mod Organizer for Linux
 
-# Supported Games
+## Supported Games
+
 - Starfield
 - Skyrim
 - Skyrim SE
@@ -12,7 +14,8 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Enderal
 - Enderal Special Edition
 
-# AMMO vs Manual
+## AMMO vs Manual
+
 - AMMO only:
   - FOMOD install wizard.
   - Ability to return to vanilla game state easily.
@@ -24,21 +27,25 @@ A Simple Terminal-Based Mod Organizer for Linux
   - Even minor mistakes are catastrophic.
   - Returning to vanilla requires nuke/pave/reinstall.
 
-# Dependencies
+## Dependencies
+
 - Games installed through Steam
 - Steam is either distro version or from Flatpak com.valvesoftware.Steam
 - Python3
 - p7z (or something else that puts 7z in your PATH).
 
-# Installation Instructions
+## Installation Instructions
+
 Steam Deck users:
-```
+
+```sh
 python -m ensurepip --upgrade
 python -m pip install --upgrade pip
 ```
 
 Everyone:
-```
+
+```sh
 echo 'PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/cyberrumor/ammo
@@ -46,48 +53,56 @@ cd ammo
 pip3 install -r requirements.txt || pip3 install --break-system-packages -r requirements.txt
 pip3 install . || pip3 install --break-system-packages .
 ```
+
 You can now execute ammo with the terminal command `ammo`.
 
-# Updating Instructions
-```
+## Updating Instructions
+
+```sh
 cd /path/to/ammo/clone/dir
 git pull
 pip3 install --force-reinstall . || pip3 install --break-system-packages --force-reinstall .
 ```
 
-# Usage Instructions
+## Usage Instructions
 
 `ammo` - Launch the interactive shell. Select a game via index if prompted.
 
-```
-activate   mod|plugin <index>             Enabled components will be loaded by game.
-commit                                    Apply pending changes.
-configure  <index>                        Configure a fomod.
-deactivate mod|plugin <index>             Disabled components will not be loaded by game.
-delete     mod|download <index>           Removes specified file from the filesystem.
-exit                                      Quit.
-find       [<keyword> ... ]               Fuzzy filter. 'find' without args removes filter.
-help                                      Show this menu.
-install    <index>                        Extract and manage an archive from ~/Downloads.
-move       mod|plugin <index> <new_index> Larger numbers win file conflicts.
-refresh                                   Abandon pending changes.
-rename     mod|download <index> <name>    Names may contain alphanumerics and underscores.
-```
+| Command     | Arguments                           | Description |
+|-|-|-|
+| activate    | mod/plugin `<index>`                | Enabled components will be loaded by game |
+| commit      |                                     | Apply pending changes |
+| configure   | `<index>`                           | Configure a fomod |
+| deactivate  | mod/plugin `<index>`                | Disabled components will not be loaded by game |
+| delete      | mod|download `<index>`              | Removes specified file from the filesystem |
+| exit        |                                     | Quit. Prompts if there are changes |
+| find        | [`<keyword>` ...]                   | Show only components with any keyword. `find` without args resets.
+| help        |                                     | Show this menu |
+| install     | `<index>`                           | Extract and manage an archive from ~/Downloads |
+| move        | mod|plugin [from_index] [to_index]  | Larger numbers win file conflicts |
+| refresh     |                                     | Abandon pending changes |
+| vanilla     |                                     | Disable all managed components and clean up |
 
-# Tips and Tricks
+Note that the `de/activate mod|plugin` command now supports `all` in place of `<index>`.
+This will activate or deactivate all mods or plugins that are visible. Combine this
+with the `find` command to quickly organize groups of components with related names.
+
+### Usage Tips and Tricks
 
 - Note that the `de/activate mod|plugin` command supports `all` in place of `<index>`.
   This will activate or deactivate all mods or plugins that are visible. Combine this
   with the `find` command to quickly organize groups of components with related names.
   You can leverage this to automatically sort your plugins to the same order as your
   mod list:
-  ```
-  deactivate mod all
-  # sort your mods with the move command
-  activate mod all
-  activate plugin all
-  commit
-  ```
+
+    ```bash
+    deactivate mod all
+    # sort your mods with the move command
+    activate mod all
+    activate plugin all
+    commit
+    ```
+
 - The `find` command accepts a special `fomods` argument that will filter by fomods.
 
 - The `find` command allows you to locate plugins owned by a particular mod, or mods
@@ -95,7 +110,8 @@ rename     mod|download <index> <name>    Names may contain alphanumerics and un
   keyword. This is an additive filter, so more words equals more matches.
 
 - You can easily return to vanilla like this:
-  ```
+  
+  ```bash
   deactivate mod all
   commit
   ```
@@ -111,9 +127,10 @@ rename     mod|download <index> <name>    Names may contain alphanumerics and un
 - Combining `find` filters with `all` is a great way to quickly manage groups of
   related components, as the `all` keyword only operates on visible components.
 
-# Contributing
+## Contributing
 
-- Fork the repository, make changes on your fork, then open a PR.
+If you would like to contribute, please fork the repository, make changes on your fork, then open a PR. Below are some key guidelines to follow for code contributions:
+
 - Format patches with ruff or black.
 - Python only.
 - Standard lib imports only.
@@ -125,28 +142,40 @@ rename     mod|download <index> <name>    Names may contain alphanumerics and un
 - Testable without the UI.
 - Installs mod files via symlink.
 - UI is terminal based only.
-- AMMO is not:
-  - a download manager.
-  - an API client.
-  - a program launcher.
 
-# Contributing (tips and tricks)
+### Tips and tricks for contributors
 
 You can run tests from the base directory of the repo with `pytest test`.
 
 It may be useful in your iterations to automate UI input before you've written
 tests. I find the easiest way to do this is with this sort of strategy:
-```
+
+```bash
 (echo "command1 arg1"; echo "command2 arg1") | ammo
 ```
 
 If you need to recreate a complex set of initial steps then supply manual input,
 you can use input redirection:
-```
+
+```bash
 (echo "instruction1"; echo "instruction2"; cat <&0) | ammo
 ```
 
-# Why Symlinks?
+## Technical Details
+
+### What AMMO does
+
+- AMMO works via creating symlinks in your game directory pointing to your mod files
+- When you install an archive, the archive may be renamed to remove special characters
+- This will remove symlinks and empty directories from your game dir, and reinstall them whenever you commit.
+
+### What AMMO does NOT
+
+- Ammo is NOT a download manager
+- Ammo is NOT an API client
+- Ammo does not launch programs
+
+### Why Symlinks?
 
 - The configured state is discovered via file inspection and logic. This avoids
   entire classes of bugs that organizers relying on databases must contend with.
@@ -159,7 +188,7 @@ you can use input redirection:
 - They make it possible to use external tools that rely on mod data without
   coupling ammo to those tools.
 
-# License
+## License
+
 GNU General Public License v2, with the exception of some of the mock mods used for testing,
 which are subject to their packaged license (if it exists), which also contains credits.
-
