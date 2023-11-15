@@ -129,7 +129,7 @@ with the `find` command to quickly organize groups of components with related na
 
 ## Contributing
 
-If you would like to contribute, please fork the repository, make changes on your fork, then open a PR. Below are some key guidelines to follow for code contributions:
+If you would like to contribute, please fork the repository, make changes on your fork, then open a PR. Below are some key guidelines to follow for code contributions, but keep in mind the intended scope of AMMO; it is NOT a download manager or API client and it does NOT launch programs.
 
 - Format patches with ruff or black.
 - Python only.
@@ -163,17 +163,7 @@ you can use input redirection:
 
 ## Technical Details
 
-### What AMMO does
-
-- AMMO works via creating symlinks in your game directory pointing to your mod files
-- When you install an archive, the archive may be renamed to remove special characters
-- This will remove symlinks and empty directories from your game dir, and reinstall them whenever you commit.
-
-### What AMMO does NOT
-
-- Ammo is NOT a download manager
-- Ammo is NOT an API client
-- Ammo does not launch programs
+AMMO works via creating symlinks in your game directory pointing to your mod files
 
 ### Why Symlinks?
 
