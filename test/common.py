@@ -261,8 +261,8 @@ def extract_mod(controller, mod_name: str):
 
 def install_mod(controller, mod_name: str):
     """
-    Helper function that installs a normal mod,
-    then activates it and all plugins associated with it.
+    Helper function that installs a normal mod, then activates it and all
+    plugins associated with it.
 
     Returns the index the mod inhabits.
     """
@@ -277,5 +277,9 @@ def install_mod(controller, mod_name: str):
         controller.activate(ComponentEnum.PLUGIN, plugin_index)
 
     controller.commit()
+    assert controller.mods[mod_index].enabled is True
+    for plugin in controller.mods[mod_index].plugins:
+        plugin_index = [i.name for i in controller.plugins].index(plugin)
+        assert controller.plugins[plugin_index].enabled is True
 
     return mod_index

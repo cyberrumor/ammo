@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from pathlib import Path
 import pytest
 
 from common import (
@@ -9,8 +8,6 @@ from common import (
     install_everything,
 )
 from ammo.component import (
-    Mod,
-    ComponentEnum,
     DeleteEnum,
 )
 
@@ -193,9 +190,9 @@ def test_rename_download_moves_file():
             # Clean up our temporary files.
             try:
                 temp_download.unlink()
-            except:
+            except FileNotFoundError:
                 pass
             try:
                 renamed_download.unlink()
-            except:
+            except FileNotFoundError:
                 pass

@@ -26,7 +26,7 @@ class Source(str, Enum):
 class GameSelection:
     name: field(default_factory=str)
     source: field(default_factory=Source)
-    library: field(default_factory=Path, repr=False)
+    library: field(default_factory=Path)
 
 
 class GameController(Controller):
@@ -149,7 +149,10 @@ class GameController(Controller):
         )
         data = directory / "Data"
         if game_selection.source == Source.FLATPAK:
-            ammo_conf_dir = Path.home() / f".var/app/com.valvesoftware.Steam/.local/share/ammo/{game_selection.name}"
+            ammo_conf_dir = (
+                Path.home()
+                / f".var/app/com.valvesoftware.Steam/.local/share/ammo/{game_selection.name}"
+            )
         elif game_selection.source == Source.STEAM:
             ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
         else:

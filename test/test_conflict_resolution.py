@@ -16,11 +16,6 @@ def test_duplicate_plugin():
     Test that installing two mods with the same plugin
     doesn't show more than one plugin in the plugins list.
     """
-    files = [
-        Path("Data/textures/mock_texture.nif"),
-        Path("Data/mock_plugin.esp"),
-        Path("file.dll"),
-    ]
     with AmmoController() as controller:
         # Install both mods
         for mod in ["conflict_1", "conflict_2"]:
@@ -112,11 +107,6 @@ def test_conflicting_plugins_disable():
 
     Test that the plugin isn't removed from the controller's plugins.
     """
-    files = [
-        Path("Data/textures/mock_texture.nif"),
-        Path("Data/mock_plugin.esp"),
-        Path("file.dll"),
-    ]
     with AmmoController() as controller:
         # Install both mods
         for mod in ["conflict_1", "conflict_2"]:
@@ -170,11 +160,6 @@ def test_conflicting_plugins_delete():
 
     Test that the plugin isn't removed from the controller's plugins.
     """
-    files = [
-        Path("Data/textures/mock_texture.nif"),
-        Path("Data/mock_plugin.esp"),
-        Path("file.dll"),
-    ]
     with AmmoController() as controller:
         # Install both mods
         for mod in ["conflict_1", "conflict_2"]:

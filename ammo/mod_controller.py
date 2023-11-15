@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import shutil
-import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -74,17 +73,26 @@ class ModController(Controller):
                 for line in file:
                     if line.startswith("#"):
                         continue
-                    name = line.strip("*").strip()
-                    enabled = False
-                    if line.startswith("*"):
-                        enabled = True
+                    name = line.strip().strip("*").strip()
+                    enabled = line.strip().startswith("*")
 
                     if name not in [i.name for i in self.mods]:
                         continue
 
                     for mod in self.mods:
                         if mod.name == name:
-                            mod.enabled = enabled
+                            # Only mark the mod as enabled if it was explicitly enabled in the
+                            # config and all of the files are present (even if the files come
+                            # from another mod, which can happen if this mod loses conflicts).
+                            for path in mod.files:
+                                game_file = self.game.directory / str(path).split(
+                                    mod.name, 1
+                                )[-1].strip("/")
+                                if game_file.exists() is False:
+                                    mod.enabled = False
+                                    break
+
+                            mod.enabled = enabled or mod.enabled
                             ordered_mods.append(mod)
                             break
 
@@ -114,36 +122,63 @@ class ModController(Controller):
                         # Ignore empty lines and comments.
                         continue
 
-                    name = line.strip("*").strip()
-                    if not (self.game.data / name).exists():
-                        # Ignore plugins that can't be found. These will automatically
-                        # be removed from DLCList.txt/Plugins.txt on first write.
-                        continue
+                    name = line.strip().strip("*").strip()
+                    enabled = line.strip().startswith("*")
 
                     # Iterate through our mods in reverse so we can assign the conflict
                     # winning mod as the parent.
                     mod = None
                     for mod in self.mods[::-1]:
+                        if not mod.enabled:
+                            continue
                         if name in mod.plugins:
                             mod = mod
                             break
 
-                    enabled = line.strip().startswith("*")
-                    if enabled and mod and mod.files_in_place():
-                        # If a plugin was enabled and it came from a mod that was
-                        # correctly installed, the parent mod should be enabled,
-                        # even if it wasn't enabled in the config. This avoids
-                        # situations where you 'commit' and suddenly plugins are
-                        # missing. This also ensures DLC plugins can be added
-                        # to self.plugins.
-                        mod.enabled = True
+                    if mod is None:
+                        plugin = Plugin(
+                            name=name,
+                            mod=mod,
+                            enabled=enabled,
+                        )
+                        if plugin.name not in [p.name for p in self.plugins]:
+                            self.plugins.append(plugin)
+                        continue
 
-                    if mod and not mod.enabled:
+                    # If a plugin was enabled and it came from a mod that was
+                    # correctly installed, the parent mod should be enabled,
+                    # even if it wasn't enabled in the config. Only do this if
+                    # all of this mod's files have a symlink pointing at them.
+                    files_installed = True
+                    for path in mod.files:
+                        game_file = self.game.directory / str(path).split(mod.name, 1)[
+                            -1
+                        ].strip("/")
+                        if any(
+                            (
+                                not game_file.exists(),
+                                not game_file.is_symlink(),
+                                game_file.resolve() != path,
+                            )
+                        ):
+                            files_installed = False
+                            break
+
+                    if not mod.enabled:
+                        mod.enabled = enabled and files_installed
+
+                    if not mod.enabled:
                         # The parent mod either wasn't enabled or wasn't installed correctly.
                         # Don't add this plugin to the list of managed plugins. It will be
                         # added automatically when the parent mod is enabled.
                         continue
 
+                    plugin_location = self.game.data / name
+                    if not plugin_location.exists() or (
+                        plugin_location.exists()
+                        and not plugin_location.resolve().exists()
+                    ):
+                        enabled = False
                     plugin = Plugin(
                         name=name,
                         mod=mod,
@@ -449,7 +484,7 @@ class ModController(Controller):
 
         if name != "".join([i for i in name if i.isalnum() or i == "_"]):
             raise Warning(
-                f"Names can only contain alphanumeric characters or underscores"
+                "Names can only contain alphanumeric characters or underscores"
             )
 
         if component == DeleteEnum.DOWNLOAD:

@@ -24,7 +24,7 @@ class Mod:
     location: Path
     parent_data_dir: Path
 
-    visible: bool = field(init=False, default=True)
+    visible: bool = field(init=False, default=True, compare=False)
     modconf: Union[None, Path] = field(init=False, default=None)
     has_data_dir: bool = field(init=False, default=False)
     fomod: bool = field(init=False, default=False)
@@ -108,23 +108,6 @@ class Mod:
                 if plugin not in result:
                     result.append(plugin)
         return result
-
-    def files_in_place(self):
-        """
-        For each file in ~/.local/ammo/{game}/mods/{mod}, check that the file
-        also exists relative to the game's directory. If all files exist,
-        return True. Otherwise False.
-        """
-        for path in self.files:
-            corrected_location = os.path.join(
-                str(path).split(self.name, 1)[-1].strip("/"), self.parent_data_dir
-            )
-            # note that we don't care if the files are the same here, just that the paths and
-            # filenames are the same. It's fine if the file comes from another mod.
-            if not os.path.exists(corrected_location):
-                print(f"unable to find expected file '{corrected_location}'")
-                return False
-        return True
 
 
 @dataclass(kw_only=True, slots=True)
