@@ -7,7 +7,7 @@ import textwrap
 from copy import deepcopy
 from enum import (
     Enum,
-    EnumType,
+    EnumMeta,
 )
 from abc import (
     ABC,
@@ -135,8 +135,8 @@ class UI:
 
                 if t := type_hints.get(param.name, None):
                     # If the argument is an enum, only provide the explicit values that
-                    # the enum can represent. Show these as state1|state2|state3.
-                    if isinstance(t, EnumType):
+                    # the enum can represent. Show these as (state1|state2|state3).
+                    if isinstance(t, EnumMeta):
                         description = "(" + "|".join([e.value for e in t]) + ")"
 
                 arg = {
@@ -156,7 +156,7 @@ class UI:
 
     def help(self):
         """
-        Show this menu.
+        Show this menu
         """
         column_cmd = []
         column_arg = []
@@ -189,7 +189,7 @@ class UI:
 
     def exit(self):
         """
-        Quit.
+        Quit
         """
         sys.exit(0)
 
