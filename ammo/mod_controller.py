@@ -389,7 +389,7 @@ class ModController(Controller):
 
     def configure(self, index: int):
         """
-        Configure a fomod.
+        Configure a fomod
         """
         # This has to run a hard refresh for now, so warn if there are uncommitted changes
         if self.changes is True:
@@ -431,7 +431,7 @@ class ModController(Controller):
 
     def activate(self, component: ComponentEnum, index: Union[int, str]):
         """
-        Enabled components will be loaded by game.
+        Enabled components will be loaded by game
         """
         try:
             int(index)
@@ -452,7 +452,7 @@ class ModController(Controller):
 
     def deactivate(self, component: ComponentEnum, index: Union[int, str]):
         """
-        Disabled components will not be loaded by game.
+        Disabled components will not be loaded by game
         """
         try:
             int(index)
@@ -473,7 +473,7 @@ class ModController(Controller):
 
     def rename(self, component: DeleteEnum, index: int, name: str):
         """
-        Names may contain alphanumerics and underscores.
+        Names may contain alphanumerics and underscores
         """
         if component not in list(DeleteEnum):
             raise Warning(
@@ -539,7 +539,7 @@ class ModController(Controller):
 
     def delete(self, component: DeleteEnum, index: Union[int, str]):
         """
-        Removes specified file from the filesystem.
+        Removes specified file from the filesystem
         """
         if not isinstance(component, DeleteEnum):
             raise TypeError(
@@ -594,7 +594,7 @@ class ModController(Controller):
 
     def install(self, index: Union[int, str]):
         """
-        Extract and manage an archive from ~/Downloads.
+        Extract and manage an archive from ~/Downloads
         """
         if self.changes is True:
             raise Warning("You must `commit` changes before installing a mod.")
@@ -697,7 +697,7 @@ class ModController(Controller):
 
     def move(self, component: ComponentEnum, index: int, new_index: int):
         """
-        Larger numbers win file conflicts.
+        Larger numbers win file conflicts
         """
         if not isinstance(component, ComponentEnum):
             raise TypeError(
@@ -719,7 +719,7 @@ class ModController(Controller):
 
     def commit(self):
         """
-        Apply pending changes.
+        Apply pending changes
         """
         self._save_order()
         stage = self._stage()
@@ -754,13 +754,13 @@ class ModController(Controller):
 
     def refresh(self):
         """
-        Abandon pending changes.
+        Abandon pending changes
         """
         self.__init__(self.downloads_dir, self.game, *self.keywords)
 
     def find(self, *keyword: str):
         """
-        Fuzzy filter. 'find' without args removes filter.
+        Show only components with any keyword
         """
         self.keywords = [*keyword]
 
