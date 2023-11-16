@@ -68,20 +68,20 @@ pip3 install --force-reinstall . || pip3 install --break-system-packages --force
 
 `ammo` - Launch the interactive shell. Select a game via index if prompted.
 
-| Command     | Arguments                           | Description |
+| Command     | Arguments                             | Description |
 |-|-|-|
-| activate    | mod/plugin `<index>`                | Enabled components will be loaded by game |
-| commit      |                                     | Apply pending changes |
-| configure   | `<index>`                           | Configure a fomod |
-| deactivate  | mod/plugin `<index>`                | Disabled components will not be loaded by game |
-| delete      | mod|download `<index>`              | Removes specified file from the filesystem |
-| exit        |                                     | Quit. Prompts if there are changes |
-| find        | [`<keyword>` ...]                   | Show only components with any keyword. `find` without args resets.
-| help        |                                     | Show this menu |
-| install     | `<index>`                           | Extract and manage an archive from ~/Downloads |
-| move        | mod|plugin [from_index] [to_index]  | Larger numbers win file conflicts |
-| refresh     |                                     | Abandon pending changes |
-| vanilla     |                                     | Disable all managed components and clean up |
+| activate    | mod\|plugin \<index>                  | Enabled components will be loaded by game |
+| commit      |                                       | Apply pending changes |
+| configure   | \<index>                              | Configure a fomod |
+| deactivate  | mod\|plugin \<index>                  | Disabled components will not be loaded by game |
+| delete      | mod\|download \<index>                | Removes specified file from the filesystem |
+| exit        |                                       | Quit |
+| find        | [\<keyword> ...]                      | Show only components with any keyword |
+| help        |                                       | Show this menu |
+| install     | \<index>                              | Extract and manage an archive from ~/Downloads |
+| move        | mod\|plugin [from_index] [to_index]   | Larger numbers win file conflicts |
+| refresh     |                                       | Abandon pending changes |
+| rename      | mod\|download \<index> \<name>        | Names may contain alphanumerics and underscores |
 
 Note that the `de/activate mod|plugin` command now supports `all` in place of `<index>`.
 This will activate or deactivate all mods or plugins that are visible. Combine this
