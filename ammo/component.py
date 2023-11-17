@@ -19,10 +19,9 @@ class DeleteEnum(str, Enum):
     DOWNLOAD = "download"
 
 
-@dataclass(kw_only=True, slots=True)
+@dataclass(slots=True)
 class Mod:
     location: Path
-    parent_data_dir: Path
 
     visible: bool = field(init=False, default=True, compare=False)
     modconf: Union[None, Path] = field(init=False, default=None)

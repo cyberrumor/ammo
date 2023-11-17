@@ -35,7 +35,6 @@ def test_rename_mod_moves_folder():
         assert controller.mods[index].location.exists() is True
         assert controller.mods[index].location.stem == "normal_mod_renamed"
         assert controller.mods[index].name == "normal_mod_renamed"
-        assert controller.mods[index].parent_data_dir == controller.game.data
 
 
 def test_rename_mod_fomod():

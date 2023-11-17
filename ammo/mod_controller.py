@@ -58,10 +58,7 @@ class ModController(Controller):
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
         for path in mod_folders:
-            mod = Mod(
-                location=self.game.ammo_mods_dir / path.name,
-                parent_data_dir=self.game.data,
-            )
+            mod = Mod(self.game.ammo_mods_dir / path.name)
             mods.append(mod)
         self.mods = mods
 
@@ -670,12 +667,7 @@ class ModController(Controller):
 
             # Add the freshly install mod to self.mods so that an error doesn't prevent
             # any successfully installed mods from appearing during 'install all'.
-            self.mods.append(
-                Mod(
-                    location=extract_to,
-                    parent_data_dir=self.game.data,
-                )
-            )
+            self.mods.append(Mod(extract_to))
 
         if index == "all":
             errors = []
