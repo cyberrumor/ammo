@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -196,3 +197,112 @@ def test_controller_disabled_broken_mod_enabled_plugin():
             assert conflict_2.enabled is False
             plugin = controller.plugins[0]
             assert plugin.enabled is True
+
+
+def test_controller_missing_mod():
+    """
+    Test that a mod which is specified in ammo.conf but can't be
+    found (because it was deleted from ammo's mod dir) isn't added
+    to mods.
+    """
+    with AmmoController() as first_launch:
+        index = install_mod(first_launch, "normal_mod")
+        mod = first_launch.mods[index]
+        shutil.rmtree(mod.location)
+
+        with AmmoController() as controller:
+            assert len(controller.mods) == 0
+
+
+def test_controller_plugin_without_mod():
+    """
+    Test that a plugin in Plugins.txt that doesn't have an associated
+    mod is added if Data/<plugin_name> exists and isn't a symlink.
+    """
+    # Get a plugin install location and plugin conf file location
+    plugin = None
+    plugin_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        plugin_file = controller.game.plugin_file
+
+    try:
+        # Create a plugin that's not associated with a mod and isn't a symlink.
+        Path.mkdir(plugin.parent, parents=True, exist_ok=True)
+        with open(plugin, "w") as esp:
+            esp.write("")
+
+        # Add the plugin to Plugins.txt as enabled.
+        Path.mkdir(plugin_file.parent, parents=True, exist_ok=True)
+        with open(plugin_file, "w") as plugin_txt:
+            plugin_txt.write("* normal_plugin.esp")
+
+        # Test that the plugin is added.
+        with AmmoController() as controller:
+            assert len(controller.plugins) == 1
+
+    finally:
+        try:
+            plugin.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def test_controller_plugin_without_mod_is_link():
+    """
+    Test that a plugin in Plugins.txt that doesn't have an associated
+    mod isn't added if Data/<plugin_name> exists and is a symlink.
+    """
+    # Get a plugin install location and plugin conf file location
+    plugin = None
+    plugin_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        plugin_file = controller.game.plugin_file
+
+    try:
+        # Create a plugin that's not associated with a mod and is a symlink.
+        # Point the symlink at /dev/null.
+        Path.mkdir(plugin.parent, parents=True, exist_ok=True)
+        dev_null = Path("/dev/null")
+        assert dev_null.exists()
+
+        plugin.symlink_to(dev_null)
+        assert plugin.exists()
+
+        # Add the plugin to Plugins.txt as enabled.
+        Path.mkdir(plugin_file.parent, parents=True, exist_ok=True)
+        with open(plugin_file, "w") as plugin_txt:
+            plugin_txt.write("* normal_plugin.esp")
+
+        # Test that the plugin is not added.
+        with AmmoController() as controller:
+            assert len(controller.plugins) == 0
+
+    finally:
+        try:
+            plugin.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def test_controller_plugin_without_mod_or_file():
+    """
+    Test that a plugin in Plugins.txt that doesn't have an associated
+    mod isn't added if Data/<plugin_name> doesn't exist.
+    """
+    # Get a plugin install location and plugin conf file location
+    plugin = None
+    plugin_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        plugin_file = controller.game.plugin_file
+
+    # Add the plugin to Plugins.txt as enabled.
+    Path.mkdir(plugin_file.parent, parents=True, exist_ok=True)
+    with open(plugin_file, "w") as plugin_txt:
+        plugin_txt.write("* normal_plugin.esp")
+
+    # Test that the plugin is not added.
+    with AmmoController() as controller:
+        assert len(controller.plugins) == 0

@@ -136,13 +136,17 @@ class ModController(Controller):
                             break
 
                     if mod is None:
-                        plugin = Plugin(
-                            name=name,
-                            mod=mod,
-                            enabled=enabled,
-                        )
-                        if plugin.name not in [p.name for p in self.plugins]:
-                            self.plugins.append(plugin)
+                        if (self.game.data / name).exists() and not (
+                            self.game.data / name
+                        ).is_symlink():
+                            # Only add plugins without mods if they exist and aren't symlinks.
+                            plugin = Plugin(
+                                name=name,
+                                mod=mod,
+                                enabled=enabled,
+                            )
+                            if plugin.name not in [p.name for p in self.plugins]:
+                                self.plugins.append(plugin)
                         continue
 
                     # If a plugin was enabled and it came from a mod that was
