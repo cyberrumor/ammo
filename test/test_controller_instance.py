@@ -125,7 +125,7 @@ def test_controller_enabled_mod_is_missing_plugin():
 def test_controller_enabled_plugin_is_broken_symlink():
     """
     Test that when an enabled plugin's symlink points at a non-existing file,
-    the plugin is shown as disabled.
+    the plugin is not shown.
     """
     with AmmoController() as first_launch:
         index = install_mod(first_launch, "conflict_1")
@@ -138,31 +138,7 @@ def test_controller_enabled_plugin_is_broken_symlink():
         with AmmoController() as controller:
             mod = controller.mods[index]
             assert mod.enabled is True
-            assert len(controller.plugins) == 1
-            assert controller.plugins[0].enabled is False
-
-
-def test_controller_disabled_mod_enabled_plugin():
-    """
-    Test that a disabled mod with an enabled plugin automatically
-    enables the mod if it was installed correctly.
-    This can happen if a user manually edits their config.
-    """
-    with AmmoController() as first_launch:
-        index = install_mod(first_launch, "conflict_1")
-        mod = first_launch.mods[index]
-        plugin = first_launch.plugins[0]
-
-        with open(first_launch.game.ammo_conf, "w") as file:
-            for mod in first_launch.mods:
-                # Don't include the asterisk prefix for 'enabled'
-                file.write(f"{mod.name}\n")
-
-        with AmmoController() as controller:
-            mod = controller.mods[index]
-            plugin = controller.plugins[0]
-            assert mod.enabled is True
-            assert plugin.enabled is True
+            assert len(controller.plugins) == 0
 
 
 def test_controller_disabled_broken_mod_enabled_plugin():

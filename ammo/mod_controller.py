@@ -128,18 +128,20 @@ class ModController(Controller):
                     # Iterate through our mods in reverse so we can assign the conflict
                     # winning mod as the parent.
                     mod = None
-                    for mod in self.mods[::-1]:
-                        if not mod.enabled:
+                    for m in self.mods[::-1]:
+                        if not m.enabled:
                             continue
-                        if name in mod.plugins:
-                            mod = mod
+                        if name in m.plugins:
+                            mod = m
                             break
 
                     if mod is None:
+                        # Only add plugins without mods if the plugin file exists
+                        # and isn't a symlink, because symlinks could be artifacts
+                        # of disabled mods.
                         if (self.game.data / name).exists() and not (
                             self.game.data / name
                         ).is_symlink():
-                            # Only add plugins without mods if they exist and aren't symlinks.
                             plugin = Plugin(
                                 name=name,
                                 mod=mod,
@@ -148,28 +150,6 @@ class ModController(Controller):
                             if plugin.name not in [p.name for p in self.plugins]:
                                 self.plugins.append(plugin)
                         continue
-
-                    # If a plugin was enabled and it came from a mod that was
-                    # correctly installed, the parent mod should be enabled,
-                    # even if it wasn't enabled in the config. Only do this if
-                    # all of this mod's files have a symlink pointing at them.
-                    files_installed = True
-                    for path in mod.files:
-                        game_file = self.game.directory / str(path).split(mod.name, 1)[
-                            -1
-                        ].strip("/")
-                        if any(
-                            (
-                                not game_file.exists(),
-                                not game_file.is_symlink(),
-                                game_file.resolve() != path,
-                            )
-                        ):
-                            files_installed = False
-                            break
-
-                    if not mod.enabled:
-                        mod.enabled = enabled and files_installed
 
                     if not mod.enabled:
                         # The parent mod either wasn't enabled or wasn't installed correctly.
