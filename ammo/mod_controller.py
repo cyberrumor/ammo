@@ -60,10 +60,8 @@ class ModController(Controller):
         for path in mod_folders:
             mod = Mod(self.game.ammo_mods_dir / path.name)
             mods.append(mod)
-        self.mods = mods
 
-        # Read the game.ammo_conf file. If there's mods in it, put them in order.
-        # Put mods that aren't listed in the game.ammo_conf file at the end.
+        # Read self.game.ammo_conf. If there's mods in it, put them in order.
         ordered_mods = []
         if self.game.ammo_conf.exists():
             with open(self.game.ammo_conf, "r") as file:
@@ -73,31 +71,36 @@ class ModController(Controller):
                     name = line.strip().strip("*").strip()
                     enabled = line.strip().startswith("*")
 
-                    if name not in [i.name for i in self.mods]:
-                        continue
+                    for mod in mods:
+                        if mod.name != name:
+                            continue
 
-                    for mod in self.mods:
-                        if mod.name == name:
-                            # Only mark the mod as enabled if it was explicitly enabled in the
-                            # config and all of the files are present (even if the files come
-                            # from another mod, which can happen if this mod loses conflicts).
-                            for path in mod.files:
-                                game_file = self.game.directory / str(path).split(
-                                    mod.name, 1
-                                )[-1].strip("/")
-                                if game_file.exists() is False:
-                                    mod.enabled = False
-                                    break
+                        # If we got this far, the mod was in self.game.ammo_conf.
+                        # Only mark the mod as enabled if it was explicitly enabled in the
+                        # config and all of the files are present (even if the files come
+                        # from another mod, which can happen if this mod loses conflicts).
+                        for path in mod.files:
+                            game_file = self.game.directory / str(path).split(
+                                mod.name, 1
+                            )[-1].strip("/")
+                            if game_file.exists() is False:
+                                mod.enabled = False
+                                break
 
-                            mod.enabled = enabled or mod.enabled
-                            ordered_mods.append(mod)
-                            break
+                        mod.enabled = enabled or mod.enabled
+                        ordered_mods.append(mod)
+                        break
 
-            for mod in self.mods:
+            # Put mods that aren't listed in self.game.ammo_conf file
+            # at the end in an arbitrary order.
+            for mod in mods:
                 if mod not in ordered_mods:
                     ordered_mods.append(mod)
 
-            self.mods = ordered_mods
+        # If ordered_mods is empty, the config either didn't exist or
+        # had nothing in it. In either case we can just load up the
+        # folders we found earlier. Otherwise use our ordered mods.
+        self.mods = ordered_mods if ordered_mods else mods
 
         # Read the Plugins.txt and DLCList.txt files.
         # Add Plugins from these files to the list of managed plugins,
