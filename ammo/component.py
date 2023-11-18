@@ -19,13 +19,15 @@ class DeleteEnum(str, Enum):
     DOWNLOAD = "download"
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Mod:
     location: Path
+    game_root: Path
+    game_data: Path
 
     visible: bool = field(init=False, default=True, compare=False)
     modconf: Union[None, Path] = field(init=False, default=None)
-    has_data_dir: bool = field(init=False, default=False)
+    install_dir: Path = field(init=False)
     fomod: bool = field(init=False, default=False)
     enabled: bool = field(init=False, default=False)
     files: list[Path] = field(default_factory=list, init=False)
@@ -34,28 +36,31 @@ class Mod:
 
     def __post_init__(self):
         self.name = self.location.name
+        self.install_dir = self.game_data
 
         # Scan the surface level of the mod to determine whether this mod will
         # need to be installed in game.directory or game.data.
         # Also determine whether this is a fomod.
         for file in self.location.iterdir():
-            match file.name.lower():
-                case "data":
-                    self.has_data_dir = self.has_data_dir or file.is_dir()
+            match file.is_dir():
+                case True:
+                    match file.name.lower():
+                        case "data":
+                            self.install_dir = self.game_root
 
-                case "edit scripts":
-                    self.has_data_dir = self.has_data_dir or file.is_dir()
+                        case "edit scripts":
+                            self.install_dir = self.game_root
 
-                case "fomod":
-                    # Assign ModuleConfig.xml. Only check surface of fomod folder.
-                    for f in file.iterdir():
-                        if f.name.lower() == "moduleconfig.xml" and f.is_file():
-                            self.modconf = f
-                            self.fomod = True
-                            break
-                case _:
+                        case "fomod":
+                            # Assign ModuleConfig.xml. Only check surface of fomod folder.
+                            for f in file.iterdir():
+                                if f.name.lower() == "moduleconfig.xml" and f.is_file():
+                                    self.modconf = f
+                                    self.fomod = True
+                                    break
+                case False:
                     if file.suffix.lower() == ".dll":
-                        self.has_data_dir = self.has_data_dir or file.is_file()
+                        self.install_dir = self.game_root
 
         # Determine which folder to populate self.files from. For fomods, only
         # care about files inside of a Data folder which may or may not exist.
@@ -64,7 +69,7 @@ class Mod:
             location = location / "Data"
 
         # Populate self.files
-        for parent_dir, folders, files in os.walk(location):
+        for parent_dir, _, files in os.walk(location):
             for file in files:
                 f = Path(file)
                 loc_parent = Path(parent_dir)
@@ -75,14 +80,6 @@ class Mod:
                         self.plugins.append(f.name)
 
                 self.files.append(loc_parent / f)
-
-    def associated_plugins(self, plugins) -> list:
-        result = []
-        for plugin in plugins:
-            if any(file.name == plugin.name for file in self.files):
-                if plugin not in result:
-                    result.append(plugin)
-        return result
 
 
 @dataclass(kw_only=True, slots=True)

@@ -58,7 +58,11 @@ class ModController(Controller):
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
         for path in mod_folders:
-            mod = Mod(self.game.ammo_mods_dir / path.name)
+            mod = Mod(
+                location=self.game.ammo_mods_dir / path.name,
+                game_root=self.game.directory,
+                game_data=self.game.data,
+            )
             mods.append(mod)
 
         # Read self.game.ammo_conf. If there's mods in it, put them in order.
@@ -222,9 +226,9 @@ class ModController(Controller):
         """
         Turn a ComponentEnum into either self.mods or self.plugins.
         """
-        if component not in list(ComponentEnum):
-            raise Warning(
-                f"Can only do that with {[i.value for i in list(ComponentEnum)]}, not {component}"
+        if not isinstance(component, ComponentEnum):
+            raise TypeError(
+                f"Expected {[i.value for i in list(ComponentEnum)]}, got {component} of type {type(component)}"
             )
 
         components = self.plugins if component == ComponentEnum.PLUGIN else self.mods
@@ -236,11 +240,6 @@ class ModController(Controller):
         If a mod with plugins was deactivated, remove those plugins from self.plugins
         if they aren't also provided by another mod.
         """
-        if not isinstance(component, ComponentEnum):
-            raise TypeError(
-                f"Expected ComponentEnum, got '{component}' of type '{type(component)}'"
-            )
-
         components = self._get_validated_components(component)
         subject = components[index]
 
@@ -252,7 +251,7 @@ class ModController(Controller):
                 hasattr(subject, "fomod")
                 and subject.fomod
                 and state
-                and not subject.has_data_dir
+                and subject.install_dir != self.game.directory
             ):
                 raise Warning("Fomods must be configured before they can be enabled.")
 
@@ -269,17 +268,15 @@ class ModController(Controller):
                         self.plugins.append(plugin)
             else:
                 # Hide plugins owned by this mod and not another mod
-                for plugin in subject.associated_plugins(self.plugins):
+                for plugin in (i for i in self.plugins if i.name in subject.plugins):
                     provided_elsewhere = False
-                    for mod in [
-                        i for i in self.mods if i.name != subject.name and i.enabled
-                    ]:
-                        if plugin in mod.associated_plugins(self.plugins):
+                    for mod in (
+                        i for i in self.mods if i.enabled and i.name != subject.name
+                    ):
+                        if plugin in (i for i in self.plugins if i.name in mod.plugins):
                             provided_elsewhere = True
                             break
                     if not provided_elsewhere:
-                        plugin.enabled = False
-
                         if plugin in self.plugins:
                             self.plugins.remove(plugin)
 
@@ -303,27 +300,14 @@ class ModController(Controller):
             # Iterate through the source files of the mod
             for src in mod.files:
                 # Get the sanitized full path relative to the game.directory.
-                corrected_name = str(src).split(mod.name, 1)[-1]
+                corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
 
                 # Don't install fomod folders.
                 if corrected_name.lower() == "fomod":
                     continue
 
-                # It is possible to make a mod install in the game.directory instead
-                # of the data dir by setting mod.has_data_dir = True.
-                dest = Path(
-                    os.path.join(
-                        self.game.directory,
-                        "Data" + corrected_name,
-                    )
-                )
-                if mod.has_data_dir:
-                    dest = Path(
-                        os.path.join(
-                            self.game.directory,
-                            corrected_name.replace("/data", "/Data").lstrip("/"),
-                        )
-                    )
+                dest = mod.install_dir / corrected_name
+
                 # Add the sanitized full path to the stage, resolving
                 # conflicts.
                 dest = normalize(dest, self.game.directory)
@@ -335,22 +319,19 @@ class ModController(Controller):
         """
         Removes empty folders.
         """
-        path = self.game.directory
-        for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
+        for dirpath, dirnames, _ in list(os.walk(self.game.directory, topdown=False)):
             for dirname in dirnames:
                 d = Path(dirpath) / dirname
                 try:
                     d.resolve().rmdir()
                 except OSError:
-                    # directory wasn't empty, ignore this
                     pass
 
     def _clean_data_dir(self):
         """
         Removes all links and deletes empty folders.
         """
-        # remove links
-        for dirpath, _dirnames, filenames in os.walk(self.game.directory):
+        for dirpath, _, filenames in os.walk(self.game.directory):
             d = Path(dirpath)
             for file in filenames:
                 full_path = d / file
@@ -638,7 +619,13 @@ class ModController(Controller):
 
             # Add the freshly install mod to self.mods so that an error doesn't prevent
             # any successfully installed mods from appearing during 'install all'.
-            self.mods.append(Mod(extract_to))
+            self.mods.append(
+                Mod(
+                    location=extract_to,
+                    game_root=self.game.directory,
+                    game_data=self.game.data,
+                )
+            )
 
         if index == "all":
             errors = []

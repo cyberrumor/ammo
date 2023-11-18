@@ -384,7 +384,7 @@ class FomodController(Controller):
             ), f"expected {v} but it did not exist.\nWe were going to copy to {k}\n\nIssue with fomod configurator."
             shutil.copy(v, k)
 
-        self.mod.has_data_dir = True
+        self.mod.install_dir = self.mod.game_root
 
     def b(self):
         """
