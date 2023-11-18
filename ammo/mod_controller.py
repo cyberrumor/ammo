@@ -66,7 +66,7 @@ class ModController(Controller):
         if self.game.ammo_conf.exists():
             with open(self.game.ammo_conf, "r") as file:
                 for line in file:
-                    if line.startswith("#"):
+                    if not line.strip() or line.strip().startswith("#"):
                         continue
                     name = line.strip().strip("*").strip()
                     enabled = line.strip().startswith("*")
@@ -75,19 +75,7 @@ class ModController(Controller):
                         if mod.name != name:
                             continue
 
-                        # If we got this far, the mod was in self.game.ammo_conf.
-                        # Only mark the mod as enabled if it was explicitly enabled in the
-                        # config and all of the files are present (even if the files come
-                        # from another mod, which can happen if this mod loses conflicts).
-                        for path in mod.files:
-                            game_file = self.game.directory / str(path).split(
-                                mod.name, 1
-                            )[-1].strip("/")
-                            if game_file.exists() is False:
-                                mod.enabled = False
-                                break
-
-                        mod.enabled = enabled or mod.enabled
+                        mod.enabled = enabled
                         ordered_mods.append(mod)
                         break
 
@@ -98,8 +86,8 @@ class ModController(Controller):
                     ordered_mods.append(mod)
 
         # If ordered_mods is empty, the config either didn't exist or
-        # had nothing in it. In either case we can just load up the
-        # folders we found earlier. Otherwise use our ordered mods.
+        # had nothing in it. In either case just load up the mods made
+        # from folders earlier. Otherwise use our ordered mods.
         self.mods = ordered_mods if ordered_mods else mods
 
         # Read the Plugins.txt and DLCList.txt files.

@@ -29,9 +29,9 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 ## Dependencies
 
-- Games installed through Steam
-- Steam is either distro version or from Flatpak com.valvesoftware.Steam
-- Python3
+- Supports Steam from your official repository
+- Supports com.valvesoftware.Steam from Flatpak
+- Python 3.10 or later
 - p7z (or something else that puts 7z in your PATH).
 
 ## Installation Instructions
@@ -107,7 +107,7 @@ pip3 install --force-reinstall . || pip3 install --break-system-packages --force
   keyword. This is an additive filter, so more words equals more matches.
 
 - You can easily return to vanilla like this:
-  
+
   ```sh
   deactivate mod all
   commit
@@ -160,7 +160,7 @@ you can use input redirection:
 
 ## Technical Details
 
-AMMO works via creating symlinks in your game directory pointing to your mod files
+AMMO works via creating symlinks in your game directory pointing to your mod files.
 
 ### Why Symlinks?
 

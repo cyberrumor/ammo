@@ -40,7 +40,7 @@ def test_rename_mod_moves_folder():
 def test_rename_mod_fomod():
     """
     Test that renaming a fomod also moves fomod specific data
-    like where the ModuleConfix.txt is located.
+    like where the ModuleConfig.txt is located.
     """
     with AmmoController() as controller:
         original_index = extract_mod(controller, "mock_base_object_swapper")
