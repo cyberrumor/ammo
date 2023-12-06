@@ -667,7 +667,8 @@ class ModController(Controller):
             new_index = len(components) - 1
         if index > len(components) - 1:
             raise Warning("Index out of range.")
-        components[index], components[new_index] = components[new_index], components[index]
+        comp = components.pop(index)
+        components.insert(new_index, comp)
         self.changes = True
 
     def commit(self):

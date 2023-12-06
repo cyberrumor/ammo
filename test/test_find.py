@@ -201,4 +201,7 @@ def test_find_fomods():
         controller.find("fomods")
 
         for i in controller.mods:
-            assert i.visible is i.fomod
+            if i.fomod:
+                assert i.visible
+                continue
+            assert i.visible is False
