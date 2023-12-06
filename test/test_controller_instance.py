@@ -282,3 +282,119 @@ def test_controller_plugin_without_mod_or_file():
     # Test that the plugin is not added.
     with AmmoController() as controller:
         assert len(controller.plugins) == 0
+
+
+def test_controller_dlc_deactivated():
+    """
+    Test that a plugin in dlcList.txt is not considered activated
+    when it is not present in Plugins.txt.
+    """
+    plugin = None
+    dlc_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        dlc_file = controller.game.dlc_file
+
+    # Add the plugin to DLCList.txt.
+    Path.mkdir(dlc_file.parent, parents=True, exist_ok=True)
+    with open(dlc_file, "w") as dlc_txt:
+        dlc_txt.write("normal_plugin.esp")
+
+    try:
+        # Create a fake normal_plugin.esp file.
+        Path.mkdir(plugin.parent, parents=True, exist_ok=True)
+        with open(plugin, "w") as normal_plugin:
+            normal_plugin.write("")
+
+        # Test that the plugin loads as disabled
+        with AmmoController() as controller:
+            assert controller.plugins[0].name == "normal_plugin.esp"
+            assert controller.plugins[0].enabled is False
+    finally:
+        try:
+            plugin.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def test_controller_dlc_activated():
+    """
+    Test that a plugin in dlcList.txt is considered activated when
+    it is also present in Plugins.txt. Ammo conditionally expects
+    the plugin to start with an asterisk. Some titles require this,
+    others require the plain filename of the plugin without prefix.
+    """
+    plugin = None
+    dlc_file = None
+    plugin_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        dlc_file = controller.game.dlc_file
+        plugin_file = controller.game.plugin_file
+
+    # Add the plugin to DLCList.txt.
+    Path.mkdir(dlc_file.parent, parents=True, exist_ok=True)
+    with open(dlc_file, "w") as dlc_txt:
+        dlc_txt.write("normal_plugin.esp")
+
+    with open(plugin_file, "w") as plugin_txt:
+        plugin_txt.write("*normal_plugin.esp")
+
+    try:
+        # Create a fake normal_plugin.esp file.
+        Path.mkdir(plugin.parent, parents=True, exist_ok=True)
+        with open(plugin, "w") as normal_plugin:
+            normal_plugin.write("")
+
+        # Test that the plugin loads as disabled
+        with AmmoController() as controller:
+            assert controller.plugins[0].name == "normal_plugin.esp"
+            assert controller.plugins[0].enabled is True
+    finally:
+        try:
+            plugin.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def test_controller_save_dlc():
+    """
+    Test that saving DLC doesn't swap the enabled state.
+    This is needed because DLC plugins in Plugins.txt are either absent or begin with an asterisk
+    in Plugins.txt if they're deactivated, and have no prefix and are present if they're activated.
+    This is the opposite of how normal mods work.
+    """
+    plugin = None
+    dlc_file = None
+    plugin_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        dlc_file = controller.game.dlc_file
+        plugin_file = controller.game.plugin_file
+
+    # Add the plugin to DLCList.txt.
+    Path.mkdir(dlc_file.parent, parents=True, exist_ok=True)
+    with open(dlc_file, "w") as dlc_txt:
+        dlc_txt.write("normal_plugin.esp")
+
+    with open(plugin_file, "w") as plugin_txt:
+        plugin_txt.write("normal_plugin.esp")
+
+    try:
+        # Create a fake normal_plugin.esp file.
+        Path.mkdir(plugin.parent, parents=True, exist_ok=True)
+        with open(plugin, "w") as normal_plugin:
+            normal_plugin.write("")
+
+        # Test that the plugin loads as disabled
+        with AmmoController() as controller:
+            assert controller.plugins[0].name == "normal_plugin.esp"
+            assert controller.plugins[0].enabled is False
+            controller.commit()
+            controller.refresh()
+            assert controller.plugins[0].enabled is False
+    finally:
+        try:
+            plugin.unlink()
+        except FileNotFoundError:
+            pass

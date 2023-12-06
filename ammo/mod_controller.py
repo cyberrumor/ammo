@@ -3,8 +3,12 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import (
+    dataclass,
+    field,
+)
 from typing import Union
 from .ui import (
     UI,
@@ -30,6 +34,9 @@ class Game:
     dlc_file: Path
     plugin_file: Path
     ammo_mods_dir: Path
+    enabled_formula: Callable[[str], bool] = field(
+        default=lambda line: line.strip().startswith("*")
+    )
 
 
 class ModController(Controller):
@@ -47,6 +54,7 @@ class ModController(Controller):
         self.downloads: list[Download] = []
         self.mods: list[Mod] = []
         self.plugins: list[Plugin] = []
+        self.dlc: list[Plugin] = []
         self.keywords = [*keywords]
 
         # Create required directories. Harmless if exists.
@@ -94,74 +102,96 @@ class ModController(Controller):
         # from folders earlier. Otherwise use our ordered mods.
         self.mods = ordered_mods if ordered_mods else mods
 
-        # Read the Plugins.txt and DLCList.txt files.
-        # Add Plugins from these files to the list of managed plugins,
-        # with attention to the order and enabled state.
-        # Create the plugins file if it didn't already exist.
         Path.mkdir(self.game.plugin_file.parent, parents=True, exist_ok=True)
         if not self.game.plugin_file.exists():
             with open(self.game.plugin_file, "w") as file:
                 file.write("")
 
-        files_with_plugins: list[Path] = [self.game.plugin_file]
+        # Parse DLCList.txt, take inventory of our DLC. Note that plugins from
+        # mods are stored in DLCList.txt too, so you must identify DLC by finding
+        # plugins from this file that didn't come from a mod.
         if self.game.dlc_file.exists():
-            files_with_plugins.append(self.game.dlc_file)
-
-        for file_with_plugin in files_with_plugins:
-            with open(file_with_plugin, "r") as file:
+            with open(self.game.dlc_file, "r") as file:
                 for line in file:
                     if not line.strip() or line.strip().startswith("#"):
                         # Ignore empty lines and comments.
                         continue
-
                     name = line.strip().strip("*").strip()
-                    enabled = line.strip().startswith("*")
-
-                    # Iterate through our mods in reverse so we can assign the conflict
-                    # winning mod as the parent.
-                    mod = None
-                    for m in self.mods[::-1]:
-                        if not m.enabled:
-                            continue
-                        if name in m.plugins:
-                            mod = m
-                            break
-
-                    if mod is None:
-                        # Only add plugins without mods if the plugin file exists
-                        # and isn't a symlink, because symlinks could be artifacts
-                        # of disabled mods.
-                        if (self.game.data / name).exists() and not (
-                            self.game.data / name
-                        ).is_symlink():
-                            plugin = Plugin(
-                                name=name,
-                                mod=mod,
-                                enabled=enabled,
-                            )
-                            if plugin.name not in [p.name for p in self.plugins]:
-                                self.plugins.append(plugin)
-                        continue
-
-                    if not mod.enabled:
-                        # The parent mod either wasn't enabled or wasn't installed correctly.
-                        # Don't add this plugin to the list of managed plugins. It will be
-                        # added automatically when the parent mod is enabled.
-                        continue
-
-                    plugin_location = self.game.data / name
-                    if not plugin_location.exists() or (
-                        plugin_location.exists()
-                        and not plugin_location.resolve().exists()
-                    ):
-                        enabled = False
                     plugin = Plugin(
                         name=name,
-                        mod=mod,
-                        enabled=enabled,
+                        mod=None,
+                        enabled=False,
                     )
-                    if plugin.name not in [p.name for p in self.plugins]:
+                    # We must identify whether files listed here
+                    # belong to a mod and assign it. If we don't,
+                    # the mod's plugins appear when the mod is disabled.
+                    for m in self.mods[::-1]:
+                        if name in m.plugins:
+                            plugin.mod = m
+                            break
+
+                    self.dlc.append(plugin)
+
+        # Parse Plugins.txt, create plugins in order.
+        with open(self.game.plugin_file, "r") as file:
+            for line in file:
+                if not line.strip() or line.strip().startswith("#"):
+                    # Ignore empty lines and comments.
+                    continue
+
+                name = line.strip().strip("*").strip()
+                enabled = self.game.enabled_formula(line)
+
+                # Iterate through our mods in reverse so we can assign the conflict
+                # winning mod as the parent.
+                mod = None
+                for m in self.mods[::-1]:
+                    if not m.enabled:
+                        continue
+                    if name in m.plugins:
+                        mod = m
+                        break
+
+                if mod is None:
+                    # Only add plugins without mods if the plugin file exists
+                    # and isn't a symlink, because symlinks could be artifacts
+                    # of disabled mods.
+                    if (self.game.data / name).exists() and not (
+                        self.game.data / name
+                    ).is_symlink():
+                        plugin = Plugin(
+                            name=name,
+                            mod=mod,
+                            enabled=enabled,
+                        )
                         self.plugins.append(plugin)
+                    continue
+
+                if not mod.enabled:
+                    # The parent mod either wasn't enabled or wasn't installed correctly.
+                    # Don't add this plugin to the list of managed plugins. It will be
+                    # added automatically when the parent mod is enabled.
+                    continue
+
+                plugin_location = self.game.data / name
+                if not plugin_location.exists() or (
+                    plugin_location.exists() and not plugin_location.resolve().exists()
+                ):
+                    enabled = False
+                plugin = Plugin(
+                    name=name,
+                    mod=mod,
+                    enabled=enabled,
+                )
+                if plugin.name not in [p.name for p in self.plugins]:
+                    self.plugins.append(plugin)
+
+        # Finish adding DLC from DLCList.txt that was missing from Plugins.txt.
+        # These will be added as disabled. Since order is preserved in Plugins.txt and
+        # these were absent from it, their true order can't be preserved.
+        for plugin in self.dlc:
+            if plugin.name not in (i.name for i in self.plugins) and plugin.mod is None:
+                self.plugins.append(plugin)
 
         downloads: list[Path] = []
         for file in self.downloads_dir.iterdir():
@@ -217,7 +247,10 @@ class ModController(Controller):
         """
         with open(self.game.plugin_file, "w") as file:
             for plugin in self.plugins:
-                file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
+                if self.game.enabled_formula("*"):
+                    file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
+                else:
+                    file.write(f"{'' if plugin.enabled else '*'}{plugin.name}\n")
         with open(self.game.ammo_conf, "w") as file:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")

@@ -162,6 +162,15 @@ class GameController(Controller):
         ammo_mods_dir = ammo_conf_dir / "mods"
         ammo_conf = ammo_conf_dir / "ammo.conf"
 
+        match game_selection.name:
+            case "Skyrim":
+                # Skyrim LE considers plugins to be disabled if they begin with something besides the name.
+                enabled_formula = lambda line: len(
+                    line.strip()
+                ) > 0 and not line.strip()[0].startswith("*")
+            case _:
+                enabled_formula = lambda line: line.strip().startswith("*")
+
         game = Game(
             game_selection.name,
             directory,
@@ -170,6 +179,7 @@ class GameController(Controller):
             dlc_file,
             plugin_file,
             ammo_mods_dir,
+            enabled_formula,
         )
 
         # Launch the main mod organizer.
