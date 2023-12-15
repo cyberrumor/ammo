@@ -301,17 +301,19 @@ class ModController(Controller):
                         self.plugins.append(plugin)
             else:
                 # Hide plugins owned by this mod and not another mod
-                for plugin in (i for i in self.plugins if i.name in subject.plugins):
+                for plugin in subject.plugins:
+                    if plugin not in [i.name for i in self.plugins]:
+                        continue
                     provided_elsewhere = False
-                    for mod in (
-                        i for i in self.mods if i.enabled and i.name != subject.name
-                    ):
-                        if plugin in (i for i in self.plugins if i.name in mod.plugins):
+                    for mod in self.mods:
+                        if mod == subject:
+                            continue
+                        if plugin in mod.plugins:
                             provided_elsewhere = True
                             break
                     if not provided_elsewhere:
-                        if plugin in self.plugins:
-                            self.plugins.remove(plugin)
+                        index = [i.name for i in self.plugins].index(plugin)
+                        self.plugins.pop(index)
 
         # Handle plugins
         elif isinstance(subject, Plugin):
