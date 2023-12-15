@@ -306,6 +306,8 @@ class ModController(Controller):
                         continue
                     provided_elsewhere = False
                     for mod in self.mods:
+                        if not mod.enabled:
+                            continue
                         if mod == subject:
                             continue
                         if plugin in mod.plugins:
