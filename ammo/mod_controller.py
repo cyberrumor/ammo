@@ -772,8 +772,9 @@ class ModController(Controller):
 
                 # Show plugins of visible mods.
                 if isinstance(component, Plugin):
-                    if component.mod.name.lower().count(kw.lower()):
-                        component.visible = True
+                    if component.mod is not None:
+                        if component.mod.name.lower().count(kw.lower()):
+                            component.visible = True
 
                 if component.visible:
                     break
