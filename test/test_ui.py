@@ -30,6 +30,9 @@ class MockController(Controller):
     def __str__(self) -> str:
         return super().__str__()
 
+    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super()._autocomplete(text, state)
+
 
 def test_cast_to_int():
     test = MockController()

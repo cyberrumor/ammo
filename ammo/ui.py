@@ -2,8 +2,11 @@
 import os
 import sys
 import typing
+from typing import Union
 import inspect
 import textwrap
+import readline
+
 from copy import deepcopy
 from enum import (
     Enum,
@@ -58,6 +61,13 @@ class Controller(ABC):
         """
         return ""
 
+    @abstractmethod
+    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+        """
+        Returns the next possible autocompletion beginning with text.
+        """
+        return None
+
 
 class UI:
     """
@@ -72,6 +82,9 @@ class UI:
         """
         self.controller = controller
         self.command = {}
+
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer(self.controller._autocomplete)
 
     def populate_commands(self):
         self.command = {}

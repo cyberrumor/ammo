@@ -2,6 +2,7 @@
 import os
 import shutil
 import textwrap
+from typing import Union
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
@@ -76,6 +77,9 @@ class FomodController(Controller):
         self.selection = self.page["type"].lower()
         self._populate_index_commands()
         return False
+
+    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super()._autocomplete(text, state)
 
     def _populate_index_commands(self):
         """

@@ -241,6 +241,9 @@ class ModController(Controller):
     def _post_exec(self) -> bool:
         return False
 
+    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super()._autocomplete(text, state)
+
     def _save_order(self):
         """
         Writes ammo.conf and Plugins.txt.

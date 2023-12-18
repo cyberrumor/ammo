@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import re
+from typing import Union
 from dataclasses import (
     dataclass,
     field,
@@ -117,6 +118,9 @@ class GameController(Controller):
             index = f"[{i}]"
             result += f"{index:<7} {game.name} ({game.source.value})\n"
         return result
+
+    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super()._autocomplete(text, state)
 
     def _populate_index_commands(self):
         """

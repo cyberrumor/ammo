@@ -247,4 +247,3 @@ def test_find_dlc_no_crash():
             plugin.unlink()
         except FileNotFoundError:
             pass
-
