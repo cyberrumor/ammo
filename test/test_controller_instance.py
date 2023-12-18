@@ -398,3 +398,19 @@ def test_controller_save_dlc():
             plugin.unlink()
         except FileNotFoundError:
             pass
+
+def test_controller_deactivate_mod_with_multiple_plugins():
+    """
+    Test that disabling a mod that contains multiple plugins actually
+    causes all of that mod's plugins to disappear.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "multiple_plugins")
+        # Make sure all plugins are there.
+        assert len(controller.plugins) == 3
+
+        # Deactivate the mod
+        controller.deactivate(ComponentEnum.MOD, 0)
+
+        # Ensure all plugins are absent.
+        assert len(controller.plugins) == 0
