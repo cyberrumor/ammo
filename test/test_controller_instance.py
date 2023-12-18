@@ -97,6 +97,31 @@ def test_controller_subsequent_launch():
             ] == plugins, "Plugins didn't load correctly on subsequent session"
 
 
+def test_controller_move():
+    """
+    Test that moving a mod or plugin to a new position causes the
+    components between the old location and the new location to collapse
+    (take out at old location, insert at new location), rather than
+    causing the old location and new location components to merely swap.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "conflict_1")
+        install_mod(controller, "conflict_2")
+        install_mod(controller, "multiple_plugins")
+
+        assert controller.mods[0].name == "normal_mod"
+        assert controller.mods[1].name == "conflict_1"
+        assert controller.mods[2].name == "conflict_2"
+        assert controller.mods[3].name == "multiple_plugins"
+
+        controller.move(ComponentEnum.MOD, 1, 3)
+        assert controller.mods[0].name == "normal_mod"
+        assert controller.mods[1].name == "conflict_2"
+        assert controller.mods[2].name == "multiple_plugins"
+        assert controller.mods[3].name == "conflict_1"
+
+
 def test_controller_enabled_mod_is_missing_plugin():
     """
     Test that when an enabled mod has an enabled plugin when ammo starts,
@@ -398,6 +423,7 @@ def test_controller_save_dlc():
             plugin.unlink()
         except FileNotFoundError:
             pass
+
 
 def test_controller_deactivate_mod_with_multiple_plugins():
     """
