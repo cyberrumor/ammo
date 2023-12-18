@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 import pytest
 
 from ammo.component import (
@@ -205,3 +206,45 @@ def test_find_fomods():
                 assert i.visible
                 continue
             assert i.visible is False
+
+
+def test_find_dlc_no_crash():
+    """
+    The find command references DLC, which is an instance of Plugin with
+    self.mod == None. The find command references self.mod.name for plugins.
+    This tests that we aren't calling '.name' on a NoneType.
+    """
+    plugin = None
+    dlc_file = None
+    plugin_file = None
+    with AmmoController() as controller:
+        plugin = controller.game.data / "normal_plugin.esp"
+        dlc_file = controller.game.dlc_file
+        plugin_file = controller.game.plugin_file
+
+    # Add the plugin to DLCList.txt.
+    Path.mkdir(dlc_file.parent, parents=True, exist_ok=True)
+    with open(dlc_file, "w") as dlc_txt:
+        dlc_txt.write("normal_plugin.esp")
+
+    with open(plugin_file, "w") as plugin_txt:
+        plugin_txt.write("*normal_plugin.esp")
+
+    try:
+        # Create a fake normal_plugin.esp file.
+        Path.mkdir(plugin.parent, parents=True, exist_ok=True)
+        with open(plugin, "w") as normal_plugin:
+            normal_plugin.write("")
+
+        # Test that the find command works.
+        with AmmoController() as controller:
+            controller.find("normal_plugin.esp")
+            # No mod to check here since DLC doesn't have an
+            # associated mod. Check that our plugin is visible.
+            assert controller.plugins[0].visible is True
+    finally:
+        try:
+            plugin.unlink()
+        except FileNotFoundError:
+            pass
+
