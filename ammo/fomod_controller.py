@@ -138,9 +138,7 @@ class FomodController(Controller):
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
                         plug_dict["name"] = plugin_name
-                        plug_dict["description"] = ""
-                        if (description := plugin.find("description")) is not None:
-                            plug_dict["description"] = description.text.strip()
+                        plug_dict["description"] = plugin.findtext("description",default="").strip()
                         plug_dict["flags"] = {}
                         # Automatically mark the first option as selected when
                         # a selection is required.
