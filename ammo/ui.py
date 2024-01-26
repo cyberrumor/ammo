@@ -65,7 +65,9 @@ class Controller(ABC):
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
         """
         Returns the next possible autocompletion beginning with text.
+        This should only be used for arguments of existing functions.
         """
+        assert readline.get_line_buffer().split()[0] in dir(self)
         return None
 
 
@@ -84,7 +86,33 @@ class UI:
         self.command = {}
 
         readline.parse_and_bind("tab: complete")
-        readline.set_completer(self.controller._autocomplete)
+        readline.set_completer(self.autocomplete)
+
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+        """
+        Autocomplete function desired by the readline interface.
+        If we can complete a command, do it. Otherwise, attempt to
+        return results from self.controller._autocomplete.
+        """
+        buf = readline.get_line_buffer()
+        if len(buf.split()) <= 1 and not buf.endswith(" "):
+            # If there's only one word in the buffer, we want to try
+            # to complete commands.
+            completions = []
+            for cmd in self.command:
+                if cmd.startswith(buf):
+                    completions.append(cmd)
+
+            # If state is greater than the number of completions,
+            # return None to signal that we've provided all completions.
+            if state > len(completions):
+                return None
+
+            # Auto insert a space after the command.
+            return completions[state] + " "
+
+        # There was more than one word.
+        return self.controller._autocomplete(text, state)
 
     def populate_commands(self):
         self.command = {}
@@ -250,6 +278,8 @@ class UI:
             # Repopulate commands on every iteration so controllers
             # that dynamically change available methods work.
             self.populate_commands()
+            # Set the completer here to fix returning from nested UIs.
+            readline.set_completer(self.autocomplete)
 
             os.system("clear")
             print(self.controller)

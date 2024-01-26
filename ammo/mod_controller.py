@@ -3,13 +3,18 @@ import os
 import shutil
 import subprocess
 import sys
+import readline
 from collections.abc import Callable
 from pathlib import Path
 from dataclasses import (
     dataclass,
     field,
 )
+import typing
 from typing import Union
+from enum import (
+    EnumMeta,
+)
 from .ui import (
     UI,
     Controller,
@@ -242,7 +247,64 @@ class ModController(Controller):
         return False
 
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
-        return super()._autocomplete(text, state)
+        buf = readline.get_line_buffer()
+        name, *args = buf.split()
+        completions = []
+
+        # print(f"{name=}")
+        # print(f"{args=}")
+        assert name in dir(self)
+
+        # Identify the method we're calling.
+        attribute = getattr(self, name)
+        if hasattr(attribute, "__func__"):
+            func = attribute.__func__
+        else:
+            func = attribute
+
+        type_hints = typing.get_type_hints(func)
+        if buf.endswith(" "):
+            target_type = list(type_hints.values())[len(args)]
+        else:
+            target_type = list(type_hints.values())[max(0, abs(len(args) - 1))]
+
+        if hasattr(target_type, "__args__"):
+            if int in target_type.__args__ and len(args) > 0:
+                match args[0]:
+                    case "download":
+                        components = self.downloads
+                    case "mod":
+                        components = self.mods
+                    case "plugin":
+                        components = self.plugins
+                    case _:
+                        components = []
+            if func not in [self.install.__func__, self.configure.__func__]:
+                for i in range(len(components)):
+                    if str(i).startswith(text):
+                        completions.append(str(i))
+                if "all".startswith(text):
+                    completions.append("all")
+
+        elif isinstance(target_type, EnumMeta):
+            for i in list(target_type):
+                if i.value.startswith(text):
+                    completions.append(i.value)
+
+        if func == self.install.__func__:
+            for i in range(len(self.downloads)):
+                if str(i).startswith(text):
+                    completions.append(str(i))
+            if "all".startswith(text) and len(self.downloads) > 0:
+                completions.append("all")
+
+        elif func == self.configure.__func__:
+            for i in range(len(self.mods)):
+                if str(i).startswith(text):
+                    if self.mods[i].fomod:
+                        completions.append(str(i))
+
+        return completions[state] + " "
 
     def _save_order(self):
         """
