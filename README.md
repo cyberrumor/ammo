@@ -39,8 +39,8 @@ A Simple Terminal-Based Mod Organizer for Linux
 Steam Deck users:
 
 ```sh
-python -m ensurepip --upgrade
-python -m pip install --upgrade pip
+python -m ensurepip --user --break-system-packages --upgrade
+python -m pip install --user --break-system-packages --upgrade pip
 ```
 
 Everyone:
@@ -50,8 +50,8 @@ echo 'PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/cyberrumor/ammo
 cd ammo
-pip3 install -r requirements.txt || pip3 install --break-system-packages -r requirements.txt
-pip3 install . || pip3 install --break-system-packages .
+pip3 install --user -r requirements.txt || pip3 install --user --break-system-packages -r requirements.txt
+pip3 install --user . || pip3 install --user --break-system-packages .
 ```
 
 You can now execute ammo with the terminal command `ammo`.
@@ -61,7 +61,7 @@ You can now execute ammo with the terminal command `ammo`.
 ```sh
 cd /path/to/ammo/clone/dir
 git pull
-pip3 install --force-reinstall . || pip3 install --break-system-packages --force-reinstall .
+pip3 install --user --force-reinstall . || pip3 install --user --break-system-packages --force-reinstall .
 ```
 
 ## Usage Instructions
