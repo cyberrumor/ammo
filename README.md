@@ -46,8 +46,8 @@ python -m pip install --user --break-system-packages --upgrade pip
 Everyone:
 
 ```sh
-echo 'PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-PATH="$HOME/.local/bin:$PATH"
+echo 'PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+PATH="$PATH:$HOME/.local/bin"
 git clone https://github.com/cyberrumor/ammo
 cd ammo
 pip3 install --user -r requirements.txt || pip3 install --user --break-system-packages -r requirements.txt
