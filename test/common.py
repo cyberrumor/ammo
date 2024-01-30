@@ -190,7 +190,9 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
         with FomodContextManager(mod) as fomod_controller:
             for selection in selections:
                 fomod_controller.page = fomod_controller.steps[
-                    fomod_controller.visible_pages[selection["page"]]
+                    fomod_controller.steps.index(
+                        fomod_controller.visible_pages[selection["page"]]
+                    )
                 ]
                 fomod_controller._select(selection["option"])
 

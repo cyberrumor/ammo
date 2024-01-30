@@ -5,6 +5,7 @@ from common import (
 )
 import pytest
 
+
 def test_missing_data_fomod():
     """
     Check that the following elements can be absent of data and
@@ -37,7 +38,7 @@ def test_missing_data_fomod():
                 "page": 0,
                 "option": 3,
             },
-        ]
+        ],
     )
 
     # other options have various self terminating tags.
@@ -53,8 +54,8 @@ def test_missing_data_fomod():
                         "page": 0,
                         "option": option,
                     },
-                ]
+                ],
             )
-            assert error == "The selected options failed to map to installable components."
-
-
+            assert (
+                error == "The selected options failed to map to installable components."
+            )

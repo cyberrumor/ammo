@@ -3,6 +3,10 @@ import os
 import shutil
 import textwrap
 from typing import Union
+from dataclasses import (
+    dataclass,
+    field,
+)
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
@@ -11,9 +15,33 @@ from .component import Mod
 from .lib import normalize
 
 
+@dataclass(kw_only=True)
+class Selection:
+    """
+    A wizard-configurable option local to a Page.
+    """
+    name: str
+    description: str
+    flags: field(default_factory=dict)
+    selected: bool
+    conditional: bool
+    files: list[ElementTree.Element]
+
+
+@dataclass(kw_only=True)
+class Page:
+    """
+    A step holds a group of related configurable options.
+    """
+    name: str
+    archtype: str
+    selections: list[Selection]
+    visibility_conditions: field(default_factory=dict)
+
+
 class FomodController(Controller):
     def __init__(self, mod: Mod):
-        self.mod = mod
+        self.mod: Mod = mod
 
         # Parse the fomod installer.
         tree = ElementTree.parse(str(mod.modconf))
@@ -25,12 +53,12 @@ class FomodController(Controller):
         self.module_name = self.xml_root_node.find("moduleName").text
 
         # Get the pages
-        self.steps = self._get_steps()
+        self.steps = self._get_pages()
         self.page_index = 0
         self.flags = self._get_flags()
-        self.visible_pages = self._get_pages()
-        self.page = self.steps[self.visible_pages[self.page_index]]
-        self.selection = self.page["type"].lower()
+        self.visible_pages = self._get_visible_pages()
+        self.page = self.steps[self.steps.index(self.visible_pages[self.page_index])]
+        self.selection = self.page.archtype.lower()
         self.do_exit = False
         self._populate_index_commands()
 
@@ -38,23 +66,23 @@ class FomodController(Controller):
         num_pages = len(self.visible_pages)
         result = f"{self.module_name}\n"
         result += "--------------------------------\n"
-        result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index]}\n"
+        result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index].name}\n"
         result += "--------------------------------\n\n"
-        for p in self.page["plugins"]:
-            if p["selected"] and p["description"]:
-                result += f'{p["name"]}\n'
+        for p in self.page.selections:
+            if p.selected and p.description:
+                result += f"{p.name}\n"
                 result += "--------------------------------\n"
-                for line in textwrap.wrap(f'{p["description"]}\n\n'):
+                for line in textwrap.wrap(f"{p.description}\n\n"):
                     result += f"{line}\n"
                 result += "\n"
 
         result += " index | Activated | Option Name\n"
         result += "-------|-----------|------------\n"
 
-        for i, p in enumerate(self.page["plugins"]):
+        for i, p in enumerate(self.page.selections):
             index = f"[{i}]"
-            enabled = f"[{p['selected']}]"
-            result += f"{index:<7} {enabled:<11} {p['name']}\n"
+            enabled = f"[{p.selected}]"
+            result += f"{index:<7} {enabled:<11} {p.name}\n"
         result += "\n"
         return result
 
@@ -66,15 +94,15 @@ class FomodController(Controller):
             return True
 
         self.flags = self._get_flags()
-        self.visible_pages = self._get_pages()
+        self.visible_pages = self._get_visible_pages()
         if self.page_index >= len(self.visible_pages):
             # The user advanced to the end of the installer.
             install_nodes = self._get_nodes()
             self._install_files(install_nodes)
             return True
 
-        self.page = self.steps[self.visible_pages[self.page_index]]
-        self.selection = self.page["type"].lower()
+        self.page = self.steps[self.steps.index(self.visible_pages[self.page_index])]
+        self.selection = self.page.archtype.lower()
         self._populate_index_commands()
         return False
 
@@ -93,15 +121,15 @@ class FomodController(Controller):
                 del self.__dict__[i]
             except ValueError:
                 pass
-        for i in range(len(self.page["plugins"])):
+        for i in range(len(self.page.selections)):
             setattr(self, str(i), lambda self, i=i: self._select(i))
-            self.__dict__[str(i)].__doc__ = f"Toggle {self.page['plugins'][i]['name']}"
+            self.__dict__[str(i)].__doc__ = f"Toggle {self.page.selections[i].name}"
 
-    def _get_steps(self) -> dict:
+    def _get_pages(self) -> list[Page]:
         """
-        Get a dictionary representing every install step for this fomod.
+        Get a representation of every install step for this fomod.
         """
-        steps = {}
+        steps = []
         # Find all the install steps
         for step in self.xml_root_node.find("installSteps"):
             for optional_file_groups in step:
@@ -111,13 +139,7 @@ class FomodController(Controller):
                         # Skip the false positive.
                         continue
 
-                    step_name = group.get("name")
-                    steps[step_name] = {}
-
-                    this_step = steps[step_name]
-                    this_step["type"] = group.get("type")
-                    this_step["plugins"] = []
-                    this_step["visible"] = {}
+                    visibility_conditions = {}
 
                     # Collect this step's visibility conditions. Associate it
                     # with the group instead of the step. This is inefficient
@@ -127,26 +149,27 @@ class FomodController(Controller):
                             dep_op = dependencies.get("operator")
                             if dep_op:
                                 dep_op = dep_op.lower()
-                            this_step["visible"]["operator"] = dep_op
+                            visibility_conditions["operator"] = dep_op
                             for xml_flag in dependencies:
-                                this_step["visible"][
+                                visibility_conditions[
                                     xml_flag.get("flag")
                                 ] = xml_flag.get("value") in ["On", "1"]
 
-                    plugins = this_step["plugins"]
+                    page = Page(
+                        name=group.get("name"),
+                        archtype=group.get("type"),
+                        selections=[],
+                        visibility_conditions=visibility_conditions,
+                    )
+
                     for plugin_index, plugin in enumerate(group_of_plugins):
-                        plug_dict = {}
-                        plugin_name = plugin.get("name").strip()
-                        plug_dict["name"] = plugin_name
-                        plug_dict["description"] = plugin.findtext(
-                            "description", default=""
-                        ).strip()
-                        plug_dict["flags"] = {}
+                        name = plugin.get("name").strip()
+                        description = plugin.findtext("description", default="").strip()
+                        flags = {}
                         # Automatically mark the first option as selected when
                         # a selection is required.
-                        plug_dict["selected"] = (
-                            this_step["type"]
-                            in ["SelectExactlyOne", "SelectAtLeastOne"]
+                        selected = (
+                            page.archtype in ["SelectExactlyOne", "SelectAtLeastOne"]
                         ) and plugin_index == 0
 
                         # Interpret on/off or 1/0 as true/false
@@ -154,22 +177,32 @@ class FomodController(Controller):
                             for flag in conditional_flags:
                                 # People use arbitrary flags here.
                                 # Most commonly "On" or "1".
-                                plug_dict["flags"][flag.get("name")] = flag.text in [
+                                flags[flag.get("name")] = flag.text in [
                                     "On",
                                     "1",
                                 ]
-                            plug_dict["conditional"] = True
+                            conditional = True
 
                         else:
                             # There were no conditional flags, so this was an
                             # unconditional install.
-                            plug_dict["conditional"] = False
+                            conditional = False
 
-                        plug_dict["files"] = []
+                        files = []
                         if plugin_files := plugin.find("files"):
-                            plug_dict["files"].extend(plugin_files)
+                            files.extend(plugin_files)
 
-                        plugins.append(plug_dict)
+                        page.selections.append(
+                            Selection(
+                                name=name,
+                                description=description,
+                                flags=flags,
+                                selected=selected,
+                                conditional=conditional,
+                                files=files,
+                            )
+                        )
+                    steps.append(page)
         return steps
 
     def _get_flags(self) -> dict:
@@ -179,11 +212,11 @@ class FomodController(Controller):
         and values are flag states.
         """
         flags = {}
-        for step in self.steps.values():
-            for plugin in step["plugins"]:
-                if plugin["selected"]:
-                    for flag in plugin.get("flags", ()):
-                        flags[flag] = plugin["flags"][flag]
+        for step in self.steps:
+            for selection in step.selections:
+                if selection.selected:
+                    for flag in selection.flags:
+                        flags[flag] = selection.flags[flag]
         return flags
 
     def _flags_match(self, expected_flags: dict) -> bool:
@@ -214,18 +247,18 @@ class FomodController(Controller):
         Toggle the 'selected' switch on appropriate plugins.
         This logic ensures any constraints on selections are obeyed.
         """
-        val = not self.page["plugins"][index]["selected"]
-        if "SelectExactlyOne" == self.page["type"]:
-            for i in range(len(self.page["plugins"])):
-                self.page["plugins"][i]["selected"] = i == index
-        elif "SelectAtMostOne" == self.page["type"]:
-            for i in range(len(self.page["plugins"])):
-                self.page["plugins"][i]["selected"] = False
-            self.page["plugins"][index]["selected"] = val
+        val = not self.page.selections[index].selected
+        if "SelectExactlyOne" == self.page.archtype:
+            for i in range(len(self.page.selections)):
+                self.page.selections[i].selected = i == index
+        elif "SelectAtMostOne" == self.page.archtype:
+            for i in range(len(self.page.selections)):
+                self.page.selections[i].selected = False
+            self.page.selections[index].selected = val
         else:
-            self.page["plugins"][index]["selected"] = val
+            self.page.selections[index].selected = val
 
-    def _get_pages(self) -> list:
+    def _get_visible_pages(self) -> list[Page]:
         """
         Returns a list of only fomod pages that should be visible,
         determined by current flags.
@@ -234,18 +267,14 @@ class FomodController(Controller):
             page
             for page in self.steps
             # if there's no condition for visibility, just show it.
-            if not self.steps[page]["visible"]
+            if not page.visibility_conditions
             # if there's conditions, only include if the conditions are met.
-            or self._flags_match(self.steps[page]["visible"])
+            or self._flags_match(page.visility_conditions)
         ]
 
-    def _get_nodes(self) -> list:
+    def _get_nodes(self) -> list[ElementTree.Element]:
         """
-        Expects xml root node for the fomod, a dictionary representing
-        all install steps, and a dictionary representing configured flags.
-
-        Returns a list of xml nodes for each folder that matched the
-        configured flags.
+        Returns a flat list of xml folder nodes that matched configured flags.
         """
         # Determine which files need to be installed.
         selected_nodes = []
@@ -253,16 +282,16 @@ class FomodController(Controller):
         # Normal files. If these were selected, install them unless flags
         # disqualify.
         for step in self.steps:
-            for plugin in self.steps[step]["plugins"]:
-                if plugin["selected"]:
-                    if plugin["conditional"]:
+            for plugin in step.selections:
+                if plugin.selected:
+                    if plugin.conditional:
                         # conditional normal file
-                        expected_flags = plugin["flags"]
+                        expected_flags = plugin.flags
                         if self._flags_match(expected_flags):
-                            selected_nodes.extend(plugin["files"])
+                            selected_nodes.extend(plugin.files)
                         continue
                     # unconditional file install
-                    selected_nodes.extend(plugin["files"])
+                    selected_nodes.extend(plugin.files)
 
         # include conditional file installs based on the user choice. These are
         # different from the normal_files with conditions because these
@@ -331,15 +360,6 @@ class FomodController(Controller):
             # ModuleConfig.xml when the actual file itself might be
             # "00 Core/meshes".
             s = node.get("source")
-            """
-            full_source = reduce(
-                lambda path, name: path / name
-                if any(map(lambda p: p.name == name, path.iterdir()))
-                else path / name.lower(),
-                s.split("\\"),
-                mod.location,
-            )
-            """
             full_source = self.mod.location
             for i in s.split("\\"):
                 folder = i
