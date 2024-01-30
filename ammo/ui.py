@@ -2,7 +2,11 @@
 import os
 import sys
 import typing
-from typing import Union
+from typing import (
+    Any,
+    Callable,
+    Union,
+)
 import inspect
 import textwrap
 import readline
@@ -16,6 +20,7 @@ from abc import (
     ABC,
     abstractmethod,
 )
+from dataclasses import dataclass
 
 
 class Controller(ABC):
@@ -71,6 +76,23 @@ class Controller(ABC):
         return None
 
 
+@dataclass(kw_only=True)
+class Arg:
+    name: str
+    type: type
+    description: str
+    required: bool
+
+
+@dataclass(kw_only=True)
+class Command:
+    name: str
+    func: Callable[..., Any]
+    args: list[Arg]
+    doc: str
+    instance: Union[Controller, None]
+
+
 class UI:
     """
     Expose public methods of whatever class (derived from Controller)
@@ -115,21 +137,29 @@ class UI:
         return self.controller._autocomplete(text, state)
 
     def populate_commands(self):
+        """
+        Populate self.command with Command objects that represent
+        public methods of self.controller.
+        """
         self.command = {}
 
         # Default 'help', may be overridden.
-        self.command["help"] = {
-            "func": self.help,
-            "args": [],
-            "doc": str(self.help.__doc__).strip(),
-        }
+        self.command["help"] = Command(
+            name="help",
+            func=self.help,
+            args=[],
+            doc=str(self.help.__doc__).strip(),
+            instance=None,
+        )
 
         # Default 'exit', may be overridden.
-        self.command["exit"] = {
-            "func": self.exit,
-            "args": [],
-            "doc": str(self.exit.__doc__).strip(),
-        }
+        self.command["exit"] = Command(
+            name="exit",
+            func=self.exit,
+            args=[],
+            doc=str(self.exit.__doc__).strip(),
+            instance=None,
+        )
 
         for name in dir(self.controller):
             # Collect instance methods (rather than class methods).
@@ -180,20 +210,22 @@ class UI:
                     if isinstance(t, EnumMeta):
                         description = "(" + "|".join([e.value for e in t]) + ")"
 
-                arg = {
-                    "name": param.name,
-                    "type": param.annotation,
-                    "description": description,
-                    "required": required,
-                }
-                args.append(arg)
+                args.append(
+                    Arg(
+                        name=param.name,
+                        type=param.annotation,
+                        description=description,
+                        required=required,
+                    )
+                )
 
-            self.command[name] = {
-                "func": func,
-                "args": args,
-                "doc": str(func.__doc__).strip(),
-                "instance": self.controller,
-            }
+            self.command[name] = Command(
+                name=name,
+                func=func,
+                args=args,
+                doc=str(func.__doc__).strip(),
+                instance=self.controller,
+            )
 
     def help(self):
         """
@@ -205,8 +237,8 @@ class UI:
 
         for name, command in sorted(self.command.items()):
             column_cmd.append(name)
-            column_arg.append(" ".join([arg["description"] for arg in command["args"]]))
-            column_doc.append(command["doc"])
+            column_arg.append(" ".join([arg.description for arg in command.args]))
+            column_doc.append(command.doc)
 
         pad_cmd = max(len(cmd) for cmd in column_cmd) + 1
         pad_arg = max(len(arg) for arg in column_arg) + 1
@@ -297,23 +329,21 @@ class UI:
                 continue
 
             # Validate that we received a sane number of arguments.
-            num_required_args = len([arg for arg in command["args"] if arg["required"]])
-            num_optional_args = len(
-                [arg for arg in command["args"] if not arg["required"]]
-            )
+            num_required_args = len([arg for arg in command.args if arg.required])
+            num_optional_args = len([arg for arg in command.args if not arg.required])
             if (
                 num_required_args > len(args)
                 or (num_required_args > len(args) and num_optional_args == 0)
                 or (len(args) > num_required_args and num_optional_args == 0)
             ):
                 print(
-                    f"{func} expected at least {len(command['args'])} arg(s) but received {len(args)}"
+                    f"{func} expected at least {len(command.args)} arg(s) but received {len(args)}"
                 )
                 input("[Enter]")
                 continue
 
             prepared_args = []
-            expected_args = deepcopy(command["args"])
+            expected_args = deepcopy(command.args)
             expected_arg = None if len(expected_args) == 0 else expected_args.pop(0)
             if expected_arg is None and len(args) > 0:
                 print(f"{func} expected no args but received {len(args)} arg(s).")
@@ -323,11 +353,11 @@ class UI:
             try:
                 while len(args) > 0:
                     arg = args.pop(0)
-                    target_type = expected_arg["type"]
+                    target_type = expected_arg.type
                     prepared_arg = self.cast_to_type(arg, target_type)
                     prepared_args.append(prepared_arg)
 
-                    if expected_arg["required"] and len(expected_args) > 0:
+                    if expected_arg.required and len(expected_args) > 0:
                         expected_arg = expected_args.pop(0)
 
             except (ValueError, KeyError) as e:
@@ -335,16 +365,16 @@ class UI:
                 input("[Enter]")
                 continue
 
-            if "instance" in command:
+            if command.instance is not None:
                 # Commands that originate from the controller's methods
                 # need to have "self" injected as their first argument.
-                controller_instance = command["instance"]
+                controller_instance = command.instance
                 prepared_args.insert(0, controller_instance)
 
             try:
-                command["func"](*prepared_args)
-                if "instance" in command:
-                    controller_instance = command["instance"]
+                command.func(*prepared_args)
+                if command.instance is not None:
+                    controller_instance = command.instance
                     if controller_instance._post_exec():
                         break
 
