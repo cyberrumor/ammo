@@ -3,7 +3,6 @@ import os
 import sys
 import typing
 from typing import (
-    Any,
     Callable,
     Union,
 )
@@ -87,7 +86,7 @@ class Arg:
 @dataclass(kw_only=True)
 class Command:
     name: str
-    func: Callable[..., Any]
+    func: Callable[..., None]
     args: list[Arg]
     doc: str
     instance: Union[Controller, None]

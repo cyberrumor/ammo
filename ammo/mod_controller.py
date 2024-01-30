@@ -442,7 +442,7 @@ class ModController(Controller):
 
         self._remove_empty_dirs()
 
-    def configure(self, index: int):
+    def configure(self, index: int) -> None:
         """
         Configure a fomod
         """
@@ -484,7 +484,7 @@ class ModController(Controller):
         # will no longer be required.
         self.refresh()
 
-    def activate(self, component: ComponentEnum, index: Union[int, str]):
+    def activate(self, component: ComponentEnum, index: Union[int, str]) -> None:
         """
         Enabled components will be loaded by game
         """
@@ -505,7 +505,7 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def deactivate(self, component: ComponentEnum, index: Union[int, str]):
+    def deactivate(self, component: ComponentEnum, index: Union[int, str]) -> None:
         """
         Disabled components will not be loaded by game
         """
@@ -526,7 +526,7 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def rename(self, component: DeleteEnum, index: int, name: str):
+    def rename(self, component: DeleteEnum, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores
         """
@@ -592,7 +592,7 @@ class ModController(Controller):
         # re-install symlinks
         self.commit()
 
-    def delete(self, component: DeleteEnum, index: Union[int, str]):
+    def delete(self, component: DeleteEnum, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem
         """
@@ -647,7 +647,7 @@ class ModController(Controller):
             raise Warning(e)
         download.location.unlink()
 
-    def install(self, index: Union[int, str]):
+    def install(self, index: Union[int, str]) -> None:
         """
         Extract and manage an archive from ~/Downloads
         """
@@ -660,7 +660,7 @@ class ModController(Controller):
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
-        def has_extra_folder(path):
+        def has_extra_folder(path) -> bool:
             files = list(path.iterdir())
             return all(
                 [
@@ -686,7 +686,7 @@ class ModController(Controller):
                 ]
             )
 
-        def install_download(index, download):
+        def install_download(index, download) -> None:
             extract_to = "".join(
                 [
                     i
@@ -751,7 +751,7 @@ class ModController(Controller):
 
         self.refresh()
 
-    def move(self, component: ComponentEnum, index: int, new_index: int):
+    def move(self, component: ComponentEnum, index: int, new_index: int) -> None:
         """
         Larger numbers win file conflicts
         """
@@ -773,7 +773,7 @@ class ModController(Controller):
         components.insert(new_index, comp)
         self.changes = True
 
-    def commit(self):
+    def commit(self) -> None:
         """
         Apply pending changes
         """
@@ -808,13 +808,13 @@ class ModController(Controller):
         if warn:
             raise Warning(warn)
 
-    def refresh(self):
+    def refresh(self) -> None:
         """
         Abandon pending changes
         """
         self.__init__(self.downloads_dir, self.game, *self.keywords)
 
-    def find(self, *keyword: str):
+    def find(self, *keyword: str) -> None:
         """
         Show only components with any keyword
         """

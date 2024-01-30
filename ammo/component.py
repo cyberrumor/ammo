@@ -34,7 +34,7 @@ class Mod:
     plugins: list[str] = field(default_factory=list, init=False)
     name: str = field(default_factory=str, init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.name = self.location.name
         self.install_dir = self.game_data
 
@@ -96,5 +96,5 @@ class Download:
     name: str = field(default_factory=str, init=False)
     visible: bool = field(init=False, default=True)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.name = self.location.name

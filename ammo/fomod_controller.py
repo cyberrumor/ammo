@@ -81,7 +81,7 @@ class FomodController(Controller):
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
         return super()._autocomplete(text, state)
 
-    def _populate_index_commands(self):
+    def _populate_index_commands(self) -> None:
         """
         Hack to get dynamically allocated methods which are
         named after numbers, one for each selectable option.
@@ -138,7 +138,9 @@ class FomodController(Controller):
                         plug_dict = {}
                         plugin_name = plugin.get("name").strip()
                         plug_dict["name"] = plugin_name
-                        plug_dict["description"] = plugin.findtext("description",default="").strip()
+                        plug_dict["description"] = plugin.findtext(
+                            "description", default=""
+                        ).strip()
                         plug_dict["flags"] = {}
                         # Automatically mark the first option as selected when
                         # a selection is required.
@@ -207,7 +209,7 @@ class FomodController(Controller):
                 match = True
         return match
 
-    def _select(self, index: int):
+    def _select(self, index: int) -> None:
         """
         Toggle the 'selected' switch on appropriate plugins.
         This logic ensures any constraints on selections are obeyed.
@@ -308,7 +310,7 @@ class FomodController(Controller):
         ), "The selected options failed to map to installable components."
         return selected_nodes
 
-    def _install_files(self, selected_nodes: list):
+    def _install_files(self, selected_nodes: list) -> None:
         """
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's Data folder.
@@ -388,7 +390,7 @@ class FomodController(Controller):
 
         self.mod.install_dir = self.mod.game_root
 
-    def b(self):
+    def b(self) -> None:
         """
         Return to the previous page
         """
@@ -397,13 +399,13 @@ class FomodController(Controller):
             self.page_index = 0
             raise Warning("Can't go back from here.")
 
-    def n(self):
+    def n(self) -> None:
         """
         Advance to the next page
         """
         self.page_index += 1
 
-    def exit(self):
+    def exit(self) -> None:
         """
         Abandon configuration
         """

@@ -122,7 +122,7 @@ class GameController(Controller):
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
         return super()._autocomplete(text, state)
 
-    def _populate_index_commands(self):
+    def _populate_index_commands(self) -> None:
         """
         Hack to get methods named after numbers,
         one for each selectable option.
@@ -134,7 +134,7 @@ class GameController(Controller):
             )
             self.__dict__[str(i)].__doc__ = full_location
 
-    def _manage_game(self, index: int):
+    def _manage_game(self, index: int) -> None:
         """
         Gather paths for the game at <index>. Create an instance of
         ModController for that game, then run it under the UI.
