@@ -407,7 +407,6 @@ class ModController(Controller):
                 # Don't install fomod folders.
                 if corrected_name.lower() == "fomod":
                     continue
-
                 dest = mod.install_dir / corrected_name
 
                 # Add the sanitized full path to the stage, resolving

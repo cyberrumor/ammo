@@ -37,7 +37,9 @@ class Mod:
     def __post_init__(self) -> None:
         self.name = self.location.name
         self.install_dir = self.game_data
-
+        # Explicitly set self.files to an empty list in case we're rereshing
+        # files via manually calling __post_init__.
+        self.files = []
         # Scan the surface level of the mod to determine whether this mod will
         # need to be installed in game.directory or game.data.
         # Also determine whether this is a fomod.

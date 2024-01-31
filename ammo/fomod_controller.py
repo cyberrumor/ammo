@@ -20,6 +20,7 @@ class Selection:
     """
     A wizard-configurable option local to a Page.
     """
+
     name: str
     description: str
     flags: field(default_factory=dict)
@@ -31,12 +32,13 @@ class Selection:
 @dataclass(kw_only=True)
 class Page:
     """
-    A step holds a group of related configurable options.
+    A group of related configurable options.
     """
+
     name: str
     archtype: str
     selections: list[Selection]
-    visibility_conditions: field(default_factory=dict)
+    visibility_conditions: field(default_factory=dict[str, bool])
 
 
 class FomodController(Controller):
@@ -44,22 +46,24 @@ class FomodController(Controller):
         self.mod: Mod = mod
 
         # Parse the fomod installer.
-        tree = ElementTree.parse(str(mod.modconf))
+        tree: ElementTree = ElementTree.parse(str(mod.modconf))
 
         # Get the root node
-        self.xml_root_node = tree.getroot()
+        self.xml_root_node: ElementTree.Element = tree.getroot()
 
         # This is the name of the mod
-        self.module_name = self.xml_root_node.find("moduleName").text
+        self.module_name: str = self.xml_root_node.find("moduleName").text
 
         # Get the pages
-        self.steps = self._get_pages()
-        self.page_index = 0
+        self.steps: list[Page] = self._get_pages()
+        self.page_index: int = 0
         self.flags = self._get_flags()
-        self.visible_pages = self._get_visible_pages()
-        self.page = self.steps[self.steps.index(self.visible_pages[self.page_index])]
-        self.selection = self.page.archtype.lower()
-        self.do_exit = False
+        self.visible_pages: list[Page] = self._get_visible_pages()
+        self.page: Page = self.steps[
+            self.steps.index(self.visible_pages[self.page_index])
+        ]
+        self.selection_type: str = self.page.archtype.lower()
+        self.do_exit: bool = False
         self._populate_index_commands()
 
     def __str__(self) -> str:
@@ -68,41 +72,43 @@ class FomodController(Controller):
         result += "--------------------------------\n"
         result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index].name}\n"
         result += "--------------------------------\n\n"
-        for p in self.page.selections:
-            if p.selected and p.description:
-                result += f"{p.name}\n"
+        for selection in self.page.selections:
+            if selection.selected and selection.description:
+                result += f"{selection.name}\n"
                 result += "--------------------------------\n"
-                for line in textwrap.wrap(f"{p.description}\n\n"):
+                for line in textwrap.wrap(f"{selection.description}\n\n"):
                     result += f"{line}\n"
                 result += "\n"
 
         result += " index | Activated | Option Name\n"
         result += "-------|-----------|------------\n"
 
-        for i, p in enumerate(self.page.selections):
+        for i, selection in enumerate(self.page.selections):
             index = f"[{i}]"
-            enabled = f"[{p.selected}]"
-            result += f"{index:<7} {enabled:<11} {p.name}\n"
+            enabled = f"[{selection.selected}]"
+            result += f"{index:<7} {enabled:<11} {selection.name}\n"
         result += "\n"
         return result
 
     def _prompt(self) -> str:
-        return f"{self.selection} >_: "
+        return f"{self.selection_type} >_: "
 
     def _post_exec(self) -> bool:
         if self.do_exit:
             return True
 
         self.flags = self._get_flags()
-        self.visible_pages = self._get_visible_pages()
+        self.visible_pages: list[Page] = self._get_visible_pages()
         if self.page_index >= len(self.visible_pages):
             # The user advanced to the end of the installer.
-            install_nodes = self._get_nodes()
+            install_nodes: list[ElementTree.Element] = self._get_nodes()
             self._install_files(install_nodes)
             return True
 
-        self.page = self.steps[self.steps.index(self.visible_pages[self.page_index])]
-        self.selection = self.page.archtype.lower()
+        self.page: Page = self.steps[
+            self.steps.index(self.visible_pages[self.page_index])
+        ]
+        self.selection_type: str = self.page.archtype.lower()
         self._populate_index_commands()
         return False
 
@@ -139,7 +145,7 @@ class FomodController(Controller):
                         # Skip the false positive.
                         continue
 
-                    visibility_conditions = {}
+                    visibility_conditions: dict[str, bool] = {}
 
                     # Collect this step's visibility conditions. Associate it
                     # with the group instead of the step. This is inefficient
