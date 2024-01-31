@@ -541,6 +541,14 @@ class ModController(Controller):
                 "Names can only contain alphanumeric characters or underscores"
             )
 
+        forbidden_names = []
+        for i in self.game.data.parts:
+            forbidden_names.append(i.lower())
+        if name.lower() in forbidden_names:
+            raise Warning(
+                f"Choose something else. These names are forbidden: {forbidden_names}"
+            )
+
         if component == DeleteEnum.DOWNLOAD:
             try:
                 download = self.downloads[index]
