@@ -36,7 +36,8 @@ class AmmoController:
     Ammo's configuration directory will be set up as AMMO_DIR,
     if it doesn't already exist.
 
-    Removes those folders on exit or error.
+    Removes those folders on exit or error. Raises AssertionError
+    after exit logic if there were broken symlinks.
     """
 
     def __init__(self):
@@ -57,11 +58,14 @@ class AmmoController:
         ammo instance. This ensures no reliance on a state
         created by a previous test.
         """
+        broken_symlinks = {}
         # remove symlinks
         for dirpath, _dirnames, filenames in os.walk(self.game.directory):
             for file in filenames:
                 full_path = Path(dirpath) / file
                 if full_path.is_symlink():
+                    if (dest := full_path.resolve()).exists() is False:
+                        broken_symlinks[str(full_path)] = str(dest)
                     full_path.unlink()
 
         # remove empty directories
@@ -81,6 +85,8 @@ class AmmoController:
             shutil.rmtree(self.game.directory)
         if AMMO_DIR.exists():
             shutil.rmtree(AMMO_DIR)
+
+        assert {} == broken_symlinks
 
 
 class FomodContextManager:

@@ -152,18 +152,19 @@ def test_controller_enabled_plugin_is_broken_symlink():
     Test that when an enabled plugin's symlink points at a non-existing file,
     the plugin is not shown.
     """
-    with AmmoController() as first_launch:
-        index = install_mod(first_launch, "conflict_1")
-        mod = first_launch.mods[index]
-        plugin = first_launch.plugins[0]
+    with pytest.raises(AssertionError):
+        with AmmoController() as first_launch:
+            index = install_mod(first_launch, "conflict_1")
+            mod = first_launch.mods[index]
+            plugin = first_launch.plugins[0]
 
-        file = [i for i in mod.files if i.name == "mock_plugin.esp"][0]
-        file.unlink()
+            file = [i for i in mod.files if i.name == "mock_plugin.esp"][0]
+            file.unlink()
 
-        with AmmoController() as controller:
-            mod = controller.mods[index]
-            assert mod.enabled is True
-            assert len(controller.plugins) == 0
+            with AmmoController() as controller:
+                mod = controller.mods[index]
+                assert mod.enabled is True
+                assert len(controller.plugins) == 0
 
 
 def test_controller_disabled_broken_mod_enabled_plugin():
@@ -206,13 +207,14 @@ def test_controller_missing_mod():
     found (because it was deleted from ammo's mod dir) isn't added
     to mods.
     """
-    with AmmoController() as first_launch:
-        index = install_mod(first_launch, "normal_mod")
-        mod = first_launch.mods[index]
-        shutil.rmtree(mod.location)
+    with pytest.raises(AssertionError):
+        with AmmoController() as first_launch:
+            index = install_mod(first_launch, "normal_mod")
+            mod = first_launch.mods[index]
+            shutil.rmtree(mod.location)
 
-        with AmmoController() as controller:
-            assert len(controller.mods) == 0
+            with AmmoController() as controller:
+                assert len(controller.mods) == 0
 
 
 def test_controller_plugin_without_mod():
