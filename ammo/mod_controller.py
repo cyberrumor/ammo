@@ -26,6 +26,7 @@ from .component import (
     Plugin,
     DeleteEnum,
     ComponentEnum,
+    RenameEnum,
 )
 from .lib import normalize
 
@@ -534,13 +535,13 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-    def rename(self, component: DeleteEnum, index: int, name: str) -> None:
+    def rename(self, component: RenameEnum, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores
         """
-        if component not in list(DeleteEnum):
+        if component not in list(RenameEnum):
             raise Warning(
-                f"Can only rename components of types {[i.value for i in list(DeleteEnum)]}, not {component}"
+                f"Can only rename components of types {[i.value for i in list(RenameEnum)]}, not {component}"
             )
         if self.changes is True:
             raise Warning("You must `commit` changes before renaming.")
@@ -558,7 +559,7 @@ class ModController(Controller):
                 f"Choose something else. These names are forbidden: {forbidden_names}"
             )
 
-        if component == DeleteEnum.DOWNLOAD:
+        if component == RenameEnum.DOWNLOAD:
             try:
                 download = self.downloads[index]
             except IndexError as e:
@@ -584,7 +585,7 @@ class ModController(Controller):
             self.refresh()
             return
 
-        assert component == DeleteEnum.MOD
+        assert component == RenameEnum.MOD
         try:
             mod = self.mods[index]
         except IndexError as e:
@@ -625,8 +626,8 @@ class ModController(Controller):
                 raise Warning(f"Expected int, got '{index}'")
 
         if component == DeleteEnum.MOD:
-            deleted_mods = ""
             if index == "all":
+                deleted_mods = ""
                 visible_mods = [i for i in self.mods if i.visible]
                 for mod in visible_mods:
                     self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
@@ -647,6 +648,39 @@ class ModController(Controller):
             shutil.rmtree(mod.location)
             self.commit()
             raise Warning(f"Deleted mod: {mod.name}")
+
+        if component == DeleteEnum.PLUGIN:
+
+            def get_plugin_file(plugin: Plugin) -> Union[None, Path]:
+                for p in plugin.mod.files:
+                    if p.name == plugin.name:
+                        return p
+
+            if index == "all":
+                deleted_plugins = ""
+                visible_plugins = [i for i in self.plugins if plugin.visible]
+                for plugin in visible_plugins:
+                    self.deactivate(ComponentEnum.PLUGIN, self.plugins.index(plugin))
+                for plugin in visible_plugins:
+                    if plugin.mod is None or plugin.name in (p.name for p in self.dlc):
+                        raise Warning(
+                            f"Deleted plugins:\n{deleted_plugins}\nCouldn't delete DLC {plugin.name}"
+                        )
+                    self.plugins.pop(self.plugins.index(plugin))
+                    if (p := get_plugin_file(plugin)) and p.exists():
+                        p.unlink()
+                        deleted_plugins += f"{plugin.name}\n"
+                self.commit()
+                raise Warning(f"Deleted plugins:\n{deleted_plugins}")
+            try:
+                plugin = self.plugins.pop(index)
+                if (p := get_plugin_file(plugin)) and p.exists():
+                    p.unlink()
+            except IndexError as e:
+                raise Warning(e)
+
+            self.commit()
+            raise Warning(f"Deleted plugin: {plugin.name}")
 
         assert component == DeleteEnum.DOWNLOAD
         if index == "all":

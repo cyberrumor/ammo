@@ -74,7 +74,7 @@ pip3 install --user --force-reinstall . || pip3 install --user --break-system-pa
 | commit      |                                         | Apply pending changes |
 | configure   | \<index>                                | Configure a fomod |
 | deactivate  | (mod\|plugin) \<index>                  | Disabled components will not be loaded by game |
-| delete      | (mod\|download) \<index>                | Removes specified file from the filesystem |
+| delete      | (mod\|download\|plugin) \<index>        | Removes specified file from the filesystem |
 | exit        |                                         | Quit |
 | find        | [\<keyword> ...]                        | Show only components with any keyword |
 | help        |                                         | Show this menu |

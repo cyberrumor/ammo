@@ -17,6 +17,12 @@ class ComponentEnum(str, Enum):
 class DeleteEnum(str, Enum):
     MOD = "mod"
     DOWNLOAD = "download"
+    PLUGIN = "plugin"
+
+
+class RenameEnum(str, Enum):
+    MOD = "mod"
+    DOWNLOAD = "download"
 
 
 @dataclass(slots=True, kw_only=True)
