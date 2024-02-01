@@ -275,7 +275,7 @@ class FomodController(Controller):
             # if there's no condition for visibility, just show it.
             if not page.visibility_conditions
             # if there's conditions, only include if the conditions are met.
-            or self._flags_match(page.visility_conditions)
+            or self._flags_match(page.visibility_conditions)
         ]
 
     def _get_nodes(self) -> list[ElementTree.Element]:

@@ -145,6 +145,11 @@ class ModController(Controller):
                     continue
 
                 name = line.strip().strip("*").strip()
+
+                # Don't add duplicate plugins
+                if name in [p.name for p in self.plugins]:
+                    continue
+
                 enabled = self.game.enabled_formula(line)
 
                 # Iterate through our mods in reverse so we can assign the conflict
@@ -161,15 +166,15 @@ class ModController(Controller):
                     # Only add plugins without mods if the plugin file exists
                     # and isn't a symlink, because symlinks could be artifacts
                     # of disabled mods.
-                    if (self.game.data / name).exists() and not (
-                        self.game.data / name
-                    ).is_symlink():
-                        plugin = Plugin(
-                            name=name,
-                            mod=mod,
-                            enabled=enabled,
+                    plugin_file = self.game.data / name
+                    if plugin_file.exists() and not plugin_file.is_symlink():
+                        self.plugins.append(
+                            Plugin(
+                                name=name,
+                                mod=mod,
+                                enabled=enabled,
+                            )
                         )
-                        self.plugins.append(plugin)
                     continue
 
                 if not mod.enabled:
@@ -178,24 +183,27 @@ class ModController(Controller):
                     # added automatically when the parent mod is enabled.
                     continue
 
-                plugin_location = self.game.data / name
-                if not plugin_location.exists() or (
-                    plugin_location.exists() and not plugin_location.resolve().exists()
-                ):
+                # Disqualify plugins that aren't installed correctly
+                # from starting as enabled.
+                plugin_file = self.game.data / name
+                if not plugin_file.exists():
                     enabled = False
-                plugin = Plugin(
-                    name=name,
-                    mod=mod,
-                    enabled=enabled,
+                elif not plugin_file.resolve().exists():
+                    enabled = False
+
+                self.plugins.append(
+                    Plugin(
+                        name=name,
+                        mod=mod,
+                        enabled=enabled,
+                    )
                 )
-                if plugin.name not in [p.name for p in self.plugins]:
-                    self.plugins.append(plugin)
 
         # Finish adding DLC from DLCList.txt that was missing from Plugins.txt.
         # These will be added as disabled. Since order is preserved in Plugins.txt and
         # these were absent from it, their true order can't be preserved.
         for plugin in self.dlc:
-            if plugin.name not in (i.name for i in self.plugins) and plugin.mod is None:
+            if plugin.mod is None and plugin.name not in (i.name for i in self.plugins):
                 self.plugins.append(plugin)
 
         downloads: list[Path] = []
@@ -453,7 +461,7 @@ class ModController(Controller):
         # files, deactivate this mod and commit changes. This prevents a scenario where
         # the user could re-configure a fomod (thereby changing mod.location/Data),
         # and quit ammo without running 'commit', which could leave broken symlinks in their
-        # game.directoryectory.
+        # game.directory.
 
         mod = self.mods[index]
         if not mod.fomod:
@@ -471,11 +479,12 @@ class ModController(Controller):
         except FileNotFoundError:
             pass
 
-        # We need to instantiate a FomodController run it against the UI.
-        # This will be a new instance of the UI. The old UI will wait for
-        # this 'configure' function we're in to return.
+        # We need to instantiate a FomodController and run it against the UI.
+        # This will be a new instance of the UI.
         fomod_controller = FomodController(mod)
         ui = UI(fomod_controller)
+        # ui read/execute/print/loop will break from its loop when the user
+        # exits or advances past the last page of the fomod config wizard.
         ui.repl()
 
         # If we can rebuild the "files" property of the mod, refreshing the controller
