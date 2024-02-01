@@ -7,6 +7,7 @@ import pytest
 
 from ammo.component import (
     ComponentEnum,
+    DeleteEnum,
 )
 from common import (
     AmmoController,
@@ -441,4 +442,26 @@ def test_controller_deactivate_mod_with_multiple_plugins():
         controller.deactivate(ComponentEnum.MOD, 0)
 
         # Ensure all plugins are absent.
+        assert len(controller.plugins) == 0
+
+
+def test_controller_delete_plugin():
+    """
+    Test that deleting a plugin removes the plugin from
+    the parent mod's files somewhere under ~/.local/share/ammo
+    and doesn't leave a broken symlink in the game dir.
+    """
+    with AmmoController() as controller:
+        # Install a mod with a plugin, ensure the plugin is there.
+        install_mod(controller, "normal_mod")
+        assert len(controller.plugins) == 1
+
+        # Delete the plugin, make sure it's gone.
+        controller.delete(DeleteEnum.PLUGIN, 0)
+        assert len(controller.plugins) == 0
+
+        # reinitialize the mod to force a rescan of its files.
+        controller.deactivate(ComponentEnum.MOD, 0)
+        controller.activate(ComponentEnum.MOD, 0)
+        # Ensure the plugin hasn't returned.
         assert len(controller.plugins) == 0

@@ -171,9 +171,36 @@ def test_conflicting_plugins_delete():
             controller.activate(ComponentEnum.MOD, mod_index)
             controller.commit()
 
-        # plugin is disabled, changes were not / are not committed
-        with pytest.raises(Warning):
-            controller.delete(DeleteEnum.MOD, 1)
+        controller.delete(DeleteEnum.MOD, 1)
         assert (
             len(controller.plugins) == 1
         ), "Deleting a mod hid a plugin provided by another mod"
+
+
+def test_conflicting_plugins_delete_plugin():
+    """
+    Install two mods with the same files. Delete a plugin provided
+    by both mods. Expect the plugin to be deleted from both mods.
+    """
+    with AmmoController() as controller:
+        for mod in ["conflict_1", "conflict_2"]:
+            mod_index_download = [i.name for i in controller.downloads].index(
+                mod + ".7z"
+            )
+            controller.install(mod_index_download)
+            mod_index = [i.name for i in controller.mods].index(mod)
+            controller.activate(ComponentEnum.MOD, mod_index)
+            controller.commit()
+
+        controller.delete(DeleteEnum.PLUGIN, 0)
+
+        assert (
+            len(controller.plugins) == 0
+        ), "A plugin provided by multiple enabled mods wasn't deleted."
+
+        controller.deactivate(ComponentEnum.MOD, "all")
+        controller.activate(ComponentEnum.MOD, "all")
+
+        assert (
+            len(controller.plugins) == 0
+        ), "A plugin provided by multiple mods came back from the grave!"

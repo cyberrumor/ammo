@@ -140,18 +140,24 @@ def test_install_validation():
 
 def test_delete_validation():
     """
-    Delete a valid and invalid mod and download
+    Delete a valid and invalid mod, plugin and download
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
+
+        # delete plugin out of range
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum.PLUGIN, 1000)
+
+        # delete plugin in range
+        controller.delete(DeleteEnum.PLUGIN, 0)
 
         # delete mod out of range
         with pytest.raises(Warning):
             controller.delete(DeleteEnum.MOD, 1000)
 
         # delete mod in range
-        with pytest.raises(Warning):
-            controller.delete(DeleteEnum.MOD, 0)
+        controller.delete(DeleteEnum.MOD, 0)
 
         # delete download out of range
         with pytest.raises(Warning):
@@ -164,7 +170,8 @@ def test_delete_validation():
         with pytest.raises(TypeError):
             controller.delete("bogus string", 0)
 
-        # generate an expendable download file
+        # generate an expendable download file, delete
+        # download in range.
         with open(os.path.join(controller.downloads_dir, "temp_download.7z"), "w") as f:
             f.write("")
 
@@ -188,9 +195,11 @@ def test_no_components_validation():
         with pytest.raises(Warning):
             controller.move(ComponentEnum.PLUGIN, 0, 1)
 
-        # attempt to delete mod
+        # attempt to delete mod / plugin
         with pytest.raises(Warning):
             controller.delete(DeleteEnum.MOD, 0)
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum.PLUGIN, 0)
 
         # attempt to activate mod/plugin
         with pytest.raises(Warning):

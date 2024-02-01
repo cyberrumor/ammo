@@ -139,8 +139,7 @@ def test_find_delete_all_mods():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "conflict")
-        with pytest.raises(Warning):
-            controller.delete(DeleteEnum.MOD, "all")
+        controller.delete(DeleteEnum.MOD, "all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

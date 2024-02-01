@@ -132,6 +132,37 @@ def mod_extracts_files(mod_name, files):
                 raise FileNotFoundError(expected_file)
 
 
+def expect_files(directory, files) -> None:
+    """
+    Raise an error if any files are missing or if files
+    that weren't provided exist.
+    """
+    for file in files:
+        expected_file = directory / file
+        if not expected_file.exists():
+            # print the files that _do_ exist to show where things ended up
+            for parent_dir, folders, actual_files in os.walk(directory):
+                print(f"{parent_dir} folders: {folders}")
+                print(f"{parent_dir} files: {actual_files}")
+
+            print(f"expected: {expected_file}")
+            raise FileNotFoundError(expected_file)
+
+        # Catch any broken symlinks.
+        assert (
+            expected_file.readlink().exists()
+        ), f"Detected broken symlink: {expected_file}"
+
+    # Check that no unexpected files exist.
+    for path, folders, filenames in os.walk(directory):
+        for file in filenames:
+            exists = os.path.join(path, file)
+            local_exists = exists.split(str(directory))[-1].lstrip("/")
+            assert local_exists in [
+                str(i) for i in files
+            ], f"Got an extra file: {local_exists}\nExpected only: {[str(i) for i in files]}"
+
+
 def mod_installs_files(mod_name, files):
     """
     Expects the name of a file in Downloads, and a list of file paths that should
@@ -151,24 +182,7 @@ def mod_installs_files(mod_name, files):
             controller.activate(ComponentEnum.PLUGIN, plugin)
 
         controller.commit()
-
-        for file in files:
-            expected_file = controller.game.directory / file
-            if not expected_file.exists():
-                # print the files that _do_ exist to show where things ended up
-                for parent_dir, folders, actual_files in os.walk(
-                    controller.game.directory
-                ):
-                    print(f"{parent_dir} folders: {folders}")
-                    print(f"{parent_dir} files: {actual_files}")
-
-                print(f"expected: {expected_file}")
-                raise FileNotFoundError(expected_file)
-
-            # Catch any broken symlinks.
-            assert (
-                expected_file.readlink().exists()
-            ), f"Detected broken symlink: {expected_file}"
+        expect_files(controller.game.directory, files)
 
 
 def fomod_selections_choose_files(mod_name, files, selections=[]):

@@ -167,13 +167,18 @@ class GameController(Controller):
         ammo_conf = ammo_conf_dir / "ammo.conf"
 
         match game_selection.name:
+            # Some games expect plugins to be disabled if they begin with
+            # something besides the name, like an asterisk. Other games
+            # use asterisk to denote an enabled plugin.
             case "Skyrim":
-                # Skyrim LE considers plugins to be disabled if they begin with something besides the name.
-                enabled_formula = lambda line: len(
-                    line.strip()
-                ) > 0 and not line.strip()[0].startswith("*")
+
+                def enabled_formula(line) -> bool:
+                    return len(line.strip()) > 0 and not line.strip()[0].startswith("*")
+
             case _:
-                enabled_formula = lambda line: line.strip().startswith("*")
+
+                def enabled_formula(line) -> bool:
+                    return line.strip().startswith("*")
 
         game = Game(
             game_selection.name,

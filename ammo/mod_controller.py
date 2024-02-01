@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import readline
+import textwrap
 from collections.abc import Callable
 from pathlib import Path
 from dataclasses import (
@@ -333,13 +334,20 @@ class ModController(Controller):
         """
         Turn a ComponentEnum into either self.mods or self.plugins.
         """
-        if not isinstance(component, ComponentEnum):
-            raise TypeError(
-                f"Expected {[i.value for i in list(ComponentEnum)]}, got {component} of type {type(component)}"
+        if isinstance(component, ComponentEnum):
+            match component:
+                case ComponentEnum.PLUGIN:
+                    return self.plugins
+                case ComponentEnum.MOD:
+                    return self.mods
+        raise TypeError(
+            textwrap.dedent(
+                f"""\
+                Expected {[i.value for i in list(ComponentEnum)]},
+                got {component} of type {type(component)}
+            """
             )
-
-        components = self.plugins if component == ComponentEnum.PLUGIN else self.mods
-        return components
+        )
 
     def _set_component_state(self, component: ComponentEnum, index: int, state: bool):
         """
@@ -354,12 +362,7 @@ class ModController(Controller):
         # Handle mods
         if isinstance(subject, Mod):
             # Handle configuration of fomods
-            if (
-                hasattr(subject, "fomod")
-                and subject.fomod
-                and state
-                and subject.install_dir != self.game.directory
-            ):
+            if subject.fomod and state and subject.install_dir != self.game.directory:
                 raise Warning("Fomods must be configured before they can be enabled.")
 
             subject.enabled = state
@@ -559,55 +562,57 @@ class ModController(Controller):
                 f"Choose something else. These names are forbidden: {forbidden_names}"
             )
 
-        if component == RenameEnum.DOWNLOAD:
-            try:
-                download = self.downloads[index]
-            except IndexError as e:
-                raise Warning(e)
-
-            if "pytest" not in sys.modules:
-                # Don't run this during tests because it's slow.
+        match component:
+            case RenameEnum.DOWNLOAD:
                 try:
-                    print("Verifying archive integrity...")
-                    subprocess.check_output(["7z", "t", f"{download.location}"])
-                except subprocess.CalledProcessError:
+                    download = self.downloads[index]
+                except IndexError as e:
+                    raise Warning(e)
+
+                if "pytest" not in sys.modules:
+                    # Don't run this during tests because it's slow.
+                    try:
+                        print("Verifying archive integrity...")
+                        subprocess.check_output(["7z", "t", f"{download.location}"])
+                    except subprocess.CalledProcessError:
+                        raise Warning(
+                            f"Rename of {index} failed at integrity check. Incomplete download?"
+                        )
+
+                new_location = (
+                    download.location.parent / f"{name}{download.location.suffix}"
+                )
+                if new_location.exists():
                     raise Warning(
-                        f"Rename of {index} failed at integrity check. Incomplete download?"
+                        f"Can't rename because download {new_location} exists."
                     )
 
-            new_location = (
-                download.location.parent / f"{name}{download.location.suffix}"
-            )
-            if new_location.exists():
-                raise Warning(f"Can't rename because download {new_location} exists.")
+                download.location.rename(new_location)
+                self.refresh()
 
-            download.location.rename(new_location)
-            self.refresh()
-            return
+            case RenameEnum.MOD:
+                try:
+                    mod = self.mods[index]
+                except IndexError as e:
+                    raise Warning(e)
 
-        assert component == RenameEnum.MOD
-        try:
-            mod = self.mods[index]
-        except IndexError as e:
-            raise Warning(e)
+                new_location = self.game.ammo_mods_dir / name
+                if new_location.exists():
+                    raise Warning(f"A mod named {str(new_location)} already exists!")
 
-        new_location = self.game.ammo_mods_dir / name
-        if new_location.exists():
-            raise Warning(f"A mod named {str(new_location)} already exists!")
+                # Remove symlinks instead of breaking them.
+                self._clean_data_dir()
 
-        # Remove symlinks instead of breaking them.
-        self._clean_data_dir()
+                # Move the folder, update the mod.
+                mod.location.rename(new_location)
+                mod.location = new_location
+                mod.name = name
 
-        # Move the folder, update the mod.
-        mod.location.rename(new_location)
-        mod.location = new_location
-        mod.name = name
+                # re-assess mod files
+                mod.__post_init__()
 
-        # re-assess mod files
-        mod.__post_init__()
-
-        # re-install symlinks
-        self.commit()
+                # re-install symlinks
+                self.commit()
 
     def delete(self, component: DeleteEnum, index: Union[int, str]) -> None:
         """
@@ -625,77 +630,97 @@ class ModController(Controller):
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
-        if component == DeleteEnum.MOD:
-            if index == "all":
-                deleted_mods = ""
-                visible_mods = [i for i in self.mods if i.visible]
-                for mod in visible_mods:
-                    self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
-                for mod in visible_mods:
-                    self.mods.pop(self.mods.index(mod))
+        match component:
+            case DeleteEnum.MOD:
+                if index == "all":
+                    deleted_mods = ""
+                    visible_mods = [i for i in self.mods if i.visible]
+                    for mod in visible_mods:
+                        self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
+                    for mod in visible_mods:
+                        self.mods.pop(self.mods.index(mod))
+                        shutil.rmtree(mod.location)
+                        deleted_mods += f"{mod.name}\n"
+                    self.commit()
+                else:
+                    try:
+                        self.deactivate(ComponentEnum.MOD, index)
+
+                    except IndexError as e:
+                        # Demote IndexErrors
+                        raise Warning(e)
+
+                    # Remove the mod from the controller then delete it.
+                    mod = self.mods.pop(index)
                     shutil.rmtree(mod.location)
-                    deleted_mods += f"{mod.name}\n"
-                self.commit()
-                raise Warning(f"Deleted mods:\n{deleted_mods}")
-            try:
-                self.deactivate(ComponentEnum.MOD, index)
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
+                    self.commit()
 
-            # Remove the mod from the controller then delete it.
-            mod = self.mods.pop(index)
-            shutil.rmtree(mod.location)
-            self.commit()
-            raise Warning(f"Deleted mod: {mod.name}")
+            case DeleteEnum.PLUGIN:
 
-        if component == DeleteEnum.PLUGIN:
+                def get_plugin_files(plugin):
+                    """
+                    Get plugin files from all enabled mods.
+                    """
+                    for mod in self.mods:
+                        if not mod.enabled:
+                            continue
+                        if plugin.name in mod.plugins:
+                            for file in mod.files:
+                                if all(
+                                    (
+                                        file.name == plugin.name and not file.is_dir(),
+                                        file.parent == mod.location
+                                        or file.parent.name.lower() == "data",
+                                    )
+                                ):
+                                    yield file
+                                    break
 
-            def get_plugin_file(plugin: Plugin) -> Union[None, Path]:
-                for p in plugin.mod.files:
-                    if p.name == plugin.name:
-                        return p
+                if index == "all":
+                    deleted_plugins = ""
+                    visible_plugins = [i for i in self.plugins if i.visible]
 
-            if index == "all":
-                deleted_plugins = ""
-                visible_plugins = [i for i in self.plugins if plugin.visible]
-                for plugin in visible_plugins:
-                    self.deactivate(ComponentEnum.PLUGIN, self.plugins.index(plugin))
-                for plugin in visible_plugins:
-                    if plugin.mod is None or plugin.name in (p.name for p in self.dlc):
-                        raise Warning(
-                            f"Deleted plugins:\n{deleted_plugins}\nCouldn't delete DLC {plugin.name}"
-                        )
-                    self.plugins.pop(self.plugins.index(plugin))
-                    if (p := get_plugin_file(plugin)) and p.exists():
-                        p.unlink()
+                    for plugin in visible_plugins:
+                        if plugin.mod is None or plugin.name in (
+                            p.name for p in self.dlc
+                        ):
+                            self.refresh()
+                            self.commit()
+                        self.plugins.pop(self.plugins.index(plugin))
+                        for file in get_plugin_files(plugin):
+                            if file.exists():
+                                file.unlink()
                         deleted_plugins += f"{plugin.name}\n"
-                self.commit()
-                raise Warning(f"Deleted plugins:\n{deleted_plugins}")
-            try:
-                plugin = self.plugins.pop(index)
-                if (p := get_plugin_file(plugin)) and p.exists():
-                    p.unlink()
-            except IndexError as e:
-                raise Warning(e)
+                    self.refresh()
+                    self.commit()
+                else:
+                    try:
+                        plugin = self.plugins.pop(index)
+                        for file in get_plugin_files(plugin):
+                            if file.exists():
+                                file.unlink()
+                    except IndexError as e:
+                        raise Warning(e)
 
-            self.commit()
-            raise Warning(f"Deleted plugin: {plugin.name}")
+                    self.refresh()
+                    self.commit()
 
-        assert component == DeleteEnum.DOWNLOAD
-        if index == "all":
-            visible_downloads = [i for i in self.downloads if i.visible]
-            for visible_download in visible_downloads:
-                download = self.downloads.pop(self.downloads.index(visible_download))
-                download.location.unlink()
-            return
-        index = int(index)
-        try:
-            download = self.downloads.pop(index)
-        except IndexError as e:
-            # Demote IndexErrors
-            raise Warning(e)
-        download.location.unlink()
+            case DeleteEnum.DOWNLOAD:
+                if index == "all":
+                    visible_downloads = [i for i in self.downloads if i.visible]
+                    for visible_download in visible_downloads:
+                        download = self.downloads.pop(
+                            self.downloads.index(visible_download)
+                        )
+                        download.location.unlink()
+                else:
+                    index = int(index)
+                    try:
+                        download = self.downloads.pop(index)
+                    except IndexError as e:
+                        # Demote IndexErrors
+                        raise Warning(e)
+                    download.location.unlink()
 
     def install(self, index: Union[int, str]) -> None:
         """
