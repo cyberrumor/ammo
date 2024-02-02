@@ -31,7 +31,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 - Supports Steam from your official repository
 - Supports com.valvesoftware.Steam from Flatpak
-- Python 3.10 or later
+- Python 3.11 or later
 - p7z (or something else that puts 7z in your PATH).
 
 ## Installation Instructions
