@@ -2,8 +2,6 @@
 import os
 from pathlib import Path
 
-import pytest
-
 from common import AmmoController
 from ammo.component import (
     ComponentEnum,

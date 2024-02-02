@@ -159,7 +159,7 @@ def test_controller_enabled_plugin_is_broken_symlink():
             mod = first_launch.mods[index]
             plugin = first_launch.plugins[0]
 
-            file = [i for i in mod.files if i.name == "mock_plugin.esp"][0]
+            file = [i for i in mod.files if i.name == plugin.name][0]
             file.unlink()
 
             with AmmoController() as controller:
@@ -296,10 +296,8 @@ def test_controller_plugin_without_mod_or_file():
     mod isn't added if Data/<plugin_name> doesn't exist.
     """
     # Get a plugin install location and plugin conf file location
-    plugin = None
     plugin_file = None
     with AmmoController() as controller:
-        plugin = controller.game.data / "normal_plugin.esp"
         plugin_file = controller.game.plugin_file
 
     # Add the plugin to Plugins.txt as enabled.
