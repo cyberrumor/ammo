@@ -552,8 +552,9 @@ class ModController(Controller):
                         plugins.insert(0, plugin)
                         break
 
+        if self.changes is False:
+            self.changes = self.plugins != plugins
         self.plugins = plugins
-        self.changes = True
 
     def rename(self, component: RenameEnum, index: int, name: str) -> None:
         """

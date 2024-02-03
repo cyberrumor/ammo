@@ -7,7 +7,6 @@ from ammo.component import (
 )
 from common import (
     AmmoController,
-    install_everything,
     install_mod,
     extract_mod,
 )
@@ -18,7 +17,8 @@ def test_move_validation():
     Install several mods, then check various arguments to "move" for validity.
     """
     with AmmoController() as controller:
-        install_everything(controller)
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "multiple_plugins")
 
         # Test valid move mod input
         highest = len(controller.mods) - 1

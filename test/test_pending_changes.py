@@ -8,7 +8,6 @@ from ammo.component import (
 )
 from common import (
     AmmoController,
-    install_everything,
     install_mod,
     extract_mod,
 )
@@ -139,7 +138,8 @@ def test_pending_change_move():
     Tests that a move operation creates a pending change.
     """
     with AmmoController() as controller:
-        install_everything(controller)
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "multiple_plugins")
         controller.move(ComponentEnum.MOD, 0, 1)
         assert (
             controller.changes is True
@@ -152,7 +152,8 @@ def test_pending_change_move_nowhere():
     are the same doesn't create a pending change.
     """
     with AmmoController() as controller:
-        install_everything(controller)
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "multiple_plugins")
         controller.move(ComponentEnum.MOD, 0, 0)
         assert (
             controller.changes is False
@@ -324,7 +325,23 @@ def test_pending_change_sort():
     Tests that the 'sort' command creates a pending change.
     """
     with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "multiple_plugins")
+        controller.move(ComponentEnum.PLUGIN, 0, -1)
+        controller.commit()
         controller.sort()
         assert (
             controller.changes is True
         ), "Sort command didn't create a pending change."
+
+
+def test_pending_change_sort_no_op():
+    """
+    Test 'sort' doesn't create a pending change
+    if it doesn't change the plugin load order.
+    """
+    with AmmoController() as controller:
+        controller.sort()
+        assert (
+            controller.changes is False
+        ), "Sort command created a pending change when it shouldn't have."
