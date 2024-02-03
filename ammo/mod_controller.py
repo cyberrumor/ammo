@@ -261,8 +261,6 @@ class ModController(Controller):
         name, *args = buf.split()
         completions = []
 
-        # print(f"{name=}")
-        # print(f"{args=}")
         assert name in dir(self)
 
         # Identify the method we're calling.
@@ -537,6 +535,25 @@ class ModController(Controller):
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
+
+    def sort(self) -> None:
+        """
+        Arrange plugins by mod order
+        """
+        plugins = []
+        for mod in self.mods[::-1]:
+            if not mod.enabled:
+                continue
+            for plugin_name in mod.plugins:
+                for plugin in self.plugins:
+                    if plugin.name == plugin_name and plugin.name not in (
+                        i.name for i in plugins
+                    ):
+                        plugins.insert(0, plugin)
+                        break
+
+        self.plugins = plugins
+        self.changes = True
 
     def rename(self, component: RenameEnum, index: int, name: str) -> None:
         """

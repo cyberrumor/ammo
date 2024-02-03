@@ -4,6 +4,7 @@ import pytest
 from ammo.component import (
     ComponentEnum,
     DeleteEnum,
+    RenameEnum,
 )
 from common import (
     AmmoController,
@@ -13,12 +14,12 @@ from common import (
 )
 
 
-def test_pending_change_restrictions():
+def test_pending_change_restrictions_delete_mod():
     """
     Actions that require the persistent state and in-memory state to be the
     same should not be possible to perform when there are pending changes.
 
-    Test that the commands configure, delete, install and rename are blocked.
+    Test delete mod.
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
@@ -27,11 +28,110 @@ def test_pending_change_restrictions():
         with pytest.raises(Warning):
             controller.delete(DeleteEnum.MOD, 0)
 
+
+def test_pending_change_restrictions_delete_download():
+    """
+    Actions that require the persistent state and in-memory state to be the
+    same should not be possible to perform when there are pending changes.
+
+    Test delete download.
+    """
+    with AmmoController() as controller:
+        # Create a temp download that we can manipulate,
+        # just in case we're not restricted from deleting it.
+        # Don't want to mess up the expected files in test/Downloads.
+        temp_download = controller.downloads_dir / "temp_download.7z"
+        with open(temp_download, "w") as f:
+            f.write("")
+
+        controller.refresh()
+        controller.changes = True
+
+        download_index = [i.name for i in controller.downloads].index(
+            "temp_download.7z"
+        )
+
+        try:
+            with pytest.raises(Warning):
+                controller.delete(DeleteEnum.DOWNLOAD, download_index)
+        finally:
+            temp_download.unlink(missing_ok=True)
+
+
+def test_pending_change_restrictions_delete_plugin():
+    """
+    Actions that require the persistent state and in-memory state to be the
+    same should not be possible to perform when there are pending changes.
+
+    Test delete plugin.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.changes = True
+
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum.PLUGIN, 0)
+
+
+def test_pending_change_restrictions_install():
+    """
+    Actions that require the persistent state and in-memory state to be the
+    same should not be possible to perform when there are pending changes.
+
+    Test install.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.changes = True
         with pytest.raises(Warning):
             controller.install(1)
 
+
+def test_pending_change_restrictions_rename_mod():
+    """
+    Actions that require the persistent state and in-memory state to be the
+    same should not be possible to perform when there are pending changes.
+
+    Test rename mod.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.changes = True
+
         with pytest.raises(Warning):
-            controller.rename(ComponentEnum.MOD, 0, "new name")
+            controller.rename(RenameEnum.MOD, 0, "new_name")
+
+
+def test_pending_change_restrictions_rename_download():
+    """
+    Actions that require the persistent state and in-memory state to be the
+    same should not be possible to perform when there are pending changes.
+
+    Test rename download.
+    """
+    with AmmoController() as controller:
+        # Create a temp download that we can manipulate,
+        # just in case we're not restricted from renaming it.
+        # Don't want to mess up the expected files in test/Downloads.
+        temp_download = controller.downloads_dir / "temp_download.7z"
+        with open(temp_download, "w") as f:
+            f.write("")
+
+        controller.refresh()
+        controller.changes = True
+
+        download_index = [i.name for i in controller.downloads].index(
+            "temp_download.7z"
+        )
+
+        try:
+            with pytest.raises(Warning):
+                controller.rename(
+                    RenameEnum.DOWNLOAD, download_index, "new_download_name"
+                )
+        finally:
+            temp_download.unlink(missing_ok=True)
+            (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
 
 
 def test_pending_change_move():
@@ -132,12 +232,99 @@ def test_pending_change_install():
         assert controller.changes is False, "Install command created a pending change"
 
 
-def test_pending_change_delete():
+def test_pending_change_delete_mod():
     """
     Tests that delete does not create a pending change.
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        with pytest.raises(TypeError):
-            controller.delete(ComponentEnum.MOD, 0)
-        assert controller.changes is False, "Delete command created a pending change."
+        controller.delete(DeleteEnum.MOD, 0)
+        assert (
+            controller.changes is False
+        ), "Delete mod command created a pending change."
+
+
+def test_pending_change_delete_download():
+    """
+    Tests that delete download does not create a pending change.
+    """
+    with AmmoController() as controller:
+        temp_download = controller.downloads_dir / "temp_download.7z"
+        with open(temp_download, "w") as f:
+            f.write("")
+        controller.refresh()
+
+        download_index = [i.name for i in controller.downloads].index(
+            "temp_download.7z"
+        )
+
+        try:
+            controller.delete(DeleteEnum.DOWNLOAD, download_index)
+            assert (
+                controller.changes is False
+            ), "Delete download command created a pending change."
+        finally:
+            temp_download.unlink(missing_ok=True)
+            (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
+
+
+def test_pending_change_delete_plugin():
+    """
+    Tests that delete plugin does not create a pending change.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.delete(DeleteEnum.PLUGIN, 0)
+        assert (
+            controller.changes is False
+        ), "Delete plugin command created a pending change."
+
+
+def test_pending_change_rename_mod():
+    """
+    Tests that renaming a mod does not create a pending change.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.rename(RenameEnum.MOD, 0, "new_mod_name")
+        assert (
+            controller.changes is False
+        ), "Rename mod command created a pending change."
+
+
+def test_pending_change_rename_download():
+    """
+    Tests that renaming a download does not create a pending change.
+    """
+    # generate an expendable download file, delete
+    # download in range.
+    with AmmoController() as controller:
+        temp_download = controller.downloads_dir / "temp_download.7z"
+        with open(temp_download, "w") as f:
+            f.write("")
+
+        controller.refresh()
+
+        download_index = [i.name for i in controller.downloads].index(
+            "temp_download.7z"
+        )
+
+        try:
+            controller.rename(RenameEnum.DOWNLOAD, download_index, "new_download_name")
+            assert (
+                controller.changes is False
+            ), "Rename download command created a pending change."
+        finally:
+            temp_download.unlink(missing_ok=True)
+            (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
+
+
+def test_pending_change_sort():
+    """
+    Tests that the 'sort' command creates a pending change.
+    """
+    with AmmoController() as controller:
+        controller.sort()
+        assert (
+            controller.changes is True
+        ), "Sort command didn't create a pending change."

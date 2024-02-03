@@ -82,6 +82,7 @@ pip3 install --user --force-reinstall . || pip3 install --user --break-system-pa
 | move        | (mod\|plugin) \<from_index> \<to_index> | Larger numbers win file conflicts |
 | refresh     |                                         | Abandon pending changes |
 | rename      | (mod\|download) \<index> \<name>        | Names may contain alphanumerics and underscores |
+| sort        |                                         | Arrange plugins by mod order |
 
 
 ### Usage Tips and Tricks
@@ -89,16 +90,6 @@ pip3 install --user --force-reinstall . || pip3 install --user --break-system-pa
 - Note that the `{de}activate (mod|plugin)` command supports `all` in place of `<index>`.
   This will activate or deactivate all mods or plugins that are visible. Combine this
   with the `find` command to quickly organize groups of components with related names.
-  You can leverage this to automatically sort your plugins to the same order as your
-  mod list:
-
-    ```sh
-    deactivate mod all
-    # sort your mods with the move command
-    activate mod all
-    activate plugin all
-    commit
-    ```
 
 - The `find` command accepts a special `fomods` argument that will filter by fomods.
 
@@ -107,7 +98,6 @@ pip3 install --user --force-reinstall . || pip3 install --user --break-system-pa
   keyword. This is an additive filter, so more words equals more matches.
 
 - You can easily return to vanilla like this:
-
   ```sh
   deactivate mod all
   commit
@@ -121,8 +111,6 @@ pip3 install --user --force-reinstall . || pip3 install --user --break-system-pa
 - If you have several downloads and you want to install all of them at once, simply
   `install all`.
 
-- Combining `find` filters with `all` is a great way to quickly manage groups of
-  related components, as the `all` keyword only operates on visible components.
 
 ## Contributing
 
