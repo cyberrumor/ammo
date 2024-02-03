@@ -14,18 +14,15 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Enderal
 - Enderal Special Edition
 
-## AMMO vs Manual
+## Features
 
-- AMMO only:
-  - FOMOD install wizard.
-  - Ability to return to vanilla game state easily.
-  - Load order management, including activation / deactivation.
-- AMMO and Manual:
-  - No dependency checking or automated load order handling.
-  - No Nexus integration. Manual downloads only.
-- Manual only:
-  - Even minor mistakes are catastrophic.
-  - Returning to vanilla requires nuke/pave/reinstall.
+- install mods from ~/Downloads
+- activate/deactivate mods/plugins
+- reorder mods/plugins
+- rename mods/plugins/downloads
+- delete mods/plugins/downloads
+- autosort plugins by mod order
+- supports FOMOD configuration
 
 ## Dependencies
 
