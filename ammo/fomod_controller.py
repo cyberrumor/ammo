@@ -348,9 +348,9 @@ class FomodController(Controller):
     def _install_files(self, selected_nodes: list) -> None:
         """
         Copy the chosen files 'selected_nodes' from given mod at 'index'
-        to that mod's Data folder.
+        to that mod's game files folder.
         """
-        data = self.mod.location / "Data"
+        data = self.mod.location / self.mod.game_data.name
 
         # delete the old configuration if it exists
         shutil.rmtree(data, ignore_errors=True)
@@ -375,7 +375,8 @@ class FomodController(Controller):
                         break
                 full_source = full_source / folder
 
-            # get the 'destination' folder from the xml. This path is relative to Data.
+            # get the 'destination' folder from the xml. This path is relative to
+            # the mod's game files folder.
             full_destination = reduce(
                 lambda path, name: path / name,
                 node.get("destination").split("\\"),

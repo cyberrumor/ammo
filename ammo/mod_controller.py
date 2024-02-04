@@ -343,7 +343,7 @@ class ModController(Controller):
                 f"""\
                 Expected {[i.value for i in list(ComponentEnum)]},
                 got {component} of type {type(component)}
-            """
+                """
             )
         )
 
@@ -408,7 +408,7 @@ class ModController(Controller):
         # destination: (mod_name, source)
         result = {}
         # Iterate through enabled mods in order.
-        for mod in [i for i in self.mods if i.enabled]:
+        for mod in (i for i in self.mods if i.enabled):
             # Iterate through the source files of the mod
             for src in mod.files:
                 # Get the sanitized full path relative to the game.directory.
@@ -438,7 +438,7 @@ class ModController(Controller):
                 except OSError:
                     pass
 
-    def _clean_data_dir(self):
+    def _clean_game_dir(self):
         """
         Removes all links and deletes empty folders.
         """
@@ -461,7 +461,7 @@ class ModController(Controller):
 
         # Since there must be a hard refresh after the fomod wizard to load the mod's new
         # files, deactivate this mod and commit changes. This prevents a scenario where
-        # the user could re-configure a fomod (thereby changing mod.location/Data),
+        # the user could re-configure a fomod (thereby changing mod.location/self.game.data.name),
         # and quit ammo without running 'commit', which could leave broken symlinks in their
         # game.directory.
 
@@ -477,7 +477,7 @@ class ModController(Controller):
 
         # Clean up previous configuration, if it exists.
         try:
-            shutil.rmtree(mod.location / "Data")
+            shutil.rmtree(mod.location / self.game.data.name)
         except FileNotFoundError:
             pass
 
@@ -619,7 +619,7 @@ class ModController(Controller):
                     raise Warning(f"A mod named {str(new_location)} already exists!")
 
                 # Remove symlinks instead of breaking them.
-                self._clean_data_dir()
+                self._clean_game_dir()
 
                 # Move the folder, update the mod.
                 mod.location.rename(new_location)
@@ -688,7 +688,8 @@ class ModController(Controller):
                                     (
                                         file.name == plugin.name and not file.is_dir(),
                                         file.parent == mod.location
-                                        or file.parent.name.lower() == "data",
+                                        or file.parent.name.lower()
+                                        == self.game.data.name.lower(),
                                     )
                                 ):
                                     yield file
@@ -761,7 +762,7 @@ class ModController(Controller):
                     files[0].is_dir(),
                     files[0].name.lower()
                     not in [
-                        "data",
+                        self.game.data.name.lower(),
                         "skse",
                         "bashtags",
                         "docs",
@@ -808,7 +809,7 @@ class ModController(Controller):
             if has_extra_folder(extract_to):
                 # It is reasonable to conclude an extra directory can be eliminated.
                 # This is needed for mods like skse that have a version directory
-                # between the mod's base folder and the Data folder.
+                # between the mod's base folder and the self.game.data.name folder.
                 for file in next(extract_to.iterdir()).iterdir():
                     file.rename(extract_to / file.name)
 
@@ -872,7 +873,7 @@ class ModController(Controller):
         """
         self._save_order()
         stage = self._stage()
-        self._clean_data_dir()
+        self._clean_game_dir()
 
         count = len(stage)
         skipped_files = []

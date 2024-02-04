@@ -53,7 +53,7 @@ class Mod:
             match file.is_dir():
                 case True:
                     match file.name.lower():
-                        case "data":
+                        case "data" | "data files":
                             self.install_dir = self.game_root
 
                         case "edit scripts":
@@ -71,10 +71,10 @@ class Mod:
                         self.install_dir = self.game_root
 
         # Determine which folder to populate self.files from. For fomods, only
-        # care about files inside of a Data folder which may or may not exist.
+        # care about files inside of a game_data.name folder which may or may not exist.
         location = self.location
         if self.fomod:
-            location = location / "Data"
+            location = location / self.game_data.name
 
         # Populate self.files
         for parent_dir, _, files in os.walk(location):
@@ -84,7 +84,10 @@ class Mod:
 
                 if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
                     # Only associate plugins if the plugins are under a data dir.
-                    if loc_parent == self.location or loc_parent.name.lower() == "data":
+                    if (
+                        loc_parent == self.location
+                        or loc_parent.name.lower() == self.game_data.name.lower()
+                    ):
                         self.plugins.append(f.name)
 
                 self.files.append(loc_parent / f)

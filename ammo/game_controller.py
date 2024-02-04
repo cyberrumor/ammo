@@ -173,7 +173,7 @@ class GameController(Controller):
             case "Skyrim":
 
                 def enabled_formula(line) -> bool:
-                    return len(line.strip()) > 0 and not line.strip()[0].startswith("*")
+                    return not line.strip().startswith("*")
 
             case _:
 
