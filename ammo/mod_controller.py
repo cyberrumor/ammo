@@ -431,7 +431,7 @@ class ModController(Controller):
                 dest = mod.install_dir / corrected_name
 
                 # Add the sanitized full path to the stage, resolving
-                # conflicts. Record whether a mod conflicting files.
+                # conflicts. Record whether a mod has conflicting files.
                 dest = normalize(dest, self.game.directory)
                 if dest in result:
                     conflicting_mod = [
@@ -985,5 +985,5 @@ class ModController(Controller):
             if kw == "plugins":
                 for component in self.mods + self.downloads:
                     component.visible = False
-                for component in self.mods:
+                for component in self.plugins:
                     component.visible = True

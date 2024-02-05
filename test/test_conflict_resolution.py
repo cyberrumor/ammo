@@ -10,6 +10,7 @@ from common import (
 from ammo.component import (
     ComponentEnum,
     DeleteEnum,
+    RenameEnum,
 )
 
 
@@ -295,7 +296,7 @@ def test_conflicting_mods_have_conflict_flag_after_deactivate():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        controller.deactivate(ComponentEnum.MOD, 3)
+        controller.deactivate(ComponentEnum.MOD, 2)
 
         assert (
             controller.mods[
