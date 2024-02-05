@@ -168,7 +168,7 @@ class FomodController(Controller):
                         visibility_conditions=visibility_conditions,
                     )
 
-                    for plugin_index, plugin in enumerate(group_of_plugins):
+                    for i, plugin in enumerate(group_of_plugins):
                         name = plugin.get("name").strip()
                         description = plugin.findtext("description", default="").strip()
                         flags = {}
@@ -176,7 +176,7 @@ class FomodController(Controller):
                         # a selection is required.
                         selected = (
                             page.archtype in ["SelectExactlyOne", "SelectAtLeastOne"]
-                        ) and plugin_index == 0
+                        ) and i == 0
 
                         # Interpret on/off or 1/0 as true/false
                         if conditional_flags := plugin.find("conditionFlags"):
@@ -194,9 +194,7 @@ class FomodController(Controller):
                             # unconditional install.
                             conditional = False
 
-                        files = []
-                        if plugin_files := plugin.find("files"):
-                            files.extend(plugin_files)
+                        files = plugin.find("files") or []
 
                         page.selections.append(
                             Selection(

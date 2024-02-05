@@ -218,6 +218,7 @@ class ModController(Controller):
         self.downloads = downloads
         self.changes = False
         self.find(*self.keywords)
+        self._stage()
 
     def __str__(self) -> str:
         """
@@ -230,22 +231,28 @@ class ModController(Controller):
 
             for i, download in enumerate(self.downloads):
                 if download.visible:
-                    index = f"[{i}]"
-                    result += f"{index:<7} {download.name}\n"
+                    priority = f"[{i}]"
+                    result += f"{priority:<7} {download.name}\n"
             result += "\n"
 
-        for index, components in enumerate([self.mods, self.plugins]):
-            result += (
-                f" index | Activated | {'Mod name' if index == 0 else 'Plugin name'}\n"
-            )
-            result += "-------|-----------|------------\n"
-            for i, component in enumerate(components):
-                if component.visible:
-                    priority = f"[{i}]"
-                    enabled = f"[{component.enabled}]"
-                    result += f"{priority:<7} {enabled:<11} {component.name}\n"
-            if index == 0:
-                result += "\n"
+        result += " index | Activated | Mod name\n"
+        result += "-------|-----------|------------\n"
+        for i, mod in enumerate(self.mods):
+            if mod.visible:
+                priority = f"[{i}]"
+                enabled = f"[{mod.enabled}]"
+                conflict = "*" if mod.conflict else " "
+                result += f"{priority:<7} {enabled:<9} {conflict:<1} {mod.name}\n"
+
+        result += "\n"
+        result += " index | Activated | Plugin name\n"
+        result += "-------|-----------|------------\n"
+        for i, plugin in enumerate(self.plugins):
+            if plugin.visible:
+                priority = f"[{i}]"
+                enabled = f"[{plugin.enabled}]"
+                result += f"{priority:<7} {enabled:<11} {plugin.name}\n"
+
         return result
 
     def _prompt(self):
@@ -403,12 +410,16 @@ class ModController(Controller):
 
     def _stage(self) -> dict:
         """
-        Returns a dict containing the final symlinks that will be installed.
+        Responsible for assigning mod.conflict for the staged configuration.
+        Returns a dict containing the final symlinks that would be installed.
         """
         # destination: (mod_name, source)
         result = {}
         # Iterate through enabled mods in order.
-        for mod in (i for i in self.mods if i.enabled):
+        for mod in self.mods:
+            mod.conflict = False
+        enabled_mods = [i for i in self.mods if i.enabled]
+        for index, mod in enumerate(enabled_mods):
             # Iterate through the source files of the mod
             for src in mod.files:
                 # Get the sanitized full path relative to the game.directory.
@@ -420,8 +431,15 @@ class ModController(Controller):
                 dest = mod.install_dir / corrected_name
 
                 # Add the sanitized full path to the stage, resolving
-                # conflicts.
+                # conflicts. Record whether a mod conflicting files.
                 dest = normalize(dest, self.game.directory)
+                if dest in result:
+                    conflicting_mod = [
+                        i for i in enabled_mods[:index] if i.name == result[dest][0]
+                    ]
+                    if conflicting_mod and conflicting_mod[0].enabled:
+                        mod.conflict = True
+                        conflicting_mod[0].conflict = True
                 result[dest] = (mod.name, src)
 
         return result
@@ -514,6 +532,7 @@ class ModController(Controller):
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
+        self._stage()
 
     def deactivate(self, component: ComponentEnum, index: Union[int, str]) -> None:
         """
@@ -535,6 +554,7 @@ class ModController(Controller):
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
+        self._stage()
 
     def sort(self) -> None:
         """
@@ -825,10 +845,10 @@ class ModController(Controller):
 
         if index == "all":
             errors = []
-            for index, download in enumerate(self.downloads):
+            for i, download in enumerate(self.downloads):
                 if download.visible:
                     try:
-                        install_download(index, download)
+                        install_download(i, download)
                     except Warning as e:
                         errors.append(str(e))
             if errors:
@@ -866,6 +886,7 @@ class ModController(Controller):
         comp = components.pop(index)
         components.insert(new_index, comp)
         self.changes = True
+        self._stage()
 
     def commit(self) -> None:
         """
@@ -877,7 +898,7 @@ class ModController(Controller):
 
         count = len(stage)
         skipped_files = []
-        for index, (dest, source) in enumerate(stage.items()):
+        for i, (dest, source) in enumerate(stage.items()):
             (name, src) = source
             assert dest.is_absolute()
             assert src.is_absolute()
@@ -890,7 +911,7 @@ class ModController(Controller):
                         {str(dest).split(str(self.game.directory))[-1].lstrip('/')}."
                 )
             finally:
-                print(f"files processed: {index+1}/{count}", end="\r", flush=True)
+                print(f"files processed: {i+1}/{count}", end="\r", flush=True)
 
         warn = ""
         for skipped_file in skipped_files:

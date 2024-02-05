@@ -36,6 +36,7 @@ class Mod:
     install_dir: Path = field(init=False)
     fomod: bool = field(init=False, default=False)
     enabled: bool = field(init=False, default=False)
+    conflict: bool = field(init=False, default=False)
     files: list[Path] = field(default_factory=list, init=False)
     plugins: list[str] = field(default_factory=list, init=False)
     name: str = field(default_factory=str, init=False)
