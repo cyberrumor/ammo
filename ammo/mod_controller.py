@@ -81,7 +81,6 @@ class ModController(Controller):
             mods.append(mod)
 
         # Read self.game.ammo_conf. If there's mods in it, put them in order.
-        ordered_mods = []
         if self.game.ammo_conf.exists():
             with open(self.game.ammo_conf, "r") as file:
                 for line in file:
@@ -95,19 +94,14 @@ class ModController(Controller):
                             continue
 
                         mod.enabled = enabled
-                        ordered_mods.append(mod)
+                        self.mods.append(mod)
                         break
 
-            # Put mods that aren't listed in self.game.ammo_conf file
-            # at the end in an arbitrary order.
-            for mod in mods:
-                if mod not in ordered_mods:
-                    ordered_mods.append(mod)
-
-        # If ordered_mods is empty, the config either didn't exist or
-        # had nothing in it. In either case just load up the mods made
-        # from folders earlier. Otherwise use our ordered mods.
-        self.mods = ordered_mods if ordered_mods else mods
+        # Put mods that aren't listed in self.game.ammo_conf file
+        # at the end in an arbitrary order.
+        for mod in mods:
+            if mod not in self.mods:
+                self.mods.append(mod)
 
         Path.mkdir(self.game.plugin_file.parent, parents=True, exist_ok=True)
         if not self.game.plugin_file.exists():
@@ -225,7 +219,7 @@ class ModController(Controller):
         Output a string representing all downloads, mods and plugins.
         """
         result = ""
-        if len(self.downloads):
+        if len([i for i in self.downloads if i.visible]):
             result += " index | Download\n"
             result += "-------|---------\n"
 
@@ -235,23 +229,28 @@ class ModController(Controller):
                     result += f"{priority:<7} {download.name}\n"
             result += "\n"
 
-        result += " index | Activated | Mod name\n"
-        result += "-------|-----------|------------\n"
-        for i, mod in enumerate(self.mods):
-            if mod.visible:
-                priority = f"[{i}]"
-                enabled = f"[{mod.enabled}]"
-                conflict = "*" if mod.conflict else " "
-                result += f"{priority:<7} {enabled:<9} {conflict:<1} {mod.name}\n"
+        if len([i for i in self.mods if i.visible]):
+            result += " index | Activated | Mod name\n"
+            result += "-------|-----------|------------\n"
+            for i, mod in enumerate(self.mods):
+                if mod.visible:
+                    priority = f"[{i}]"
+                    enabled = f"[{mod.enabled}]"
+                    conflict = "*" if mod.conflict else " "
+                    result += f"{priority:<7} {enabled:<9} {conflict:<1} {mod.name}\n"
 
-        result += "\n"
-        result += " index | Activated | Plugin name\n"
-        result += "-------|-----------|------------\n"
-        for i, plugin in enumerate(self.plugins):
-            if plugin.visible:
-                priority = f"[{i}]"
-                enabled = f"[{plugin.enabled}]"
-                result += f"{priority:<7} {enabled:<11} {plugin.name}\n"
+        if len([i for i in self.plugins if i.visible]):
+            result += "\n"
+            result += " index | Activated | Plugin name\n"
+            result += "-------|-----------|------------\n"
+            for i, plugin in enumerate(self.plugins):
+                if plugin.visible:
+                    priority = f"[{i}]"
+                    enabled = f"[{plugin.enabled}]"
+                    result += f"{priority:<7} {enabled:<11} {plugin.name}\n"
+
+        if not result:
+            result = "\n"
 
         return result
 
@@ -408,13 +407,14 @@ class ModController(Controller):
         if not self.changes:
             self.changes = starting_state != subject.enabled
 
+
     def _stage(self) -> dict:
         """
         Responsible for assigning mod.conflict for the staged configuration.
         Returns a dict containing the final symlinks that would be installed.
         """
-        # destination: (mod_name, source)
-        result = {}
+        # { destination: (mod_name, source), ... }
+        result: dict[str, tuple[str, Path]] = {}
         # Iterate through enabled mods in order.
         for mod in self.mods:
             mod.conflict = False
@@ -564,8 +564,8 @@ class ModController(Controller):
         for mod in self.mods[::-1]:
             if not mod.enabled:
                 continue
-            for plugin_name in mod.plugins:
-                for plugin in self.plugins:
+            for plugin in self.plugins[::-1]:
+                for plugin_name in mod.plugins:
                     if plugin.name == plugin_name and plugin.name not in (
                         i.name for i in plugins
                     ):
