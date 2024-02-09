@@ -886,7 +886,6 @@ class ModController(Controller):
         comp = components.pop(index)
         components.insert(new_index, comp)
         self.changes = True
-        self._stage()
 
     def commit(self) -> None:
         """
