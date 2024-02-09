@@ -143,7 +143,7 @@ class ModController(Controller):
                 name = line.strip().strip("*").strip()
 
                 # Don't add duplicate plugins
-                if name in [p.name for p in self.plugins]:
+                if name.lower() in (p.name.lower() for p in self.plugins):
                     continue
 
                 enabled = self.game.enabled_formula(line)
@@ -247,7 +247,10 @@ class ModController(Controller):
                 if plugin.visible:
                     priority = f"[{i}]"
                     enabled = f"[{plugin.enabled}]"
-                    result += f"{priority:<7} {enabled:<11} {plugin.name}\n"
+                    conflict = "*" if plugin.conflict else " "
+                    result += (
+                        f"{priority:<7} {enabled:<9} {conflict:<1} {plugin.name}\n"
+                    )
 
         if not result:
             result = "\n"
@@ -407,7 +410,6 @@ class ModController(Controller):
         if not self.changes:
             self.changes = starting_state != subject.enabled
 
-
     def _stage(self) -> dict:
         """
         Responsible for assigning mod.conflict for the staged configuration.
@@ -441,6 +443,15 @@ class ModController(Controller):
                         mod.conflict = True
                         conflicting_mod[0].conflict = True
                 result[dest] = (mod.name, src)
+
+        plugin_names = []
+        for mod in self.mods:
+            if mod.enabled:
+                plugin_names.extend(mod.plugins)
+        for plugin in self.plugins:
+            plugin.conflict = False
+            if plugin_names.count(plugin.name.lower()) > 1:
+                plugin.conflict = True
 
         return result
 

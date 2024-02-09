@@ -100,6 +100,8 @@ class Plugin:
     mod: Union[None, Mod]
     enabled: bool
     visible: bool = field(init=False, default=True)
+    conflict: bool = field(init=False, default=False)
+
 
 
 @dataclass(slots=True)
