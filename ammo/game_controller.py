@@ -17,16 +17,9 @@ from .ui import (
 )
 
 
-class Source(str, Enum):
-    UNKNOWN = "unknown"
-    STEAM = "steam"
-    FLATPAK = "flatpak"
-
-
 @dataclass(frozen=True, kw_only=True)
 class GameSelection:
     name: field(default_factory=str)
-    source: field(default_factory=Source)
     library: field(default_factory=Path)
 
 
@@ -80,15 +73,8 @@ class GameController(Controller):
                     if game.name not in self.ids:
                         continue
 
-                    source = Source.UNKNOWN
-                    if self.steam in [library, library.parents]:
-                        source = Source.STEAM
-                    elif self.flatpak in [library, library.parents]:
-                        source = Source.FLATPAK
-
                     game_selection = GameSelection(
                         name=game.name,
-                        source=source,
                         library=library,
                     )
 
@@ -116,7 +102,7 @@ class GameController(Controller):
         result += "-------|-----\n"
         for i, game in enumerate(self.games):
             index = f"[{i}]"
-            result += f"{index:<7} {game.name} ({game.source.value})\n"
+            result += f"{index:<7} {game.name} ({game.library})\n"
         return result
 
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
@@ -152,17 +138,8 @@ class GameController(Controller):
             app_data / f"{game_selection.name.replace('t 4', 't4')}/Plugins.txt"
         )
         data = directory / "Data"
-        if game_selection.source == Source.FLATPAK:
-            ammo_conf_dir = (
-                Path.home()
-                / f".var/app/com.valvesoftware.Steam/.local/share/ammo/{game_selection.name}"
-            )
-        elif game_selection.source == Source.STEAM:
-            ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
-        else:
-            raise TypeError(
-                f"Expected {list(Source)} but got {game_selection.source} of type {type(game_selection.source)}"
-            )
+
+        ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
         ammo_mods_dir = ammo_conf_dir / "mods"
         ammo_conf = ammo_conf_dir / "ammo.conf"
 
