@@ -203,7 +203,7 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
         mod_index = [i.name for i in controller.mods].index(mod_name)
         mod = controller.mods[mod_index]
         try:
-            shutil.rmtree(mod.location / "Data")
+            shutil.rmtree(mod.location / "ammo_fomod" / "Data")
         except FileNotFoundError:
             pass
 
@@ -222,10 +222,12 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
 
         # Check that all the expected files exist.
         for file in files:
-            expected_file = mod.location / file
+            expected_file = mod.location / "ammo_fomod" / file
             if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
-                for parent_dir, folders, actual_files in os.walk(mod.location):
+                for parent_dir, folders, actual_files in os.walk(
+                    mod.location / "ammo_fomod"
+                ):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
 
@@ -233,10 +235,12 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
                 raise FileNotFoundError(expected_file)
 
         # Check that no unexpected files exist.
-        for path, folders, filenames in os.walk(mod.location / "Data"):
+        for path, folders, filenames in os.walk(mod.location / "ammo_fomod" / "Data"):
             for file in filenames:
                 exists = os.path.join(path, file)
-                local_exists = exists.split(str(mod.location))[-1].lstrip("/")
+                local_exists = exists.split(str(mod.location / "ammo_fomod"))[
+                    -1
+                ].lstrip("/")
                 assert local_exists in [
                     str(i) for i in files
                 ], f"Got an extra file: {local_exists}\nExpected only: {files}"

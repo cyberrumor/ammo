@@ -369,7 +369,11 @@ class ModController(Controller):
         # Handle mods
         if isinstance(subject, Mod):
             # Handle configuration of fomods
-            if subject.fomod and state and subject.install_dir != self.game.directory:
+            if (
+                state
+                and subject.fomod
+                and not (subject.location / "ammo_fomod").exists()
+            ):
                 raise Warning("Fomods must be configured before they can be enabled.")
 
             subject.enabled = state
@@ -425,11 +429,13 @@ class ModController(Controller):
             # Iterate through the source files of the mod
             for src in mod.files:
                 # Get the sanitized full path relative to the game.directory.
-                corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
+                if mod.fomod:
+                    corrected_name = (
+                        str(src).split(f"{mod.name}/ammo_fomod", 1)[-1].strip("/")
+                    )
+                else:
+                    corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
 
-                # Don't install fomod folders.
-                if corrected_name.lower() == "fomod":
-                    continue
                 dest = mod.install_dir / corrected_name
 
                 # Add the sanitized full path to the stage, resolving
@@ -506,7 +512,7 @@ class ModController(Controller):
 
         # Clean up previous configuration, if it exists.
         try:
-            shutil.rmtree(mod.location / self.game.data.name)
+            shutil.rmtree(mod.location / "ammo_fomod" / self.game.data.name)
         except FileNotFoundError:
             pass
 

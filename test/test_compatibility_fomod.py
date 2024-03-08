@@ -5,6 +5,7 @@ from common import (
     mod_extracts_files,
     mod_installs_files,
 )
+import pytest
 
 
 def test_base_object_swapper():
@@ -24,22 +25,38 @@ def test_base_object_swapper():
     )
 
 
-def test_embers_xd():
+def test_no_activate_unconfigred_fomod_with_data_dir():
     """
-    In the past, there were some issues with Embers XD plugin becoming visible
-    upon activate, but not persisting through a refresh.
-
-    Test that only plugins located immediately under the Data folder are
-    added to self.plugins for fomods.
-
-    mock_embers_xd is a preconfigured fomod with a Data folder, so we can
-    test this by merely activating, refreshing, and checking plugins.
+    Test that fomods with a Data folder (like Embers XD or MCM Helper)
+    aren't possible to activate before they've been configured.
     """
-    files = [
-        Path("Data/Embers XD - Fire Magick Add-On.esp"),
-    ]
+    files = []
+    with pytest.raises(Warning):
+        # "Fomods must be configured before they can be enabled."
+        mod_installs_files("mock_embers_xd", files)
 
-    mod_installs_files("mock_embers_xd", files)
+
+def test_parse_broken_moduleconfig():
+    """
+    Test parsing a broken ModuleConfig.xml.
+    """
+    files = []
+    with pytest.raises(Warning):
+        # xml.etree.ElementTree.ParseError: no element found
+        fomod_selections_choose_files(
+            "mock_embers_xd",
+            files,
+            selections=[
+                {
+                    "page": 0,
+                    "option": 0,
+                },
+                {
+                    "page": 1,
+                    "option": 1,
+                },
+            ],
+        )
 
 
 def test_realistic_ragdolls():

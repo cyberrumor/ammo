@@ -66,32 +66,35 @@ class Mod:
                                 if f.name.lower() == "moduleconfig.xml" and f.is_file():
                                     self.modconf = f
                                     self.fomod = True
+                                    self.install_dir = self.game_root
                                     break
                 case False:
                     if file.suffix.lower() == ".dll":
                         self.install_dir = self.game_root
 
         # Determine which folder to populate self.files from. For fomods, only
-        # care about files inside of a game_data.name folder which may or may not exist.
+        # care about files inside of an ammo_fomod/game_data.name folder which may or may not exist.
         location = self.location
         if self.fomod:
-            location = location / self.game_data.name
+            location = location / "ammo_fomod" / self.game_data.name
+            plugin_dir = location
+        else:
+            plugin_dir = location / self.game_data.name
+            if not plugin_dir.exists():
+                plugin_dir = location
 
         # Populate self.files
         for parent_dir, _, files in os.walk(location):
             for file in files:
                 f = Path(file)
                 loc_parent = Path(parent_dir)
-
-                if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
-                    # Only associate plugins if the plugins are under a data dir.
-                    if (
-                        loc_parent == self.location
-                        or loc_parent.name.lower() == self.game_data.name.lower()
-                    ):
-                        self.plugins.append(f.name)
-
                 self.files.append(loc_parent / f)
+
+        # populate plugins
+        if plugin_dir.exists():
+            for f in plugin_dir.iterdir():
+                if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
+                    self.plugins.append(f.name)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -101,7 +104,6 @@ class Plugin:
     enabled: bool
     visible: bool = field(init=False, default=True)
     conflict: bool = field(init=False, default=False)
-
 
 
 @dataclass(slots=True)

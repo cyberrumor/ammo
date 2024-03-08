@@ -46,7 +46,12 @@ class FomodController(Controller):
         self.mod: Mod = mod
 
         # Parse the fomod installer.
-        tree: ElementTree = ElementTree.parse(str(mod.modconf))
+        try:
+            tree: ElementTree = ElementTree.parse(str(mod.modconf))
+        except ElementTree.ParseError:
+            raise Warning(
+                "This fomod's ModuleConfig.xml is malformed and can not be parsed."
+            )
 
         # Get the root node
         self.xml_root_node: ElementTree.Element = tree.getroot()
@@ -348,9 +353,9 @@ class FomodController(Controller):
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's game files folder.
         """
-        data = self.mod.location / self.mod.game_data.name
+        data = self.mod.location / "ammo_fomod" / self.mod.game_data.name
 
-        # delete the old configuration if it exists
+        # delete the old configuration if it exists.
         shutil.rmtree(data, ignore_errors=True)
         Path.mkdir(data, parents=True, exist_ok=True)
 
@@ -367,13 +372,6 @@ class FomodController(Controller):
             full_source = self.mod.location
             for i in s.split("\\"):
                 folder = i
-                assert (
-                    # If a fomod has a Data folder in its normal structure and uses
-                    # it as file sources, it will break the second time you configure it.
-                    # This isn't supported. Just advise people to reinstall the mod.
-                    full_source.exists()
-                ), "This fomod uses Data as a source folder (unsupported). Reinstall then configure manually."
-
                 for file in os.listdir(full_source):
                     if file.lower() == i.lower():
                         folder = file
@@ -392,6 +390,7 @@ class FomodController(Controller):
             # Normalize the capitalization of folder names
 
             full_destination = normalize(full_destination, data.parent)
+
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that
             # isn't implemented here yet.
