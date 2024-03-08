@@ -367,6 +367,13 @@ class FomodController(Controller):
             full_source = self.mod.location
             for i in s.split("\\"):
                 folder = i
+                assert (
+                    # If a fomod has a Data folder in its normal structure and uses
+                    # it as file sources, it will break the second time you configure it.
+                    # This isn't supported. Just advise people to reinstall the mod.
+                    full_source.exists()
+                ), "This fomod uses Data as a source folder (unsupported). Reinstall then configure manually."
+
                 for file in os.listdir(full_source):
                     if file.lower() == i.lower():
                         folder = file
