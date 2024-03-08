@@ -73,28 +73,32 @@ class Mod:
                         self.install_dir = self.game_root
 
         # Determine which folder to populate self.files from. For fomods, only
-        # care about files inside of an ammo_fomod/game_data.name folder which may or may not exist.
+        # care about files inside of an ammo_fomod/self.game_data.name folder
+        # which may or may not exist.
         location = self.location
         if self.fomod:
-            location = location / "ammo_fomod" / self.game_data.name
-            plugin_dir = location
-        else:
-            plugin_dir = location / self.game_data.name
-            if not plugin_dir.exists():
-                plugin_dir = location
+            location /= "ammo_fomod"
 
         # Populate self.files
-        for parent_dir, _, files in os.walk(location):
-            for file in files:
-                f = Path(file)
-                loc_parent = Path(parent_dir)
-                self.files.append(loc_parent / f)
+        if location.exists():
+            for parent_dir, _, files in os.walk(location):
+                for file in files:
+                    f = Path(file)
+                    loc_parent = Path(parent_dir)
+                    self.files.append(loc_parent / f)
 
-        # populate plugins
-        if plugin_dir.exists():
-            for f in plugin_dir.iterdir():
-                if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
-                    self.plugins.append(f.name)
+            # populate plugins
+            plugin_dir = location
+
+            for i in location.iterdir():
+                if i.name.lower() == self.game_data.name.lower():
+                    plugin_dir /= i.name
+                    break
+
+            if plugin_dir.exists():
+                for f in plugin_dir.iterdir():
+                    if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
+                        self.plugins.append(f.name)
 
 
 @dataclass(kw_only=True, slots=True)
