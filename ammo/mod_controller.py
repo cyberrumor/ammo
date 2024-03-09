@@ -945,6 +945,56 @@ class ModController(Controller):
         """
         self.__init__(self.downloads_dir, self.game, *self.keywords)
 
+    def collisions(self, index: int) -> None:
+        """
+        Show file conflicts for a mod
+        """
+        try:
+            subject = self.mods[index]
+        except IndexError as e:
+            # Demote index errors
+            raise Warning(e)
+
+        if not subject.conflict:
+            raise Warning("No conflicts.")
+
+        def get_relative_files(mod):
+            for src in mod.files:
+                # Get the sanitized full path relative to the game.directory.
+                if mod.fomod:
+                    corrected_name = (
+                        str(src).split(f"{mod.name}/ammo_fomod", 1)[-1].strip("/")
+                    )
+                else:
+                    corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
+
+                yield corrected_name
+
+        enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
+        enabled_mod_names = [i.name for i in enabled_mods]
+        subject_files = list(get_relative_files(subject))
+        conflicts = {}
+
+        for mod in enabled_mods:
+            if mod.name == subject.name:
+                continue
+            for file in get_relative_files(mod):
+                if file in subject_files:
+                    if conflicts.get(file, None):
+                        conflicts[file].append(mod.name)
+                    else:
+                        conflicts[file] = [mod.name, subject.name]
+
+        result = ""
+        for file, mods in conflicts.items():
+            result += f"{file}\n"
+            sorted_mods = sorted(mods, key=lambda x: enabled_mod_names.index(x))
+            for index, mod in enumerate(sorted_mods):
+                winner = "*" if index == len(sorted_mods) - 1 else " "
+                result += f"  {winner} {mod}\n"
+
+        raise Warning(result)
+
     def find(self, *keyword: str) -> None:
         """
         Show only components with any keyword
