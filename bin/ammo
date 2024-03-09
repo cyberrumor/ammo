@@ -1,7 +1,37 @@
 #!/usr/bin/env python3
+import argparse
+from pathlib import Path
+
 from ammo.game_controller import GameController
 from ammo.ui import UI
 
-controller = GameController()
+parser = argparse.ArgumentParser(description="Manage mods for Bethesda games.")
+
+parser.add_argument(
+    "--downloads",
+    default=Path.home() / "Downloads",
+    metavar="PATH",
+    help="directory containing installable archives",
+    type=Path,
+)
+
+parser.add_argument(
+    "--conf",
+    default=Path.home() / ".local/share/ammo",
+    metavar="PATH",
+    help="directory containing configs for managed games",
+    type=Path,
+)
+
+parser.add_argument(
+    "--mods",
+    metavar="PATH",
+    help="directory containing mods for this session",
+    type=Path,
+)
+
+args = parser.parse_args()
+
+controller = GameController(args)
 ui = UI(controller)
 ui.repl()

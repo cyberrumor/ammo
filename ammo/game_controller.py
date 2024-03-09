@@ -33,7 +33,8 @@ class GameController(Controller):
     with the selected game and runs it under the UI.
     """
 
-    def __init__(self):
+    def __init__(self, args):
+        self.args = args
         self.ids = {
             "Skyrim Special Edition": "489830",
             "Oblivion": "22330",
@@ -43,7 +44,8 @@ class GameController(Controller):
             "Enderal Special Edition": "976620",
             "Starfield": "1716740",
         }
-        self.downloads = Path.home() / "Downloads"
+        self.downloads = self.args.downloads.resolve(strict=True)
+
         self.steam = Path.home() / ".local/share/Steam/steamapps"
         self.flatpak = (
             Path.home()
@@ -139,8 +141,8 @@ class GameController(Controller):
         )
         data = directory / "Data"
 
-        ammo_conf_dir = Path.home() / f".local/share/ammo/{game_selection.name}"
-        ammo_mods_dir = ammo_conf_dir / "mods"
+        ammo_conf_dir = self.args.conf.resolve() / game_selection.name
+        ammo_mods_dir = (self.args.mods or ammo_conf_dir / "mods").resolve()
         ammo_conf = ammo_conf_dir / "ammo.conf"
 
         match game_selection.name:
