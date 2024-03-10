@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import re
 from typing import Union
 from dataclasses import (
@@ -7,6 +8,7 @@ from dataclasses import (
 )
 from enum import Enum
 from pathlib import Path
+
 from .mod_controller import (
     Game,
     ModController,
@@ -20,7 +22,19 @@ from .ui import (
 @dataclass(frozen=True, kw_only=True)
 class GameSelection:
     name: field(default_factory=str)
-    library: field(default_factory=Path)
+    directory: field(default_factory=Path)
+    data: field(default_factory=Path)
+    dlc_file: field(default_factory=Path)
+    plugin_file: field(default_factory=Path)
+
+    def __post_init__(self):
+        """
+        Validate that all paths are absolute.
+        """
+        assert self.directory.is_absolute()
+        assert self.data.is_absolute()
+        assert self.dlc_file.is_absolute()
+        assert self.plugin_file.is_absolute()
 
 
 class GameController(Controller):
@@ -45,15 +59,15 @@ class GameController(Controller):
             "Starfield": "1716740",
         }
         self.downloads = self.args.downloads.resolve(strict=True)
+        self.games: list[GameSelection] = []
 
+        # Find games from instances of Steam
+        self.libraries: list[Path] = []
         self.steam = Path.home() / ".local/share/Steam/steamapps"
         self.flatpak = (
             Path.home()
             / ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"
         )
-        self.libraries: list[Path] = []
-        self.games: list[GameSelection] = []
-
         for source in [self.steam, self.flatpak]:
             if (source / "libraryfolders.vdf").exists() is False:
                 continue
@@ -75,12 +89,36 @@ class GameController(Controller):
                     if game.name not in self.ids:
                         continue
 
+                    pfx = library / f"compatdata/{self.ids[game.name]}/pfx"
+                    app_data = pfx / "drive_c/users/steamuser/AppData/Local"
+
                     game_selection = GameSelection(
                         name=game.name,
-                        library=library,
+                        directory=library / f"common/{game.name}",
+                        data=library / f"common/{game.name}/Data",
+                        dlc_file=app_data
+                        / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
+                        plugin_file=app_data
+                        / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
                     )
 
                     self.games.append(game_selection)
+
+        # Find manually configured games
+        if args.conf.exists():
+            for i in args.conf.iterdir():
+                if i.is_file() and i.suffix == ".json":
+                    with open(i, "r") as file:
+                        j = json.loads(file.read())
+                    game_selection = GameSelection(
+                        name=i.stem,
+                        directory=Path(j["directory"]),
+                        data=Path(j["data"]),
+                        dlc_file=Path(j["dlc_file"]),
+                        plugin_file=Path(j["plugin_file"]),
+                    )
+                    if game_selection not in self.games:
+                        self.games.append(game_selection)
 
         if len(self.games) == 0:
             raise FileNotFoundError(
@@ -104,7 +142,7 @@ class GameController(Controller):
         result += "-------|-----\n"
         for i, game in enumerate(self.games):
             index = f"[{i}]"
-            result += f"{index:<7} {game.name} ({game.library})\n"
+            result += f"{index:<7} {game.name} ({game.directory})\n"
         return result
 
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
@@ -117,9 +155,7 @@ class GameController(Controller):
         """
         for i, game in enumerate(self.games):
             setattr(self, str(i), lambda self, i=i: self._manage_game(i))
-            full_location = str((game.library / "common" / game.name)).replace(
-                str(Path.home()), "~", 1
-            )
+            full_location = str(game.directory).replace(str(Path.home()), "~", 1)
             self.__dict__[str(i)].__doc__ = full_location
 
     def _manage_game(self, index: int) -> None:
@@ -128,18 +164,6 @@ class GameController(Controller):
         ModController for that game, then run it under the UI.
         """
         game_selection = self.games[index]
-
-        app_id = self.ids[game_selection.name]
-        pfx = game_selection.library / f"compatdata/{app_id}/pfx"
-        directory = game_selection.library / f"common/{game_selection.name}"
-        app_data = (
-            game_selection.library / f"{pfx}/drive_c/users/steamuser/AppData/Local"
-        )
-        dlc_file = app_data / f"{game_selection.name.replace('t 4', 't4')}/DLCList.txt"
-        plugin_file = (
-            app_data / f"{game_selection.name.replace('t 4', 't4')}/Plugins.txt"
-        )
-        data = directory / "Data"
 
         ammo_conf_dir = self.args.conf.resolve() / game_selection.name
         ammo_mods_dir = (self.args.mods or ammo_conf_dir / "mods").resolve()
@@ -160,13 +184,13 @@ class GameController(Controller):
                     return line.strip().startswith("*")
 
         game = Game(
-            game_selection.name,
-            directory,
-            data,
             ammo_conf,
-            dlc_file,
-            plugin_file,
             ammo_mods_dir,
+            game_selection.name,
+            game_selection.directory,
+            game_selection.data,
+            game_selection.dlc_file,
+            game_selection.plugin_file,
             enabled_formula,
         )
 

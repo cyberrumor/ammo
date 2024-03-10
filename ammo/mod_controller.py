@@ -34,13 +34,13 @@ from .lib import normalize
 
 @dataclass(frozen=True)
 class Game:
+    ammo_conf: Path
+    ammo_mods_dir: Path
     name: str
     directory: Path
     data: Path
-    ammo_conf: Path
     dlc_file: Path
     plugin_file: Path
-    ammo_mods_dir: Path
     enabled_formula: Callable[[str], bool] = field(
         default=lambda line: line.strip().startswith("*")
     )
