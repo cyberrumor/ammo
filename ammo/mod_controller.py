@@ -968,6 +968,8 @@ class ModController(Controller):
                 else:
                     corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
 
+                if mod.install_dir.name == mod.game_data.name:
+                    corrected_name = mod.game_data.name + f"/{corrected_name}"
                 yield corrected_name
 
         enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
