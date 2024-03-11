@@ -257,7 +257,11 @@ class UI:
                 + "\n"
             )
         print(out)
-        input("[Enter] ")
+        try:
+            input("[Enter] ")
+        except EOFError:
+            print()
+            sys.exit(0)
 
     def exit(self):
         """
@@ -315,9 +319,13 @@ class UI:
             os.system("clear")
             print(self.controller)
 
-            if not (stdin := input(f"{self.controller._prompt()}")):
-                continue
-
+            try:
+                if not (stdin := input(f"{self.controller._prompt()}")):
+                    continue
+            except EOFError:
+                print()
+                sys.exit(0)
+                
             cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
             func = cmds[0]
