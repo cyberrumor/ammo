@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import textwrap
 from pathlib import Path
 
 from common import (
@@ -12,6 +13,8 @@ from ammo.component import (
     DeleteEnum,
     RenameEnum,
 )
+
+import pytest
 
 
 def test_duplicate_plugin():
@@ -350,3 +353,44 @@ def test_conflicting_mods_conflict_after_rename():
 
         assert controller.mods[0].conflict is True
         assert controller.mods[1].conflict is True
+
+
+def test_collisions():
+    """
+    Test that the 'collisions' command indicates
+    all and only conflicting files, indicating the
+    conflict winning mod with an "*".
+    """
+    with AmmoController() as controller:
+        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+            install_mod(controller, mod)
+
+        conflict_1 = [i.name for i in controller.mods].index("conflict_1")
+        conflict_2 = [i.name for i in controller.mods].index("conflict_2")
+        normal_mod = [i.name for i in controller.mods].index("normal_mod")
+
+        expected = textwrap.dedent(
+            """\
+            file.dll
+                conflict_1
+              * conflict_2
+            Data/mock_plugin.esp
+                conflict_1
+              * conflict_2
+            Data/textures/mock_texture.nif
+                conflict_1
+              * conflict_2
+        """
+        )
+
+        with pytest.raises(Warning) as warning:
+            controller.collisions(conflict_1)
+        assert warning.value.args == (expected,)
+
+        with pytest.raises(Warning) as warning:
+            controller.collisions(conflict_2)
+        assert warning.value.args == (expected,)
+
+        with pytest.raises(Warning) as warning:
+            controller.collisions(normal_mod)
+        assert warning.value.args == ("No conflicts.",)
