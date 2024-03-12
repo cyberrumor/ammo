@@ -259,7 +259,7 @@ class UI:
         print(out)
         try:
             input("[Enter] ")
-        except EOFError:
+        except (KeyboardInterrupt, EOFError):
             print()
             sys.exit(0)
 
@@ -322,10 +322,10 @@ class UI:
             try:
                 if not (stdin := input(f"{self.controller._prompt()}")):
                     continue
-            except EOFError:
+            except (KeyboardInterrupt, EOFError):
                 print()
                 sys.exit(0)
-                
+
             cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
             func = cmds[0]
@@ -387,4 +387,4 @@ class UI:
 
             except Warning as warning:
                 print(f"\n{warning}")
-                input("[Enter] ") 
+                input("[Enter] ")
