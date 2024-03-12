@@ -257,7 +257,11 @@ class UI:
                 + "\n"
             )
         print(out)
-        input("[Enter]")
+        try:
+            input("[Enter] ")
+        except EOFError:
+            print()
+            sys.exit(0)
 
     def exit(self):
         """
@@ -315,9 +319,13 @@ class UI:
             os.system("clear")
             print(self.controller)
 
-            if not (stdin := input(f"{self.controller._prompt()}")):
-                continue
-
+            try:
+                if not (stdin := input(f"{self.controller._prompt()}")):
+                    continue
+            except EOFError:
+                print()
+                sys.exit(0)
+                
             cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
             func = cmds[0]
@@ -338,7 +346,7 @@ class UI:
                 print(
                     f"{func} expected at least {len(command.args)} arg(s) but received {len(args)}"
                 )
-                input("[Enter]")
+                input("[Enter] ")
                 continue
 
             prepared_args = []
@@ -346,7 +354,7 @@ class UI:
             expected_arg = None if len(expected_args) == 0 else expected_args.pop(0)
             if expected_arg is None and len(args) > 0:
                 print(f"{func} expected no args but received {len(args)} arg(s).")
-                input("[Enter]")
+                input("[Enter] ")
                 continue
 
             try:
@@ -361,7 +369,7 @@ class UI:
 
             except (ValueError, KeyError) as e:
                 print(f"arg was unexpected type: {e}")
-                input("[Enter]")
+                input("[Enter] ")
                 continue
 
             if command.instance is not None:
@@ -379,4 +387,4 @@ class UI:
 
             except Warning as warning:
                 print(f"\n{warning}")
-                input("[Enter]")
+                input("[Enter] ") 
