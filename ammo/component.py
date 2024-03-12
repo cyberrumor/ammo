@@ -37,6 +37,7 @@ class Mod:
     fomod: bool = field(init=False, default=False)
     enabled: bool = field(init=False, default=False)
     conflict: bool = field(init=False, default=False)
+    obsolete: bool = field(init=False, default=True)
     files: list[Path] = field(default_factory=list, init=False)
     plugins: list[str] = field(default_factory=list, init=False)
     name: str = field(default_factory=str, init=False)

@@ -236,7 +236,11 @@ class ModController(Controller):
                 if mod.visible:
                     priority = f"[{i}]"
                     enabled = f"[{mod.enabled}]"
-                    conflict = "*" if mod.conflict else " "
+                    conflict = (
+                        "x"
+                        if mod.enabled and mod.obsolete
+                        else ("*" if mod.conflict else " ")
+                    )
                     result += f"{priority:<7} {enabled:<9} {conflict:<1} {mod.name}\n"
 
         if len([i for i in self.plugins if i.visible]):
@@ -424,6 +428,7 @@ class ModController(Controller):
         # Iterate through enabled mods in order.
         for mod in self.mods:
             mod.conflict = False
+            mod.obsolete = True
         enabled_mods = [i for i in self.mods if i.enabled]
         for index, mod in enumerate(enabled_mods):
             # Iterate through the source files of the mod
@@ -449,6 +454,13 @@ class ModController(Controller):
                         mod.conflict = True
                         conflicting_mod[0].conflict = True
                 result[dest] = (mod.name, src)
+
+        # Record whether a mod is obsolete (all files are overwritten by other mods).
+        for mod in enabled_mods:
+            for name, src in result.values():
+                if name == mod.name:
+                    mod.obsolete = False
+                    break
 
         plugin_names = []
         for mod in self.mods:
@@ -902,6 +914,7 @@ class ModController(Controller):
             raise Warning("Index out of range.")
         comp = components.pop(index)
         components.insert(new_index, comp)
+        self._stage()
         self.changes = True
 
     def commit(self) -> None:

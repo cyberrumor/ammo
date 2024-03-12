@@ -394,3 +394,34 @@ def test_collisions():
         with pytest.raises(Warning) as warning:
             controller.collisions(normal_mod)
         assert warning.value.args == ("No conflicts.",)
+
+
+def test_obsolete_init():
+    """
+    Test that mods are properly marked as obsolete on move/enable/disable.
+    """
+    with AmmoController() as controller:
+        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+            install_mod(controller, mod)
+
+        conflict_1 = [i.name for i in controller.mods].index("conflict_1")
+        conflict_2 = [i.name for i in controller.mods].index("conflict_2")
+        normal_mod = [i.name for i in controller.mods].index("normal_mod")
+
+        assert controller.mods[conflict_1].obsolete is True
+        assert controller.mods[conflict_2].obsolete is False
+        assert controller.mods[normal_mod].obsolete is False
+
+        # perform a move
+        controller.move(ComponentEnum.MOD, conflict_1, conflict_2)
+        # fix indices
+        conflict_1, conflict_2 = conflict_2, conflict_1
+
+        assert controller.mods[conflict_2].obsolete is True
+        assert controller.mods[conflict_1].obsolete is False
+        assert controller.mods[normal_mod].obsolete is False
+
+        # Perform a deactivate
+        controller.deactivate(ComponentEnum.MOD, conflict_1)
+        assert controller.mods[conflict_2].obsolete is False
+        assert controller.mods[normal_mod].obsolete is False
