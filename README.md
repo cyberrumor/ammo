@@ -47,18 +47,24 @@ echo 'PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
 PATH="$PATH:$HOME/.local/bin"
 git clone https://github.com/cyberrumor/ammo
 cd ammo
-pip3 install --user -r requirements.txt || pip3 install --user --break-system-packages -r requirements.txt
-pip3 install --user . || pip3 install --user --break-system-packages .
+pip3 install --user --break-system-packages -r requirements.txt
+pip3 install --user --break-system-packages .
 ```
 
 You can now execute ammo with the terminal command `ammo`.
 
 ## Updating Instructions
 
+Check the releases page for possible manual migration steps.
+Releases are only published on breaking changes, and are there
+for the benefit of people who don't have time to address those
+changes. In general, you should be using the most recent
+version of the main branch.
+
 ```sh
 cd /path/to/ammo/clone/dir
 git pull
-pip3 install --user --force-reinstall . || pip3 install --user --break-system-packages --force-reinstall .
+pip3 install --user --break-system-packages --force-reinstall .
 ```
 
 ## Usage Instructions
@@ -68,6 +74,7 @@ pip3 install --user --force-reinstall . || pip3 install --user --break-system-pa
 | Command     | Arguments                               | Description |
 |-|-|-|
 | activate    | (mod\|plugin) \<index>                  | Enabled components will be loaded by game |
+| collisions  | \<index>                                | Show file conflicts for a mod |
 | commit      |                                         | Apply pending changes |
 | configure   | \<index>                                | Configure a fomod |
 | deactivate  | (mod\|plugin) \<index>                  | Disabled components will not be loaded by game |
