@@ -495,7 +495,10 @@ class ModController(Controller):
             for file in filenames:
                 full_path = d / file
                 if full_path.is_symlink():
-                    full_path.unlink()
+                    try:
+                        full_path.unlink()
+                    except FileNotFoundError:
+                        pass
 
         self._remove_empty_dirs()
 
@@ -707,7 +710,10 @@ class ModController(Controller):
                         self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
                     for mod in visible_mods:
                         self.mods.pop(self.mods.index(mod))
-                        shutil.rmtree(mod.location)
+                        try:
+                            shutil.rmtree(mod.location)
+                        except FileNotFoundError:
+                            pass
                         deleted_mods += f"{mod.name}\n"
                     self.commit()
                 else:
@@ -720,7 +726,10 @@ class ModController(Controller):
 
                     # Remove the mod from the controller then delete it.
                     mod = self.mods.pop(index)
-                    shutil.rmtree(mod.location)
+                    try:
+                        shutil.rmtree(mod.location)
+                    except FileNotFoundError:
+                        pass
                     self.commit()
 
             case DeleteEnum.PLUGIN:
@@ -757,8 +766,10 @@ class ModController(Controller):
                             self.commit()
                         self.plugins.pop(self.plugins.index(plugin))
                         for file in get_plugin_files(plugin):
-                            if file.exists():
+                            try:
                                 file.unlink()
+                            except FileNotFoundError:
+                                pass
                         deleted_plugins += f"{plugin.name}\n"
                     self.refresh()
                     self.commit()
@@ -766,8 +777,10 @@ class ModController(Controller):
                     try:
                         plugin = self.plugins.pop(index)
                         for file in get_plugin_files(plugin):
-                            if file.exists():
+                            try:
                                 file.unlink()
+                            except FileNotFoundError:
+                                pass
                     except IndexError as e:
                         raise Warning(e)
 
@@ -781,7 +794,10 @@ class ModController(Controller):
                         download = self.downloads.pop(
                             self.downloads.index(visible_download)
                         )
-                        download.location.unlink()
+                        try:
+                            download.location.unlink()
+                        except FileNotFoundError:
+                            pass
                 else:
                     index = int(index)
                     try:
@@ -789,7 +805,10 @@ class ModController(Controller):
                     except IndexError as e:
                         # Demote IndexErrors
                         raise Warning(e)
-                    download.location.unlink()
+                    try:
+                        download.location.unlink()
+                    except FileNotFoundError:
+                        pass
 
     def install(self, index: Union[int, str]) -> None:
         """

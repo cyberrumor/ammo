@@ -228,7 +228,10 @@ class ToolController(Controller):
                         self.deactivate(ComponentEnum.TOOL, self.tools.index(tool))
                     for tool in visible_tools:
                         self.tools.pop(self.tools.index(tool))
-                        shutil.rmtree(tool)
+                        try:
+                            shutil.rmtree(tool)
+                        except FileNotFoundError:
+                            pass
                         deleted_tools += f"{tool.name}\n"
                     self.commit()
                 else:
@@ -239,7 +242,10 @@ class ToolController(Controller):
                         # Demote IndexErrors
                         raise Warning(e)
 
-                    shutil.rmtree(tool)
+                    try:
+                        shutil.rmtree(tool)
+                    except FileNotFoundError:
+                        pass
 
             case ToolEnum.DOWNLOAD:
                 if index == "all":
@@ -256,7 +262,10 @@ class ToolController(Controller):
                     except IndexError as e:
                         # Demote IndexErrors
                         raise Warning(e)
-                    download.location.unlink()
+                    try:
+                        download.location.unlink()
+                    except FileNotFoundError:
+                        pass
 
     def install(self, index: Union[int, str]) -> None:
         """
