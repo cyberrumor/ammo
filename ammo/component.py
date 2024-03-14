@@ -25,6 +25,11 @@ class RenameEnum(str, Enum):
     DOWNLOAD = "download"
 
 
+class ToolEnum(str, Enum):
+    TOOL = "tool"
+    DOWNLOAD = "download"
+
+
 @dataclass(slots=True, kw_only=True)
 class Mod:
     location: Path

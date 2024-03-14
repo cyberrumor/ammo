@@ -21,6 +21,7 @@ from .ui import (
     Controller,
 )
 from .fomod_controller import FomodController
+from .tool_controller import ToolController
 from .component import (
     Mod,
     Download,
@@ -1068,3 +1069,14 @@ class ModController(Controller):
                     component.visible = False
                 for component in self.plugins:
                     component.visible = True
+
+    def tools(self) -> None:
+        """
+        Manage tools
+        """
+        tool_controller = ToolController(
+            self.downloads_dir,
+            self.game.ammo_conf.parent / "tools",
+        )
+        ui = UI(tool_controller)
+        ui.repl()
