@@ -11,6 +11,7 @@ def normalize(destination: Path, dest_prefix: Path) -> Path:
     file = destination.name
     local_path = str(path).split(str(dest_prefix))[-1].lower()
     for i in [
+        "NetScriptFramework",
         "Data Files",
         "Data",
         "DynDOLOD",

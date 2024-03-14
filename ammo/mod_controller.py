@@ -833,6 +833,7 @@ class ModController(Controller):
                     not in [
                         self.game.data.name.lower(),
                         "skse",
+                        "netscriptframework",
                         "bashtags",
                         "docs",
                         "meshes",
