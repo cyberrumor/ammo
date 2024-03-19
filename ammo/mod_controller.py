@@ -706,6 +706,12 @@ class ModController(Controller):
                 if index == "all":
                     deleted_mods = ""
                     visible_mods = [i for i in self.mods if i.visible]
+                    # Don't allow deleting mods with "all" unless they're inactive.
+                    for mod in visible_mods:
+                        if mod.enabled:
+                            raise Warning(
+                                "You must deactivate all visible components of that type before deleting them with all."
+                            )
                     for mod in visible_mods:
                         self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
                     for mod in visible_mods:
@@ -757,6 +763,11 @@ class ModController(Controller):
                 if index == "all":
                     deleted_plugins = ""
                     visible_plugins = [i for i in self.plugins if i.visible]
+                    for plugin in visible_plugins:
+                        if plugin.enabled:
+                            raise Warning(
+                                "You must deactivate all visible components of that type before deleting them with all."
+                            )
 
                     for plugin in visible_plugins:
                         if plugin.mod is None or plugin.name in (

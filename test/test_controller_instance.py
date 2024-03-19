@@ -483,3 +483,38 @@ def test_controller_plugin_wrong_spot():
         controller.rename(ComponentEnum.MOD, 0, "new_name")
         assert controller.mods[0].plugins == []
 
+
+def test_no_delete_all_if_mod_active():
+    """
+    It's not the first time I've done this on accident, but
+    it will be the last. Test that deleting all mods fails if
+    any visible mod is still enabled. In other words, deleting
+    all mods is only allowed if all visible mods are inactive.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "conflict_1")
+        extract_mod(controller, "conflict_2")
+
+        expected = "You must deactivate all visible components of that type before deleting them with all."
+
+        with pytest.raises(Warning) as warning:
+            controller.delete(DeleteEnum.MOD, "all")
+            assert warning.value.args == (expected,)
+
+
+def test_no_delete_all_if_plugin_active():
+    """
+    Test that all target plugins are deactivated before
+    deleting them with all. If there's an active one,
+    prompt the user to deactivate it before allowing this operation.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "conflict_1")
+        install_mod(controller, "normal_mod")
+        controller.activate(ComponentEnum.PLUGIN, 1)
+
+        expected = "You must deactivate all visible components of that type before deleting them with all."
+
+        with pytest.raises(Warning) as warning:
+            controller.delete(DeleteEnum.PLUGIN, "all")
+            assert warning.value.args == (expected,)

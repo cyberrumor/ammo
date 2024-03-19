@@ -133,9 +133,9 @@ def test_find_delete_all_mods():
     then deleting all will only delete visible mods.
     """
     with AmmoController() as controller:
-        install_mod(controller, "normal_mod")
-        install_mod(controller, "conflict_1")
-        install_mod(controller, "no_data_folder_plugin")
+        extract_mod(controller, "normal_mod")
+        extract_mod(controller, "conflict_1")
+        extract_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "conflict")
         controller.delete(DeleteEnum.MOD, "all")
