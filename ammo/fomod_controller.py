@@ -36,6 +36,7 @@ class Page:
     """
 
     name: str
+    step_name: str
     archtype: str
     selections: list[Selection]
     visibility_conditions: field(default_factory=dict[str, bool])
@@ -73,7 +74,7 @@ class FomodController(Controller):
 
     def __str__(self) -> str:
         num_pages = len(self.visible_pages)
-        result = f"{self.module_name}\n"
+        result = f"{self.module_name} {self.page.step_name}\n"
         result += "--------------------------------\n"
         result += f"Page {self.page_index + 1} / {num_pages}: {self.visible_pages[self.page_index].name}\n"
         result += "--------------------------------\n\n"
@@ -143,6 +144,9 @@ class FomodController(Controller):
         steps = []
         # Find all the install steps
         for step in self.xml_root_node.find("installSteps"):
+            install_step_name = step.get("name", "")
+            if install_step_name:
+                install_step_name = f"- {install_step_name}"
             for optional_file_groups in step:
                 for group in optional_file_groups:
                     if not (group_of_plugins := group.find("plugins")):
@@ -162,12 +166,13 @@ class FomodController(Controller):
                                 dep_op = dep_op.lower()
                             visibility_conditions["operator"] = dep_op
                             for xml_flag in dependencies:
-                                visibility_conditions[
-                                    xml_flag.get("flag")
-                                ] = xml_flag.get("value") in ["On", "1"]
+                                visibility_conditions[xml_flag.get("flag")] = (
+                                    xml_flag.get("value") in ["On", "1"]
+                                )
 
                     page = Page(
                         name=group.get("name"),
+                        step_name=install_step_name,
                         archtype=group.get("type"),
                         selections=[],
                         visibility_conditions=visibility_conditions,
