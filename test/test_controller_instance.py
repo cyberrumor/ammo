@@ -11,6 +11,7 @@ from ammo.component import (
 )
 from common import (
     AmmoController,
+    extract_mod,
     install_everything,
     install_mod,
 )
@@ -463,3 +464,22 @@ def test_controller_delete_plugin():
         controller.activate(ComponentEnum.MOD, 0)
         # Ensure the plugin hasn't returned.
         assert len(controller.plugins) == 0
+
+
+def test_controller_plugin_wrong_spot():
+    """
+    Test that a plugin which isn't under Data or the root
+    directory of a mod doesn't appear in mod.plugins.
+    """
+    with AmmoController() as controller:
+        extract_mod(controller, "plugin_wrong_spot")
+        assert controller.mods[0].plugins == []
+        controller.activate(ComponentEnum.MOD, 0)
+        assert controller.mods[0].plugins == []
+        controller.deactivate(ComponentEnum.MOD, 0)
+        assert controller.mods[0].plugins == []
+        controller.commit()
+        assert controller.mods[0].plugins == []
+        controller.rename(ComponentEnum.MOD, 0, "new_name")
+        assert controller.mods[0].plugins == []
+

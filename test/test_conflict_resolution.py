@@ -197,6 +197,33 @@ def test_conflicting_plugins_delete_plugin():
         ), "A plugin provided by multiple mods came back from the grave!"
 
 
+def test_conflicting_plugins_mult_delete_plugin():
+    """
+    Install two mods with the same plugin. One of those mods has an extra
+    plugin by the same name but in somewhere besides Data. Expect the plugin
+    to be deleted from both mods, but the plugin that was in the wrong spot
+    is not removed.
+    """
+    with AmmoController() as controller:
+        for mod in ["plugin_wrong_spot", "mult_plugins_same_name"]:
+            install_mod(controller, mod)
+
+        controller.delete(DeleteEnum.PLUGIN, 0)
+        files = controller.mods[[i.name for i in controller.mods].index("plugin_wrong_spot")].files
+        file = controller.game.ammo_mods_dir / "plugin_wrong_spot/Data/test/plugin.esp"
+        # Check that we didn't delete a plugin that wasn't in Data
+        assert file in files
+
+        files = controller.mods[[i.name for i in controller.mods].index("mult_plugins_same_name")].files
+        file = controller.game.ammo_mods_dir / "mult_plugins_same_name/Data/plugin.esp"
+        # Check that we deleted what we intended to
+        assert file not in files
+
+        file = controller.game.ammo_mods_dir / "mult_plugins_same_name/Data/test/plugin.esp"
+        # Check that we didn't delete a plugin that wasn't in Data
+        assert file in files
+
+
 def test_conflicting_mods_have_conflict_flag_after_install():
     """
     Test that only conflicting mods have mod.conflict set to True
