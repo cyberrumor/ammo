@@ -30,7 +30,10 @@ from .component import (
     ComponentEnum,
     RenameEnum,
 )
-from .lib import normalize
+from .lib import (
+    normalize,
+    NO_EXTRACT_DIRS,
+)
 
 
 @dataclass(frozen=True)
@@ -840,23 +843,8 @@ class ModController(Controller):
                 [
                     len(files) == 1,
                     files[0].is_dir(),
-                    files[0].name.lower()
-                    not in [
-                        self.game.data.name.lower(),
-                        "skse",
-                        "netscriptframework",
-                        "bashtags",
-                        "docs",
-                        "meshes",
-                        "textures",
-                        "animations",
-                        "interface",
-                        "misc",
-                        "shaders",
-                        "sounds",
-                        "voices",
-                        "edit scripts",
-                    ],
+                    files[0].name.lower() != self.game.data.name.lower(),
+                    files[0].name.lower() not in NO_EXTRACT_DIRS,
                     files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
                 ]
             )

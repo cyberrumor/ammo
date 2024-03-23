@@ -2,6 +2,27 @@
 from pathlib import Path
 
 
+NO_EXTRACT_DIRS = [
+    "skse",
+    "netscriptframework",
+    "bashtags",
+    "docs",
+    "meshes",
+    "textures",
+    "grass",
+    "animations",
+    "interface",
+    "strings",
+    "misc",
+    "shaders",
+    "sounds",
+    "voices",
+    "edit scripts",
+    "scripts",
+    "seq",
+]
+
+
 def normalize(destination: Path, dest_prefix: Path) -> Path:
     """
     Prevent folders with the same name but different case

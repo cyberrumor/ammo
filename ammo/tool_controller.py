@@ -24,6 +24,7 @@ from .component import (
     Download,
     ToolEnum,
 )
+from .lib import NO_EXTRACT_DIRS
 
 
 class ToolController(Controller):
@@ -283,22 +284,8 @@ class ToolController(Controller):
                 [
                     len(files) == 1,
                     files[0].is_dir(),
-                    files[0].name.lower()
-                    not in [
-                        self.tools_dir.name.lower(),
-                        "skse",
-                        "bashtags",
-                        "docs",
-                        "meshes",
-                        "textures",
-                        "animations",
-                        "interface",
-                        "misc",
-                        "shaders",
-                        "sounds",
-                        "voices",
-                        "edit scripts",
-                    ],
+                    files[0].name.lower() != self.tools_dir.name.lower(),
+                    files[0].name.lower() not in NO_EXTRACT_DIRS,
                     files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
                 ]
             )
