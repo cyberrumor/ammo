@@ -607,10 +607,16 @@ class ModController(Controller):
                     ):
                         plugins.insert(0, plugin)
                         break
+        result = []
+        for plugin in list(plugins):
+            if any([plugin.name.lower().endswith(i) for i in [".esl", ".esm"]]):
+                result.append(plugins.pop(plugins.index(plugin)))
+
+        result.extend(plugins)
 
         if self.changes is False:
-            self.changes = self.plugins != plugins
-        self.plugins = plugins
+            self.changes = self.plugins != result
+        self.plugins = result
 
     def rename(self, component: RenameEnum, index: int, name: str) -> None:
         """
