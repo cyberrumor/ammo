@@ -518,3 +518,27 @@ def test_no_delete_all_if_plugin_active():
         with pytest.raises(Warning) as warning:
             controller.delete(DeleteEnum.PLUGIN, "all")
             assert warning.value.args == (expected,)
+
+
+def test_sort_esm_esl():
+    """
+    Test that .esl and .esm plugins are auto-sorted to
+    before .esp plugins from the 'sort' command.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "esm")
+        install_mod(controller, "esl")
+        install_mod(controller, "conflict_1")
+
+        assert controller.plugins[0].name == "normal_plugin.esp"
+        assert controller.plugins[1].name == "plugin.esm"
+        assert controller.plugins[2].name == "plugin.esl"
+        assert controller.plugins[3].name == "mock_plugin.esp"
+
+        controller.sort()
+
+        assert controller.plugins[0].name == "plugin.esm"
+        assert controller.plugins[1].name == "plugin.esl"
+        assert controller.plugins[2].name == "normal_plugin.esp"
+        assert controller.plugins[3].name == "mock_plugin.esp"
