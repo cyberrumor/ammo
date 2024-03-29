@@ -373,6 +373,9 @@ class ModController(Controller):
         components = self._get_validated_components(component)
         subject = components[index]
 
+        if not subject.visible:
+            raise Warning("You can only de/activate visible components.")
+
         starting_state = subject.enabled
         # Handle mods
         if isinstance(subject, Mod):
@@ -520,6 +523,9 @@ class ModController(Controller):
         # game.directory.
 
         mod = self.mods[index]
+
+        if not mod.visible:
+            raise Warning("You can only configure visible mods.")
         if not mod.fomod:
             raise Warning("Only fomods can be configured.")
 
@@ -649,6 +655,9 @@ class ModController(Controller):
                 except IndexError as e:
                     raise Warning(e)
 
+                if not download.visible:
+                    raise Warning("You caon only rename visible components.")
+
                 if "pytest" not in sys.modules:
                     # Don't run this during tests because it's slow.
                     try:
@@ -675,6 +684,9 @@ class ModController(Controller):
                     mod = self.mods[index]
                 except IndexError as e:
                     raise Warning(e)
+
+                if not mod.visible:
+                    raise Warning("You can only rename visible components.")
 
                 new_location = self.game.ammo_mods_dir / name
                 if new_location.exists():
@@ -719,10 +731,8 @@ class ModController(Controller):
                     for mod in visible_mods:
                         if mod.enabled:
                             raise Warning(
-                                "You must deactivate all visible components of that type before deleting them with all."
+                                "You can only delete all visible components if they are all deactivated."
                             )
-                    for mod in visible_mods:
-                        self.deactivate(ComponentEnum.MOD, self.mods.index(mod))
                     for mod in visible_mods:
                         self.mods.pop(self.mods.index(mod))
                         try:
@@ -733,14 +743,17 @@ class ModController(Controller):
                     self.commit()
                 else:
                     try:
-                        self.deactivate(ComponentEnum.MOD, index)
+                        mod = self.mods[index]
 
                     except IndexError as e:
                         # Demote IndexErrors
                         raise Warning(e)
 
+                    if not mod.visible:
+                        raise Warning("You can only delete visible components.")
+
                     # Remove the mod from the controller then delete it.
-                    mod = self.mods.pop(index)
+                    self.mods.pop(index)
                     try:
                         shutil.rmtree(mod.location)
                     except FileNotFoundError:
@@ -775,7 +788,7 @@ class ModController(Controller):
                     for plugin in visible_plugins:
                         if plugin.enabled:
                             raise Warning(
-                                "You must deactivate all visible components of that type before deleting them with all."
+                                "You can only delete all visible components if they are all deactivated."
                             )
 
                     for plugin in visible_plugins:
@@ -795,14 +808,19 @@ class ModController(Controller):
                     self.commit()
                 else:
                     try:
-                        plugin = self.plugins.pop(index)
-                        for file in get_plugin_files(plugin):
-                            try:
-                                file.unlink()
-                            except FileNotFoundError:
-                                pass
+                        plugin = self.plugins[index]
                     except IndexError as e:
+                        # Demote IndexErrors
                         raise Warning(e)
+                    if not plugin.visible:
+                        raise Warning("You can only delete visible components.")
+
+                    self.plugins.remove(plugin)
+                    for file in get_plugin_files(plugin):
+                        try:
+                            file.unlink()
+                        except FileNotFoundError:
+                            pass
 
                     self.refresh()
                     self.commit()
@@ -821,10 +839,16 @@ class ModController(Controller):
                 else:
                     index = int(index)
                     try:
-                        download = self.downloads.pop(index)
+                        download = self.downloads[index]
                     except IndexError as e:
                         # Demote IndexErrors
                         raise Warning(e)
+
+                    if not download.visible:
+                        raise Warning("You can only delete visible components")
+
+                    self.downloads.remove(download)
+
                     try:
                         download.location.unlink()
                     except FileNotFoundError:
@@ -916,6 +940,9 @@ class ModController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
+            if not download.visible:
+                raise Warning("You can only install visible downloads.")
+
             install_download(index, download)
 
         self.refresh()
@@ -931,14 +958,23 @@ class ModController(Controller):
         components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
+        try:
+            comp = components[index]
+        except IndexError as e:
+            # Demote IndexErrors
+            raise Warning(e)
+
+        if not comp.visible:
+            raise Warning("You can only move visible components.")
+
         if index == new_index:
             return
+
         if new_index > len(components) - 1:
             # Auto correct astronomical <to index> to max.
             new_index = len(components) - 1
-        if index > len(components) - 1:
-            raise Warning("Index out of range.")
-        comp = components.pop(index)
+
+        components.pop(index)
         components.insert(new_index, comp)
         self._stage()
         self.changes = True

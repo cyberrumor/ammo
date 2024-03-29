@@ -4,6 +4,7 @@ import pytest
 from ammo.component import (
     ComponentEnum,
     DeleteEnum,
+    RenameEnum,
 )
 from common import (
     AmmoController,
@@ -224,3 +225,105 @@ def test_no_install_twice():
 
         with pytest.raises(Warning):
             install_mod(controller, "normal_mod")
+
+
+def test_invisible_install():
+    """
+    Don't allow installing hidden downloads.
+    """
+    with AmmoController() as controller:
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.install(0)
+
+
+def test_invisible_delete_mod():
+    """
+    Don't allow deleting hidden mods.
+    """
+    with AmmoController() as controller:
+        extract_mod(controller, "normal_mod")
+
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum.MOD, 0)
+
+
+def test_invisible_delete_plugin():
+    """
+    Don't allow deleting hidden plugins.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum.PLUGIN, 0)
+
+
+def test_invisible_delete_download():
+    """
+    Don't allow deleting hidden downloads.
+    """
+    with AmmoController() as controller:
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.delete(DeleteEnum.DOWNLOAD, 0)
+
+
+def test_invisible_move_mod():
+    """
+    Don't allow moving hidden mods.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "conflict_1")
+        install_mod(controller, "conflict_2")
+
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.move(ComponentEnum.MOD, 0, 1)
+
+
+def test_invisible_move_plugin():
+    """
+    Don't allow moving hidden plugins.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        install_mod(controller, "conflict_1")
+
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.move(ComponentEnum.PLUGIN, 0, 1)
+
+
+def test_invisible_rename_mod():
+    """
+    Don't allow renaming hidden mods.
+    """
+    with AmmoController() as controller:
+        extract_mod(controller, "normal_mod")
+
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.rename(RenameEnum.MOD, 0, "new_name")
+
+
+def test_invisible_configure():
+    """
+    Don't allow configuring invisible mods.
+    """
+    with AmmoController() as controller:
+        extract_mod(controller, "mock_relighting_skyrim")
+
+        controller.find("nothing")
+
+        with pytest.raises(Warning):
+            controller.configure(0)
