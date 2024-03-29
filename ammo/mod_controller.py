@@ -1099,9 +1099,12 @@ class ModController(Controller):
         """
         Manage tools
         """
+        if self.changes:
+            raise Warning("You must commit changes before accessing tools")
         tool_controller = ToolController(
             self.downloads_dir,
             self.game.ammo_conf.parent / "tools",
         )
         ui = UI(tool_controller)
         ui.repl()
+        self.refresh()
