@@ -347,7 +347,7 @@ class ToolController(Controller):
 
             install_download(index, download)
 
-    def exit(self) -> None:
+    def mods(self) -> None:
         """
         Return to the mod controller
         """

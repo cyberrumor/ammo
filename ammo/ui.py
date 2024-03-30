@@ -90,6 +90,7 @@ class Command:
     args: list[Arg]
     doc: str
     instance: Union[Controller, None]
+    visible: bool
 
 
 class UI:
@@ -149,6 +150,7 @@ class UI:
             args=[],
             doc=str(self.help.__doc__).strip(),
             instance=None,
+            visible=True,
         )
 
         # Default 'exit', may be overridden.
@@ -158,6 +160,17 @@ class UI:
             args=[],
             doc=str(self.exit.__doc__).strip(),
             instance=None,
+            visible=True,
+        )
+
+        # Make 'exit' available from 'q' too.
+        self.command["q"] = Command(
+            name="q",
+            func=self.exit,
+            args=[],
+            doc=str(self.exit.__doc__).strip(),
+            instance=None,
+            visible=False,
         )
 
         for name in dir(self.controller):
@@ -224,6 +237,7 @@ class UI:
                 args=args,
                 doc=str(func.__doc__).strip(),
                 instance=self.controller,
+                visible=True,
             )
 
     def help(self):
@@ -235,6 +249,8 @@ class UI:
         column_doc = []
 
         for name, command in sorted(self.command.items()):
+            if not command.visible:
+                continue
             column_cmd.append(name)
             column_arg.append(" ".join([arg.description for arg in command.args]))
             column_doc.append(command.doc)
