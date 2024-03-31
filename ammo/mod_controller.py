@@ -700,8 +700,9 @@ class ModController(Controller):
                 if new_location.exists():
                     raise Warning(f"A mod named {str(new_location)} already exists!")
 
-                # Remove symlinks instead of breaking them.
-                self._clean_game_dir()
+                if mod.enabled:
+                    # Remove symlinks instead of breaking them.
+                    self._clean_game_dir()
 
                 # Move the folder, update the mod.
                 mod.location.rename(new_location)
@@ -712,7 +713,8 @@ class ModController(Controller):
                 mod.__post_init__()
 
                 # re-install symlinks
-                self.commit()
+                if mod.enabled:
+                    self.commit()
 
     def delete(self, component: DeleteEnum, index: Union[int, str]) -> None:
         """
@@ -764,6 +766,8 @@ class ModController(Controller):
                     if not mod.visible:
                         raise Warning("You can only delete visible components.")
 
+                    originally_active = mod.enabled
+
                     # Remove the mod from the controller then delete it.
                     self._set_component_state(
                         ComponentEnum.MOD, self.mods.index(mod), False
@@ -773,7 +777,9 @@ class ModController(Controller):
                         shutil.rmtree(mod.location)
                     except FileNotFoundError:
                         pass
-                    self.commit()
+
+                    if originally_active:
+                        self.commit()
 
             case DeleteEnum.PLUGIN:
 
