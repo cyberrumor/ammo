@@ -564,17 +564,25 @@ class ModController(Controller):
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
+        warnings = []
+
         if index == "all":
             for i in range(len(self.__dict__[f"{component.value}s"])):
                 if self.__dict__[f"{component.value}s"][i].visible:
-                    self._set_component_state(component, i, True)
+                    try:
+                        self._set_component_state(component, i, True)
+                    except Warning as e:
+                        warnings.append(e)
         else:
             try:
                 self._set_component_state(component, index, True)
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
+
         self._stage()
+        if warnings:
+            raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
     def deactivate(self, component: ComponentEnum, index: Union[int, str]) -> None:
         """
