@@ -103,7 +103,7 @@ def test_deactivate_validation():
     with AmmoController() as controller:
         mod_index = install_mod(controller, "normal_mod")
         plugin_index = [i.name for i in controller.plugins].index(
-            controller.mods[mod_index].plugins[0]
+            controller.mods[mod_index].plugins[0].name
         )
 
         # valid deactivate plugin

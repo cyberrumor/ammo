@@ -299,13 +299,13 @@ def install_mod(controller, mod_name: str):
     controller.activate(ComponentEnum.MOD, mod_index)
 
     for plugin in controller.mods[mod_index].plugins:
-        plugin_index = [i.name for i in controller.plugins].index(plugin)
+        plugin_index = [i.name for i in controller.plugins].index(plugin.name)
         controller.activate(ComponentEnum.PLUGIN, plugin_index)
 
     controller.commit()
     assert controller.mods[mod_index].enabled is True
     for plugin in controller.mods[mod_index].plugins:
-        plugin_index = [i.name for i in controller.plugins].index(plugin)
+        plugin_index = [i.name for i in controller.plugins].index(plugin.name)
         assert controller.plugins[plugin_index].enabled is True
 
     return mod_index

@@ -104,7 +104,7 @@ class Mod:
             if plugin_dir.exists():
                 for f in plugin_dir.iterdir():
                     if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
-                        self.plugins.append(f.name)
+                        self.plugins.append(f)
 
 
 @dataclass(kw_only=True, slots=True)

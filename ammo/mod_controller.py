@@ -158,7 +158,7 @@ class ModController(Controller):
                 for m in self.mods[::-1]:
                     if not m.enabled:
                         continue
-                    if name in m.plugins:
+                    if name in (i.name for i in m.plugins):
                         mod = m
                         break
 
@@ -390,10 +390,10 @@ class ModController(Controller):
             subject.enabled = state
             if subject.enabled:
                 # Show plugins owned by this mod
-                for name in subject.plugins:
-                    if name not in [i.name for i in self.plugins]:
+                for subject_plugin in subject.plugins:
+                    if subject_plugin.name not in (i.name for i in self.plugins):
                         plugin = Plugin(
-                            name=name,
+                            name=subject_plugin.name,
                             mod=subject,
                             enabled=False,
                         )
@@ -401,7 +401,7 @@ class ModController(Controller):
             else:
                 # Hide plugins owned by this mod and not another mod
                 for plugin in subject.plugins:
-                    if plugin not in [i.name for i in self.plugins]:
+                    if plugin.name not in (i.name for i in self.plugins):
                         continue
                     provided_elsewhere = False
                     for mod in self.mods:
@@ -409,11 +409,11 @@ class ModController(Controller):
                             continue
                         if mod == subject:
                             continue
-                        if plugin in mod.plugins:
+                        if plugin.name in (i.name for i in mod.plugins):
                             provided_elsewhere = True
                             break
                     if not provided_elsewhere:
-                        index = [i.name for i in self.plugins].index(plugin)
+                        index = [i.name for i in self.plugins].index(plugin.name)
                         self.plugins.pop(index)
 
         # Handle plugins
@@ -607,8 +607,8 @@ class ModController(Controller):
             if not mod.enabled:
                 continue
             for plugin in self.plugins[::-1]:
-                for plugin_name in mod.plugins:
-                    if plugin.name == plugin_name and plugin.name not in (
+                for plugin_file in mod.plugins:
+                    if plugin.name == plugin_file.name and plugin.name not in (
                         i.name for i in plugins
                     ):
                         plugins.insert(0, plugin)
@@ -769,18 +769,9 @@ class ModController(Controller):
                     for mod in self.mods:
                         if not mod.enabled:
                             continue
-                        if plugin.name in mod.plugins:
-                            for file in mod.files:
-                                if all(
-                                    (
-                                        file.name == plugin.name and not file.is_dir(),
-                                        file.parent == mod.location
-                                        or file.parent.name.lower()
-                                        == self.game.data.name.lower(),
-                                    )
-                                ):
-                                    yield file
-                                    break
+                        for file in mod.plugins:
+                            if file.name == plugin.name:
+                                yield file
 
                 if index == "all":
                     deleted_plugins = ""
@@ -797,7 +788,7 @@ class ModController(Controller):
                         ):
                             self.refresh()
                             self.commit()
-                        self.plugins.pop(self.plugins.index(plugin))
+                        self.plugins.remove(plugin)
                         for file in get_plugin_files(plugin):
                             try:
                                 file.unlink()
@@ -1108,7 +1099,7 @@ class ModController(Controller):
             # We can't simply plugin.mod.visible = True because plugin.mod
             # does not care about conflict winners. This also means we can't break.
             for mod in self.mods:
-                if plugin.name in mod.plugins:
+                if plugin.name in (i.name for i in mod.plugins):
                     mod.visible = True
 
         if len(self.keywords) == 1:

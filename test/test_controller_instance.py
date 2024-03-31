@@ -449,10 +449,13 @@ def test_controller_delete_plugin():
     Test that deleting a plugin removes the plugin from
     the parent mod's files somewhere under ~/.local/share/ammo
     and doesn't leave a broken symlink in the game dir.
+
+    Tests that it doesn't delete files if they weren't loaded as plugins
+    (like .esp files that weren't under Data).
     """
     with AmmoController() as controller:
         # Install a mod with a plugin, ensure the plugin is there.
-        install_mod(controller, "normal_mod")
+        install_mod(controller, "mult_plugins_same_name")
         assert len(controller.plugins) == 1
 
         # Delete the plugin, make sure it's gone.
@@ -464,6 +467,13 @@ def test_controller_delete_plugin():
         controller.activate(ComponentEnum.MOD, 0)
         # Ensure the plugin hasn't returned.
         assert len(controller.plugins) == 0
+
+        # Ensure we didn't delete .esp files that weren't under Data
+        assert (
+            controller.game.ammo_mods_dir
+            / "mult_plugins_same_name/Data/test/plugin.esp"
+        ).exists()
+        assert (controller.game.data / "test/plugin.esp").exists()
 
 
 def test_controller_plugin_wrong_spot():
