@@ -742,7 +742,11 @@ class ModController(Controller):
                                 "You can only delete all visible components if they are all deactivated."
                             )
                     for mod in visible_mods:
-                        self.mods.pop(self.mods.index(mod))
+                        # Remove plugins that mod provides.
+                        self._set_component_state(
+                            ComponentEnum.MOD, self.mods.index(mod), False
+                        )
+                        self.mods.remove(mod)
                         try:
                             shutil.rmtree(mod.location)
                         except FileNotFoundError:
@@ -761,6 +765,9 @@ class ModController(Controller):
                         raise Warning("You can only delete visible components.")
 
                     # Remove the mod from the controller then delete it.
+                    self._set_component_state(
+                        ComponentEnum.MOD, self.mods.index(mod), False
+                    )
                     self.mods.pop(index)
                     try:
                         shutil.rmtree(mod.location)
