@@ -15,6 +15,18 @@ from .component import Mod
 from .lib import normalize
 
 
+@dataclass
+class Dependency:
+    """
+    Stores fomod flags and the dependency operator,
+    both of which are used for determining whether the
+    selections on a page should map to any particular file.
+    """
+
+    operator: str = field(init=False, default_factory=str)
+    flags: dict = field(init=False, default_factory=dict)
+
+
 @dataclass(kw_only=True)
 class Selection:
     """
@@ -23,7 +35,7 @@ class Selection:
 
     name: str
     description: str
-    flags: field(default_factory=dict)
+    dependency: Dependency
     selected: bool
     conditional: bool
     files: list[ElementTree.Element]
@@ -39,7 +51,7 @@ class Page:
     step_name: str
     archtype: str
     selections: list[Selection]
-    visibility_conditions: field(default_factory=dict[str, bool])
+    dependency: Dependency
 
 
 class FomodController(Controller):
@@ -154,7 +166,7 @@ class FomodController(Controller):
                         # Skip the false positive.
                         continue
 
-                    visibility_conditions: dict[str, bool] = {}
+                    dependency = Dependency()
 
                     # Collect this step's visibility conditions. Associate it
                     # with the group instead of the step. This is inefficient
@@ -162,10 +174,10 @@ class FomodController(Controller):
                     if visible := step.find("visible"):
                         if dependencies := visible.find("dependencies"):
                             dep_op = dependencies.get("operator", "").lower()
-                            visibility_conditions["operator"] = dep_op
+                            dependency.operator = dep_op
                             for xml_flag in dependencies:
                                 if flag := xml_flag.get("flag"):
-                                    visibility_conditions[flag] = xml_flag.get(
+                                    dependency.flags[flag] = xml_flag.get(
                                         "value", ""
                                     ).lower() in ["on", "1", "active"]
 
@@ -174,13 +186,13 @@ class FomodController(Controller):
                         step_name=install_step_name,
                         archtype=group.get("type"),
                         selections=[],
-                        visibility_conditions=visibility_conditions,
+                        dependency=dependency,
                     )
 
                     for i, plugin in enumerate(group_of_plugins):
                         name = plugin.get("name").strip()
                         description = plugin.findtext("description", default="").strip()
-                        flags = {}
+                        dependency = Dependency()
                         # Automatically mark the first option as selected when
                         # a selection is required.
                         selected = (
@@ -192,7 +204,9 @@ class FomodController(Controller):
                             for flag in conditional_flags:
                                 # People use arbitrary flags here.
                                 # Most commonly "On", "1" or "active".
-                                flags[flag.get("name")] = (flag.text or "").lower() in [
+                                dependency.flags[flag.get("name")] = (
+                                    flag.text or ""
+                                ).lower() in [
                                     "on",
                                     "1",
                                     "active",
@@ -210,7 +224,7 @@ class FomodController(Controller):
                             Selection(
                                 name=name,
                                 description=description,
-                                flags=flags,
+                                dependency=dependency,
                                 selected=selected,
                                 conditional=conditional,
                                 files=files,
@@ -229,25 +243,22 @@ class FomodController(Controller):
         for step in self.steps:
             for selection in step.selections:
                 if selection.selected:
-                    for flag in selection.flags:
-                        flags[flag] = selection.flags[flag]
+                    for flag in selection.dependency.flags:
+                        flags[flag] = selection.dependency.flags[flag]
         return flags
 
-    def _flags_match(self, expected_flags: dict) -> bool:
+    def _flags_match(self, dependency: Dependency) -> bool:
         """
-        Compare actual flags with expected flags to determine whether
-        the plugin associated with expected_flags should be included.
+        Compare actual flags with dependency flags to determine whether
+        the plugin associated with dependency should be included.
 
-        Returns whether the plugin which owns expected_flags matches.
+        Returns whether the plugin which owns dependency matches.
         """
         match = False
-        for k, v in expected_flags.items():
+        for k, v in dependency.flags.items():
             if k in self.flags:
                 if self.flags[k] != v:
-                    if (
-                        "operator" in expected_flags
-                        and expected_flags["operator"] == "and"
-                    ):
+                    if dependency.operator == "and":
                         # Mismatched flag. Skip this plugin.
                         return False
                     # if dep_op is "or" (or undefined), try the rest of these.
@@ -281,9 +292,9 @@ class FomodController(Controller):
             page
             for page in self.steps
             # if there's no condition for visibility, just show it.
-            if not page.visibility_conditions
+            if not page.dependency.flags
             # if there's conditions, only include if the conditions are met.
-            or self._flags_match(page.visibility_conditions)
+            or self._flags_match(page.dependency)
         ]
 
     def _get_nodes(self) -> list[ElementTree.Element]:
@@ -300,8 +311,8 @@ class FomodController(Controller):
                 if plugin.selected:
                     if plugin.conditional:
                         # conditional normal file
-                        expected_flags = plugin.flags
-                        if self._flags_match(expected_flags):
+                        expected = plugin.dependency
+                        if self._flags_match(expected):
                             selected_nodes.extend(plugin.files)
                         continue
                     # unconditional file install
@@ -317,12 +328,12 @@ class FomodController(Controller):
             else []
         )
         for pattern in patterns:
-            dependencies = pattern.find("dependencies")
-            dep_op = dependencies.get("operator", "").lower()
-            expected_flags = {"operator": dep_op}
-            for xml_flag in dependencies:
+            xml_dependencies = pattern.find("dependencies")
+            dependency = Dependency()
+            dependency.operator = xml_dependencies.get("operator", "").lower()
+            for xml_flag in xml_dependencies:
                 if flag := xml_flag.get("flag"):
-                    expected_flags[flag] = xml_flag.get("value", "").lower() in [
+                    dependency.flags[flag] = xml_flag.get("value", "").lower() in [
                         "on",
                         "1",
                         "active",
@@ -334,19 +345,19 @@ class FomodController(Controller):
                 # can't find files for this, no point in checking whether to include.
                 continue
 
-            if not expected_flags:
+            if not dependency:
                 # No requirements for these files to be used.
                 selected_nodes.extend(xml_files)
 
-            if self._flags_match(expected_flags):
+            if self._flags_match(dependency):
                 selected_nodes.extend(xml_files)
 
-        required_files = self.xml_root_node.find("requiredInstallFiles") or []
-        for file in required_files:
-            if file.tag == "files":
-                selected_nodes.extend(file)
+        xml_required_files = self.xml_root_node.find("requiredInstallFiles") or []
+        for xml_file in xml_required_files:
+            if xml_file.tag == "files":
+                selected_nodes.extend(xml_file)
             else:
-                selected_nodes.append(file)
+                selected_nodes.append(xml_file)
 
         assert (
             len(selected_nodes) > 0
