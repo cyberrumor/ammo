@@ -161,14 +161,13 @@ class FomodController(Controller):
                     # but fits into the "each step is a page" paradigm better.
                     if visible := step.find("visible"):
                         if dependencies := visible.find("dependencies"):
-                            dep_op = dependencies.get("operator")
-                            if dep_op:
-                                dep_op = dep_op.lower()
+                            dep_op = dependencies.get("operator", "").lower()
                             visibility_conditions["operator"] = dep_op
                             for xml_flag in dependencies:
-                                visibility_conditions[xml_flag.get("flag")] = (
-                                    xml_flag.get("value") in ["On", "1"]
-                                )
+                                if flag := xml_flag.get("flag"):
+                                    visibility_conditions[flag] = xml_flag.get(
+                                        "value", ""
+                                    ).lower() in ["on", "1", "active"]
 
                     page = Page(
                         name=group.get("name"),
@@ -192,10 +191,11 @@ class FomodController(Controller):
                         if conditional_flags := plugin.find("conditionFlags"):
                             for flag in conditional_flags:
                                 # People use arbitrary flags here.
-                                # Most commonly "On" or "1".
-                                flags[flag.get("name")] = flag.text in [
-                                    "On",
+                                # Most commonly "On", "1" or "active".
+                                flags[flag.get("name")] = (flag.text or "").lower() in [
+                                    "on",
                                     "1",
+                                    "active",
                                 ]
                             conditional = True
 
@@ -318,15 +318,15 @@ class FomodController(Controller):
         )
         for pattern in patterns:
             dependencies = pattern.find("dependencies")
-            dep_op = dependencies.get("operator")
-            if dep_op:
-                dep_op = dep_op.lower()
+            dep_op = dependencies.get("operator", "").lower()
             expected_flags = {"operator": dep_op}
             for xml_flag in dependencies:
-                expected_flags[xml_flag.get("flag")] = xml_flag.get("value") in [
-                    "On",
-                    "1",
-                ]
+                if flag := xml_flag.get("flag"):
+                    expected_flags[flag] = xml_flag.get("value", "").lower() in [
+                        "on",
+                        "1",
+                        "active",
+                    ]
 
             # xml_files is a list of folders. The folder objects contain the paths.
             xml_files = pattern.find("files")
