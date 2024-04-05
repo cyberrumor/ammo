@@ -35,7 +35,7 @@ class Selection:
 
     name: str
     description: str
-    dependency: Dependency
+    flags: dict
     selected: bool
     conditional: bool
     files: list[ElementTree.Element]
@@ -192,7 +192,7 @@ class FomodController(Controller):
                     for i, plugin in enumerate(group_of_plugins):
                         name = plugin.get("name").strip()
                         description = plugin.findtext("description", default="").strip()
-                        dependency = Dependency()
+                        flags = {}
                         # Automatically mark the first option as selected when
                         # a selection is required.
                         selected = (
@@ -204,9 +204,7 @@ class FomodController(Controller):
                             for flag in conditional_flags:
                                 # People use arbitrary flags here.
                                 # Most commonly "On", "1" or "active".
-                                dependency.flags[flag.get("name")] = (
-                                    flag.text or ""
-                                ).lower() in [
+                                flags[flag.get("name")] = (flag.text or "").lower() in [
                                     "on",
                                     "1",
                                     "active",
@@ -224,7 +222,7 @@ class FomodController(Controller):
                             Selection(
                                 name=name,
                                 description=description,
-                                dependency=dependency,
+                                flags=flags,
                                 selected=selected,
                                 conditional=conditional,
                                 files=files,
@@ -243,11 +241,11 @@ class FomodController(Controller):
         for step in self.steps:
             for selection in step.selections:
                 if selection.selected:
-                    for flag in selection.dependency.flags:
-                        flags[flag] = selection.dependency.flags[flag]
+                    for k, v in selection.flags.items():
+                        flags[k] = v
         return flags
 
-    def _flags_match(self, dependency: Dependency) -> bool:
+    def _flags_match(self, flags: dict, operator=None) -> bool:
         """
         Compare actual flags with dependency flags to determine whether
         the plugin associated with dependency should be included.
@@ -255,10 +253,10 @@ class FomodController(Controller):
         Returns whether the plugin which owns dependency matches.
         """
         match = False
-        for k, v in dependency.flags.items():
+        for k, v in flags.items():
             if k in self.flags:
                 if self.flags[k] != v:
-                    if dependency.operator == "and":
+                    if operator == "and":
                         # Mismatched flag. Skip this plugin.
                         return False
                     # if dep_op is "or" (or undefined), try the rest of these.
@@ -294,7 +292,7 @@ class FomodController(Controller):
             # if there's no condition for visibility, just show it.
             if not page.dependency.flags
             # if there's conditions, only include if the conditions are met.
-            or self._flags_match(page.dependency)
+            or self._flags_match(page.dependency.flags, page.dependency.operator)
         ]
 
     def _get_nodes(self) -> list[ElementTree.Element]:
@@ -311,8 +309,7 @@ class FomodController(Controller):
                 if plugin.selected:
                     if plugin.conditional:
                         # conditional normal file
-                        expected = plugin.dependency
-                        if self._flags_match(expected):
+                        if self._flags_match(plugin.flags):
                             selected_nodes.extend(plugin.files)
                         continue
                     # unconditional file install
@@ -349,7 +346,7 @@ class FomodController(Controller):
                 # No requirements for these files to be used.
                 selected_nodes.extend(xml_files)
 
-            if self._flags_match(dependency):
+            if self._flags_match(dependency.flags, dependency.operator):
                 selected_nodes.extend(xml_files)
 
         xml_required_files = self.xml_root_node.find("requiredInstallFiles") or []
