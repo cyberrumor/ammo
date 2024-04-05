@@ -263,6 +263,9 @@ class FomodController(Controller):
                     continue
                 # A single match.
                 match = True
+            elif operator == "and":
+                # Missing flags counts as failure for 'and'.
+                return False
         return match
 
     def _select(self, index: int) -> None:
@@ -342,11 +345,10 @@ class FomodController(Controller):
                 # can't find files for this, no point in checking whether to include.
                 continue
 
-            if not dependency:
+            if not dependency.flags:
                 # No requirements for these files to be used.
                 selected_nodes.extend(xml_files)
-
-            if self._flags_match(dependency.flags, dependency.operator):
+            elif self._flags_match(dependency.flags, dependency.operator):
                 selected_nodes.extend(xml_files)
 
         xml_required_files = self.xml_root_node.find("requiredInstallFiles") or []
