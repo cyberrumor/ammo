@@ -161,7 +161,7 @@ class FomodController(Controller):
                 install_step_name = f"- {install_step_name}"
             for optional_file_groups in step:
                 for group in optional_file_groups:
-                    if not (group_of_plugins := group.find("plugins")):
+                    if (group_of_plugins := group.find("plugins")) is None:
                         # This step has no configurable plugins.
                         # Skip the false positive.
                         continue
@@ -200,7 +200,9 @@ class FomodController(Controller):
                         ) and i == 0
 
                         # Interpret on/off or 1/0 as true/false
-                        if conditional_flags := plugin.find("conditionFlags"):
+                        if (
+                            conditional_flags := plugin.find("conditionFlags")
+                        ) is not None:
                             for flag in conditional_flags:
                                 # People use arbitrary flags here.
                                 # Most commonly "On", "1" or "active".
@@ -216,7 +218,9 @@ class FomodController(Controller):
                             # unconditional install.
                             conditional = False
 
-                        files = plugin.find("files") or []
+                        files = plugin.find("files")
+                        if files is None:
+                            files = []
 
                         page.selections.append(
                             Selection(
@@ -324,7 +328,7 @@ class FomodController(Controller):
         # install steps instead of within them).
         patterns = (
             self.xml_root_node.find("conditionalFileInstalls").find("patterns")
-            if self.xml_root_node.find("conditionalFileInstalls")
+            if self.xml_root_node.find("conditionalFileInstalls") is not None
             else []
         )
         for pattern in patterns:
@@ -341,7 +345,7 @@ class FomodController(Controller):
 
             # xml_files is a list of folders. The folder objects contain the paths.
             xml_files = pattern.find("files")
-            if not xml_files:
+            if xml_files is None:
                 # can't find files for this, no point in checking whether to include.
                 continue
 
@@ -351,7 +355,9 @@ class FomodController(Controller):
             elif self._flags_match(dependency.flags, dependency.operator):
                 selected_nodes.extend(xml_files)
 
-        xml_required_files = self.xml_root_node.find("requiredInstallFiles") or []
+        xml_required_files = self.xml_root_node.find("requiredInstallFiles")
+        if xml_required_files is None:
+            xml_required_files = []
         for xml_file in xml_required_files:
             if xml_file.tag == "files":
                 selected_nodes.extend(xml_file)
