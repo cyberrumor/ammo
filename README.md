@@ -19,7 +19,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 - install mods from ~/Downloads
 - activate/deactivate mods/plugins
 - reorder mods/plugins
-- rename mods/plugins/downloads
+- rename mods/downloads
 - delete mods/plugins/downloads
 - autosort plugins by mod order
 - supports FOMOD configuration
