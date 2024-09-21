@@ -11,6 +11,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Skyrim SE
 - Oblivion
 - Fallout 4
+- Fallout New Vegas
 - Enderal
 - Enderal Special Edition
 
