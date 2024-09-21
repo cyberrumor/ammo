@@ -57,6 +57,7 @@ class GameController(Controller):
             "Enderal": "933480",
             "Enderal Special Edition": "976620",
             "Starfield": "1716740",
+            "Fallout New Vegas": "22380",
         }
         self.downloads = self.args.downloads.resolve(strict=True)
         self.games: list[GameSelection] = []
