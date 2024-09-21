@@ -145,7 +145,7 @@ class ToolController(Controller):
 
     def rename(self, component: ToolEnum, index: int, name: str) -> None:
         """
-        Names may contain alphanumerics or underscores
+        Names may contain alphanumerics or underscores.
         """
         if component not in list(ToolEnum):
             raise Warning(
@@ -208,7 +208,7 @@ class ToolController(Controller):
 
     def delete(self, component: ToolEnum, index: Union[int, str]) -> None:
         """
-        Removes specified file from the filesystem
+        Removes specified file from the filesystem.
         """
         if not isinstance(component, ToolEnum):
             raise TypeError(
@@ -270,7 +270,7 @@ class ToolController(Controller):
 
     def install(self, index: Union[int, str]) -> None:
         """
-        Extract and manage an archive from ~/Downloads
+        Extract and manage an archive from ~/Downloads.
         """
         try:
             int(index)
@@ -349,12 +349,12 @@ class ToolController(Controller):
 
     def mods(self) -> None:
         """
-        Return to the mod controller
+        Return to the mod controller.
         """
         self.do_exit = True
 
     def refresh(self) -> None:
         """
-        Scan for tools in the tool folder
+        Scan for tools in the tool folder.
         """
         self.__init__(self.downloads_dir, self.tools_dir)

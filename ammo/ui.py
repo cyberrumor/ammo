@@ -20,6 +20,7 @@ from abc import (
     abstractmethod,
 )
 from dataclasses import dataclass
+from itertools import product
 
 
 class Controller(ABC):
@@ -80,6 +81,7 @@ class Arg:
     name: str
     type: type
     description: str
+    expressions: list[str]
     required: bool
 
 
@@ -91,6 +93,7 @@ class Command:
     doc: str
     instance: Union[Controller, None]
     visible: bool
+    examples: list[str]
 
 
 class UI:
@@ -149,6 +152,7 @@ class UI:
             func=self.help,
             args=[],
             doc=str(self.help.__doc__).strip(),
+            examples=[],
             instance=None,
             visible=True,
         )
@@ -159,6 +163,7 @@ class UI:
             func=self.help,
             args=[],
             doc=str(self.help.__doc__).strip(),
+            examples=[],
             instance=None,
             visible=False,
         )
@@ -169,6 +174,7 @@ class UI:
             func=self.exit,
             args=[],
             doc=str(self.exit.__doc__).strip(),
+            examples=[],
             instance=None,
             visible=True,
         )
@@ -179,6 +185,7 @@ class UI:
             func=self.exit,
             args=[],
             doc=str(self.exit.__doc__).strip(),
+            examples=[],
             instance=None,
             visible=False,
         )
@@ -206,7 +213,10 @@ class UI:
             parameters = list(signature.parameters.values())[1:]
 
             args = []
-            for param in parameters:
+            for index, param in enumerate(parameters):
+                # enumerate so we can get a unique int for each int arg
+                # in the help text.
+                expressions = []
                 required = False
                 description = ""
                 if param.default == param.empty:
@@ -216,30 +226,65 @@ class UI:
                         # *args are optional, and any
                         # number of them may be provided.
                         description = f"[<{param.name}> ... ]"
+                        expressions.append("")
+                        expressions.append(f"{param.name}1")
+                        expressions.append(f"{param.name}1 {param.name}2")
 
                     elif param.kind == inspect.Parameter.VAR_KEYWORD:
                         # **kwargs are optional, but there's no way to know
                         # which kwargs are accepted. Just hint at the collective.
                         description = f"[{param.name}=<value>]"
+                        expressions.append("")
+                        expressions.append("undocumnted_arg1=some_value")
+                        expressions.append(
+                            "undocumented_arg1=some_value undocumented_arg2=some_value"
+                        )
 
-                    else:
-                        description = f"<{param.name}>"
-                        required = True
+                    elif t := type_hints.get(param.name, None):
+                        # If the argument is an enum, only provide the explicit values that
+                        # the enum can represent. Show these as (state1|state2|state3).
+                        if isinstance(t, EnumMeta):
+                            description = "(" + "|".join([e.value for e in t]) + ")"
+                            for e in t:
+                                expressions.append(e.value)
 
-                if t := type_hints.get(param.name, None):
-                    # If the argument is an enum, only provide the explicit values that
-                    # the enum can represent. Show these as (state1|state2|state3).
-                    if isinstance(t, EnumMeta):
-                        description = "(" + "|".join([e.value for e in t]) + ")"
+                        else:
+
+                            description = f"<{param.name}>"
+                            required = True
+                            t = type_hints.get(param.name, None)
+                            if t is Union[int, str]:
+                                expressions.append(f"{index}")
+                                # guh, business logic in the UI class :c
+                                expressions.append("all")
+                            elif t is int:
+                                # TODO: Make this say 3 if it's not the first int
+                                expressions.append(f"{index}")
+                            elif t is str:
+                                expressions.append("some_text")
+                            else:
+                                expressions.append(param.name)
 
                 args.append(
                     Arg(
                         name=param.name,
                         type=param.annotation,
                         description=description,
+                        expressions=expressions,
                         required=required,
                     )
                 )
+
+            examples = set()
+            expressions_lists = [arg.expressions for arg in args]
+            product_combinations = product(*expressions_lists)
+            for combination in product_combinations:
+                examples.add(f"{name} {' '.join(combination)}".strip())
+            examples = sorted(list(examples))
+
+            # Get rid of examples that are just the command name alone.
+            if len(examples) == 1 and examples[0] == name:
+                examples = []
 
             self.command[name] = Command(
                 name=name,
@@ -248,15 +293,17 @@ class UI:
                 doc=str(func.__doc__).strip(),
                 instance=self.controller,
                 visible=True,
+                examples=examples,
             )
 
     def help(self):
         """
-        Show this menu
+        Show this menu.
         """
         column_cmd = []
         column_arg = []
         column_doc = []
+        example_doc = []
 
         for name, command in sorted(self.command.items()):
             if not command.visible:
@@ -264,12 +311,15 @@ class UI:
             column_cmd.append(name)
             column_arg.append(" ".join([arg.description for arg in command.args]))
             column_doc.append(command.doc)
+            example_doc.append(command.examples)
 
         pad_cmd = max(len(cmd) for cmd in column_cmd) + 1
         pad_arg = max(len(arg) for arg in column_arg) + 1
 
         out = "\n"
-        for cmd, arg, doc in zip(column_cmd, column_arg, column_doc):
+        for cmd, arg, doc, examples in zip(
+            column_cmd, column_arg, column_doc, example_doc
+        ):
             line = f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}"
             # Treat linebreaks, tabs and multiple spaces as a single space.
             docstring = " ".join(doc.split())
@@ -282,6 +332,16 @@ class UI:
                 )
                 + "\n"
             )
+            for example in examples:
+                out += (
+                    textwrap.fill(
+                        f"- `{example}`",
+                        initial_indent=" " * (pad_cmd + pad_arg) + "    ",
+                        subsequent_indent=" " * (pad_cmd + pad_arg) + "    ",
+                        width=100,
+                    )
+                    + "\n"
+                )
         print(out)
         try:
             input("[Enter] ")
@@ -291,7 +351,7 @@ class UI:
 
     def exit(self):
         """
-        Quit
+        Quit.
         """
         sys.exit(0)
 
