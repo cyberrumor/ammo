@@ -240,30 +240,32 @@ class UI:
                             "undocumented_arg1=some_value undocumented_arg2=some_value"
                         )
 
-                    elif t := type_hints.get(param.name, None):
-                        # If the argument is an enum, only provide the explicit values that
-                        # the enum can represent. Show these as (state1|state2|state3).
-                        if isinstance(t, EnumMeta):
-                            description = "(" + "|".join([e.value for e in t]) + ")"
-                            for e in t:
-                                expressions.append(e.value)
-
+                    elif (t := type_hints.get(param.name, None)) and not isinstance(
+                        t, EnumMeta
+                    ):
+                        description = f"<{param.name}>"
+                        required = True
+                        t = type_hints.get(param.name, None)
+                        if t is Union[int, str]:
+                            expressions.append(f"{index}")
+                            # guh, business logic in the UI class :c
+                            expressions.append("all")
+                        elif t is int:
+                            # TODO: Make this say 3 if it's not the first int
+                            expressions.append(f"{index}")
+                        elif t is str:
+                            expressions.append("some_text")
                         else:
+                            expressions.append(param.name)
 
-                            description = f"<{param.name}>"
-                            required = True
-                            t = type_hints.get(param.name, None)
-                            if t is Union[int, str]:
-                                expressions.append(f"{index}")
-                                # guh, business logic in the UI class :c
-                                expressions.append("all")
-                            elif t is int:
-                                # TODO: Make this say 3 if it's not the first int
-                                expressions.append(f"{index}")
-                            elif t is str:
-                                expressions.append("some_text")
-                            else:
-                                expressions.append(param.name)
+                if t := type_hints.get(param.name, None):
+                    # If the argument is an enum, only provide the explicit values that
+                    # the enum can represent. Show these as (state1|state2|state3).
+                    required = True
+                    if isinstance(t, EnumMeta):
+                        description = "(" + "|".join([e.value for e in t]) + ")"
+                        for e in t:
+                            expressions.append(e.value)
 
                 args.append(
                     Arg(
@@ -424,6 +426,7 @@ class UI:
             # Validate that we received a sane number of arguments.
             num_required_args = len([arg for arg in command.args if arg.required])
             num_optional_args = len([arg for arg in command.args if not arg.required])
+
             if (
                 num_required_args > len(args)
                 or (num_required_args > len(args) and num_optional_args == 0)
@@ -454,7 +457,7 @@ class UI:
                         expected_arg = expected_args.pop(0)
 
             except (ValueError, KeyError) as e:
-                print(f"arg was unexpected type: {e}")
+                print(f"arg '{e}' was unexpected type: {type(e)}")
                 input("[Enter] ")
                 continue
 
@@ -474,3 +477,8 @@ class UI:
             except Warning as warning:
                 print(f"\n{warning}")
                 input("[Enter] ")
+
+            except Exception as e:
+                print(e)
+                print(f"{prepared_args=}")
+                raise
