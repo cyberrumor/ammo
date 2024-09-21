@@ -74,20 +74,20 @@ pip3 install --user --break-system-packages --force-reinstall .
 
 | Command     | Arguments                               | Description |
 |-|-|-|
-| activate    | (mod\|plugin) \<index>                  | Enabled components will be loaded by game |
-| collisions  | \<index>                                | Show file conflicts for a mod |
-| commit      |                                         | Apply pending changes |
-| configure   | \<index>                                | Configure a fomod |
-| deactivate  | (mod\|plugin) \<index>                  | Disabled components will not be loaded by game |
-| delete      | (mod\|download\|plugin) \<index>        | Removes specified file from the filesystem |
-| exit        |                                         | Quit |
-| find        | [\<keyword> ...]                        | Show only components with any keyword |
-| help        |                                         | Show this menu |
-| install     | \<index>                                | Extract and manage an archive from ~/Downloads |
-| move        | (mod\|plugin) \<from_index> \<to_index> | Larger numbers win file conflicts |
-| refresh     |                                         | Abandon pending changes |
-| rename      | (mod\|download) \<index> \<name>        | Names may contain alphanumerics and underscores |
-| sort        |                                         | Arrange plugins by mod order |
+| activate    | (mod\|plugin) \<index>                  | Enabled components will be loaded by game. |
+| collisions  | \<index>                                | Show file conflicts for a mod. |
+| commit      |                                         | Apply pending changes. |
+| configure   | \<index>                                | Configure a fomod. |
+| deactivate  | (mod\|plugin) \<index>                  | Disabled components will not be loaded by game. |
+| delete      | (mod\|download\|plugin) \<index>        | Removes specified file from the filesystem. |
+| exit        |                                         | Quit. |
+| find        | [\<keyword> ...]                        | Show only components with any keyword. Execute without args to show all. |
+| help        |                                         | Show this menu. |
+| install     | \<index>                                | Extract and manage an archive from ~/Downloads. |
+| move        | (mod\|plugin) \<from_index> \<to_index> | Larger numbers win file conflicts. |
+| refresh     |                                         | Abandon pending changes. |
+| rename      | (mod\|download) \<index> \<name>        | Names may contain alphanumerics and underscores. |
+| sort        |                                         | Arrange plugins by mod order. |
 
 
 ### Usage Tips and Tricks
