@@ -153,6 +153,16 @@ class UI:
             visible=True,
         )
 
+        # Make 'help' available from 'h' too.
+        self.command["h"] = Command(
+            name="h",
+            func=self.help,
+            args=[],
+            doc=str(self.help.__doc__).strip(),
+            instance=None,
+            visible=False,
+        )
+
         # Default 'exit', may be overridden.
         self.command["exit"] = Command(
             name="exit",
