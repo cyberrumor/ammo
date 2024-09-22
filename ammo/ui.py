@@ -24,6 +24,8 @@ from itertools import product
 
 
 SEPARATOR_ROW = "."
+SEPARATOR_COL = ":"
+TERM_WIDTH = 96
 
 
 class Controller(ABC):
@@ -321,21 +323,24 @@ class UI:
         pad_cmd = max(len(cmd) for cmd in column_cmd) + 1
         pad_arg = max(len(arg) for arg in column_arg) + 1
 
-        row_divider = SEPARATOR_ROW * 100
+        row_divider = SEPARATOR_ROW * TERM_WIDTH
 
         out = f"\n{row_divider}\n"
         for cmd, arg, doc, examples in zip(
             column_cmd, column_arg, column_doc, example_doc
         ):
-            line = f"{cmd}{' ' * (pad_cmd - len(cmd))}{arg}{' ' * (pad_arg - len(arg))}"
+            line = f"{cmd}{' ' * (pad_cmd - len(cmd))}{SEPARATOR_COL} {arg}{' ' * (pad_arg - len(arg))}{SEPARATOR_COL} "
             # Treat linebreaks, tabs and multiple spaces as a single space.
             docstring = " ".join(doc.split())
             # Wrap the document so it stays in the description column.
             out += (
                 textwrap.fill(
                     line + docstring,
-                    subsequent_indent=" " * (pad_cmd + pad_arg),
-                    width=100,
+                    subsequent_indent=(" " * pad_cmd)
+                    + SEPARATOR_COL
+                    + (" " * pad_arg)
+                    + f" {SEPARATOR_COL} ",
+                    width=TERM_WIDTH,
                 )
                 + "\n"
             )
@@ -343,9 +348,15 @@ class UI:
                 out += (
                     textwrap.fill(
                         f"- `{example}`",
-                        initial_indent=" " * (pad_cmd + pad_arg) + "    ",
-                        subsequent_indent=" " * (pad_cmd + pad_arg) + "    ",
-                        width=100,
+                        initial_indent=(" " * pad_cmd)
+                        + SEPARATOR_COL
+                        + (" " * pad_arg)
+                        + f" {SEPARATOR_COL} ",
+                        subsequent_indent=(" " * pad_cmd)
+                        + SEPARATOR_COL
+                        + (" " * pad_arg)
+                        + f" {SEPARATOR_COL} ",
+                        width=TERM_WIDTH,
                     )
                     + "\n"
                 )
