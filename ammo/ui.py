@@ -23,6 +23,9 @@ from dataclasses import dataclass
 from itertools import product
 
 
+SEPARATOR_ROW = "."
+
+
 class Controller(ABC):
     """
     Public methods of class derivatives will be exposed
@@ -318,7 +321,9 @@ class UI:
         pad_cmd = max(len(cmd) for cmd in column_cmd) + 1
         pad_arg = max(len(arg) for arg in column_arg) + 1
 
-        out = "\n"
+        row_divider = SEPARATOR_ROW * 100
+
+        out = f"\n{row_divider}\n"
         for cmd, arg, doc, examples in zip(
             column_cmd, column_arg, column_doc, example_doc
         ):
@@ -344,6 +349,8 @@ class UI:
                     )
                     + "\n"
                 )
+            out += f"{row_divider}\n"
+
         print(out)
         try:
             input("[Enter] ")
