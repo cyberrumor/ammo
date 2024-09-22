@@ -266,8 +266,8 @@ class UI:
                 if t := type_hints.get(param.name, None):
                     # If the argument is an enum, only provide the explicit values that
                     # the enum can represent. Show these as (state1|state2|state3).
-                    required = True
                     if isinstance(t, EnumMeta):
+                        required = True
                         description = "(" + "|".join([e.value for e in t]) + ")"
                         for e in t:
                             expressions.append(e.value)
