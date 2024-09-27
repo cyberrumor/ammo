@@ -51,7 +51,9 @@ activate   : (mod|plugin) <index>             : Enabled components will be loade
            :                                  : - `activate plugin 1`
            :                                  : - `activate plugin all`
 ................................................................................................
-collisions : <index>                          : Show file conflicts for a mod.
+collisions : <index>                          : Show file conflicts for a mod. Mods prefixed
+           :                                  : with asterisks have file conflicts. Mods
+           :                                  : prefixed with x install no files.
            :                                  : - `collisions 0`
 ................................................................................................
 commit     :                                  : Apply pending changes.

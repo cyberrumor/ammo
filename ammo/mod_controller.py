@@ -1034,7 +1034,8 @@ class ModController(Controller):
 
     def collisions(self, index: int) -> None:
         """
-        Show file conflicts for a mod.
+        Show file conflicts for a mod. Mods prefixed with asterisks
+        have file conflicts. Mods prefixed with x install no files.
         """
         try:
             subject = self.mods[index]
