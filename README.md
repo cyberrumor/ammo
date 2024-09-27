@@ -40,26 +40,68 @@ cd ammo
 pipx install . --force
 ```
 
-## Usage Instructions
+## Usage
 
 `ammo` - Launch the interactive shell. Select a game via index if prompted.
-
-| Command     | Arguments                               | Description |
-|-|-|-|
-| activate    | (mod\|plugin) \<index>                  | Enabled components will be loaded by game. |
-| collisions  | \<index>                                | Show file conflicts for a mod. |
-| commit      |                                         | Apply pending changes. |
-| configure   | \<index>                                | Configure a fomod. |
-| deactivate  | (mod\|plugin) \<index>                  | Disabled components will not be loaded by game. |
-| delete      | (mod\|download\|plugin) \<index>        | Removes specified file from the filesystem. |
-| exit        |                                         | Quit. |
-| find        | [\<keyword> ...]                        | Show only components with any keyword. Execute without args to show all. |
-| help        |                                         | Show this menu. |
-| install     | \<index>                                | Extract and manage an archive from ~/Downloads. |
-| move        | (mod\|plugin) \<from_index> \<to_index> | Larger numbers win file conflicts. |
-| refresh     |                                         | Abandon pending changes. |
-| rename      | (mod\|download) \<index> \<name>        | Names may contain alphanumerics and underscores. |
-| sort        |                                         | Arrange plugins by mod order. |
+```
+................................................................................................
+activate   : (mod|plugin) <index>             : Enabled components will be loaded by game.
+           :                                  : - `activate mod 1`
+           :                                  : - `activate mod all`
+           :                                  : - `activate plugin 1`
+           :                                  : - `activate plugin all`
+................................................................................................
+collisions : <index>                          : Show file conflicts for a mod.
+           :                                  : - `collisions 0`
+................................................................................................
+commit     :                                  : Apply pending changes.
+................................................................................................
+configure  : <index>                          : Configure a fomod.
+           :                                  : - `configure 0`
+................................................................................................
+deactivate : (mod|plugin) <index>             : Disabled components will not be loaded by game.
+           :                                  : - `deactivate mod 1`
+           :                                  : - `deactivate mod all`
+           :                                  : - `deactivate plugin 1`
+           :                                  : - `deactivate plugin all`
+................................................................................................
+delete     : (mod|download|plugin) <index>    : Removes specified file from the filesystem.
+           :                                  : - `delete download 1`
+           :                                  : - `delete download all`
+           :                                  : - `delete mod 1`
+           :                                  : - `delete mod all`
+           :                                  : - `delete plugin 1`
+           :                                  : - `delete plugin all`
+................................................................................................
+exit       :                                  : Quit.
+................................................................................................
+find       : [<keyword> ... ]                 : Show only components with any keyword. Execute
+           :                                  : without args to show all.
+           :                                  : - `find`
+           :                                  : - `find keyword1`
+           :                                  : - `find keyword1 keyword2`
+................................................................................................
+help       :                                  : Show this menu.
+................................................................................................
+install    : <index>                          : Extract and manage an archive from ~/Downloads.
+           :                                  : - `install 0`
+           :                                  : - `install all`
+................................................................................................
+move       : (mod|plugin) <index> <new_index> : Larger numbers win file conflicts.
+           :                                  : - `move mod 1 2`
+           :                                  : - `move plugin 1 2`
+................................................................................................
+refresh    :                                  : Abandon pending changes.
+................................................................................................
+rename     : (mod|download) <index> <name>    : Names may contain alphanumerics and underscores.
+           :                                  : - `rename download 1 some_text`
+           :                                  : - `rename mod 1 some_text`
+................................................................................................
+sort       :                                  : Arrange plugins by mod order.
+................................................................................................
+tools      :                                  : Manage tools.
+................................................................................................
+```
 
 
 ## License
