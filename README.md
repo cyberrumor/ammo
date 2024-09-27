@@ -27,45 +27,17 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 ## Dependencies
 
-- Supports Steam from your official repository
-- Supports com.valvesoftware.Steam from Flatpak
 - Python 3.11 or later
-- p7z (or something else that puts 7z in your PATH).
+- Steam from [Flatpak](https://flathub.org/apps/com.valvesoftware.Steam) or official repos.
+- [p7z](https://github.com/p7zip-project/p7zip) from official repos.
+- [pipx](https://github.com/pypa/pipx) from official repos.
 
-## Installation Instructions
+## Installation
 
-Steam Deck users:
-
-```sh
-python -m ensurepip --user --break-system-packages --upgrade
-python -m pip install --user --break-system-packages --upgrade pip
 ```
-
-Everyone:
-
-```sh
-echo 'PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
-PATH="$PATH:$HOME/.local/bin"
 git clone https://github.com/cyberrumor/ammo
 cd ammo
-pip3 install --user --break-system-packages -r requirements.txt
-pip3 install --user --break-system-packages .
-```
-
-You can now execute ammo with the terminal command `ammo`.
-
-## Updating Instructions
-
-Check the releases page for possible manual migration steps.
-Releases are only published on breaking changes, and are there
-for the benefit of people who don't have time to address those
-changes. In general, you should be using the most recent
-version of the main branch.
-
-```sh
-cd /path/to/ammo/clone/dir
-git pull
-pip3 install --user --break-system-packages --force-reinstall .
+pipx install . --force
 ```
 
 ## Usage Instructions
