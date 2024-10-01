@@ -304,7 +304,11 @@ class ModController(Controller):
                         components = self.plugins
                     case _:
                         components = []
-            if func not in [self.install.__func__, self.configure.__func__]:
+            if func not in [
+                self.install.__func__,
+                self.configure.__func__,
+                self.collisions.__func__,
+            ]:
                 for i in range(len(components)):
                     if str(i).startswith(text):
                         completions.append(str(i))
@@ -327,6 +331,12 @@ class ModController(Controller):
             for i in range(len(self.mods)):
                 if str(i).startswith(text):
                     if self.mods[i].fomod:
+                        completions.append(str(i))
+
+        elif func == self.collisions.__func__:
+            for i in range(len(self.mods)):
+                if str(i).startswith(text):
+                    if self.mods[i].conflict:
                         completions.append(str(i))
 
         return completions[state] + " "
