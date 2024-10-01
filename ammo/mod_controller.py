@@ -1046,7 +1046,8 @@ class ModController(Controller):
         if not subject.conflict:
             raise Warning("No conflicts.")
 
-        def get_relative_files(mod):
+        def get_relative_files(mod: Mod):
+            # Iterate through the source files of the mod
             for src in mod.files:
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
@@ -1056,9 +1057,11 @@ class ModController(Controller):
                 else:
                     corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
 
-                if mod.install_dir.name == mod.game_data.name:
-                    corrected_name = mod.game_data.name + f"/{corrected_name}"
-                yield corrected_name
+                dest = mod.install_dir / corrected_name
+                dest = normalize(dest, self.game.directory)
+                dest = str(dest).split(str(self.game.directory), 1)[-1].strip("/")
+
+                yield dest
 
         enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
         enabled_mod_names = [i.name for i in enabled_mods]
