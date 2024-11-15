@@ -915,6 +915,16 @@ class ModController(Controller):
                     f"Extraction of {index} failed since mod '{extract_to.name}' exists."
                 )
 
+            # 7z CLI has a bug with filenames with apostrophes. shlex.quote won't work around this.
+            # Rename the archive if it has an apostrophe in it.
+            if "'" in download.location.name:
+                new_location = (
+                    download.location.parent / download.location.name.replace("'", "_")
+                )
+                download.location.rename(new_location)
+                download.location = new_location
+                download.name = new_location.name
+
             if "pytest" not in sys.modules:
                 # Don't run this during tests because it's slow.
                 try:
