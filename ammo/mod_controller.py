@@ -6,6 +6,7 @@ import sys
 import readline
 import textwrap
 from collections.abc import Callable
+from functools import wraps
 from pathlib import Path
 from dataclasses import (
     dataclass,
@@ -57,6 +58,22 @@ class ModController(Controller):
     Private methods here are private simply so the UI doesn't
     display them.
     """
+
+    def _requires_sync(func: Callable) -> Callable:
+        """
+        Decorator which prevents decorated function from executing
+        if self.changes is True.
+        """
+
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.changes:
+                raise Warning(
+                    "Not executed. You must refresh or commit before doing that."
+                )
+            return func(self, *args, **kwargs)
+
+        return wrapper
 
     def __init__(self, downloads_dir: Path, game: Game, *keywords):
         self.downloads_dir: Path = downloads_dir
@@ -518,14 +535,11 @@ class ModController(Controller):
 
         self._remove_empty_dirs()
 
+    @_requires_sync
     def configure(self, index: int) -> None:
         """
         Configure a fomod.
         """
-        # This has to run a hard refresh for now, so warn if there are uncommitted changes
-        if self.changes is True:
-            raise Warning("You must `commit` changes before configuring a fomod.")
-
         # Since there must be a hard refresh after the fomod wizard to load the mod's new
         # files, deactivate this mod and commit changes. This prevents a scenario where
         # the user could re-configure a fomod (thereby changing mod.location/self.game.data.name),
@@ -642,6 +656,7 @@ class ModController(Controller):
             self.changes = self.plugins != result
         self.plugins = result
 
+    @_requires_sync
     def rename(self, component: RenameEnum, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores.
@@ -650,8 +665,6 @@ class ModController(Controller):
             raise Warning(
                 f"Can only rename components of types {[i.value for i in list(RenameEnum)]}, not {component}"
             )
-        if self.changes is True:
-            raise Warning("You must `commit` changes before renaming.")
 
         if name != "".join([i for i in name if i.isalnum() or i == "_"]):
             raise Warning(
@@ -726,6 +739,7 @@ class ModController(Controller):
                 if mod.enabled:
                     self.commit()
 
+    @_requires_sync
     def delete(self, component: DeleteEnum, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
@@ -734,8 +748,6 @@ class ModController(Controller):
             raise TypeError(
                 f"Expected DeleteEnum, got '{component}' of type '{type(component)}'"
             )
-        if self.changes is True:
-            raise Warning("You must `commit` changes before deleting files.")
         try:
             index = int(index)
         except ValueError:
@@ -876,13 +888,11 @@ class ModController(Controller):
                     except FileNotFoundError:
                         pass
 
+    @_requires_sync
     def install(self, index: Union[int, str]) -> None:
         """
         Extract and manage an archive from ~/Downloads.
         """
-        if self.changes is True:
-            raise Warning("You must `commit` changes before installing a mod.")
-
         try:
             int(index)
         except ValueError:
@@ -1167,12 +1177,11 @@ class ModController(Controller):
                 for component in self.plugins:
                     component.visible = True
 
+    @_requires_sync
     def tools(self) -> None:
         """
         Manage tools.
         """
-        if self.changes:
-            raise Warning("You must commit changes before accessing tools")
         tool_controller = ToolController(
             self.downloads_dir,
             self.game.ammo_conf.parent / "tools",
