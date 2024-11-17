@@ -22,6 +22,7 @@ GAME = Game(
     directory=Path("/tmp/MockGame"),
     data=Path("/tmp/MockGame/Data"),
     ammo_conf=Path(f"{AMMO_DIR}/ammo.conf"),
+    ammo_log=Path(f"{AMMO_DIR}/ammo.log"),
     dlc_file=Path(f"{AMMO_DIR}/dlcList.txt"),
     plugin_file=Path(f"{AMMO_DIR}/Plugins.txt"),
     ammo_mods_dir=Path(f"{AMMO_DIR}/MockGame/mods"),

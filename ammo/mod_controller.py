@@ -5,6 +5,7 @@ import subprocess
 import sys
 import readline
 import textwrap
+import logging
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
@@ -37,9 +38,13 @@ from .lib import (
 )
 
 
+log = logging.getLogger(__name__)
+
+
 @dataclass(frozen=True)
 class Game:
     ammo_conf: Path
+    ammo_log: Path
     ammo_mods_dir: Path
     name: str
     directory: Path
@@ -84,6 +89,9 @@ class ModController(Controller):
         self.plugins: list[Plugin] = []
         self.dlc: list[Plugin] = []
         self.keywords = [*keywords]
+
+        logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
+        log.info("initializing")
 
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
@@ -687,7 +695,7 @@ class ModController(Controller):
                     raise Warning(e)
 
                 if not download.visible:
-                    raise Warning("You caon only rename visible components.")
+                    raise Warning("You can only rename visible components.")
 
                 if "pytest" not in sys.modules:
                     # Don't run this during tests because it's slow.
@@ -707,6 +715,7 @@ class ModController(Controller):
                         f"Can't rename because download {new_location} exists."
                     )
 
+                log.info(f"Renaming {component} {download.location} to {new_location}")
                 download.location.rename(new_location)
                 self.refresh()
 
@@ -724,10 +733,12 @@ class ModController(Controller):
                     raise Warning(f"A mod named {str(new_location)} already exists!")
 
                 if mod.enabled:
-                    # Remove symlinks instead of breaking them.
+                    # Remove symlinks instead of breaking them in case something goes
+                    # wrong with the rename and ammo exits before it can commit.
                     self._clean_game_dir()
 
                 # Move the folder, update the mod.
+                log.info(f"Renaming {component} {mod.location} to {new_location}")
                 mod.location.rename(new_location)
                 mod.location = new_location
                 mod.name = name
@@ -736,8 +747,7 @@ class ModController(Controller):
                 mod.__post_init__()
 
                 # re-install symlinks
-                if mod.enabled:
-                    self.commit()
+                self.commit()
 
     @_requires_sync
     def delete(self, component: DeleteEnum, index: Union[int, str]) -> None:
@@ -772,6 +782,7 @@ class ModController(Controller):
                         )
                         self.mods.remove(mod)
                         try:
+                            log.info(f"Deleting {component}: {mod.location}")
                             shutil.rmtree(mod.location)
                         except FileNotFoundError:
                             pass
@@ -796,6 +807,7 @@ class ModController(Controller):
                     )
                     self.mods.pop(index)
                     try:
+                        log.info(f"Deleting {component}: {mod.location}")
                         shutil.rmtree(mod.location)
                     except FileNotFoundError:
                         pass
@@ -834,6 +846,7 @@ class ModController(Controller):
                         self.plugins.remove(plugin)
                         for file in get_plugin_files(plugin):
                             try:
+                                log.info(f"Deleting {component}: {file}")
                                 file.unlink()
                             except FileNotFoundError:
                                 pass
@@ -852,6 +865,7 @@ class ModController(Controller):
                     self.plugins.remove(plugin)
                     for file in get_plugin_files(plugin):
                         try:
+                            log.info(f"Deleting {component}: {file}")
                             file.unlink()
                         except FileNotFoundError:
                             pass
@@ -867,6 +881,7 @@ class ModController(Controller):
                             self.downloads.index(visible_download)
                         )
                         try:
+                            log.info(f"Deleting {component}: {download.location}")
                             download.location.unlink()
                         except FileNotFoundError:
                             pass
@@ -884,6 +899,7 @@ class ModController(Controller):
                     self.downloads.remove(download)
 
                     try:
+                        log.info(f"Deleting {component}: {download.location}")
                         download.location.unlink()
                     except FileNotFoundError:
                         pass
@@ -1016,6 +1032,7 @@ class ModController(Controller):
             # Auto correct astronomical <to index> to max.
             new_index = len(components) - 1
 
+        log.info(f"moving {component} {comp.name} from {index=} to {new_index=}")
         components.pop(index)
         components.insert(new_index, comp)
         self._stage()
@@ -1025,6 +1042,7 @@ class ModController(Controller):
         """
         Apply pending changes.
         """
+        log.info("Committing pending changes to storage")
         self._save_order()
         stage = self._stage()
         self._clean_game_dir()

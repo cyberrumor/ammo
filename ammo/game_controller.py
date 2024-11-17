@@ -169,6 +169,7 @@ class GameController(Controller):
         ammo_conf_dir = self.args.conf.resolve() / game_selection.name
         ammo_mods_dir = (self.args.mods or ammo_conf_dir / "mods").resolve()
         ammo_conf = ammo_conf_dir / "ammo.conf"
+        ammo_log = ammo_conf_dir / "ammo.log"
 
         match game_selection.name:
             # Some games expect plugins to be disabled if they begin with
@@ -186,6 +187,7 @@ class GameController(Controller):
 
         game = Game(
             ammo_conf,
+            ammo_log,
             ammo_mods_dir,
             game_selection.name,
             game_selection.directory,
