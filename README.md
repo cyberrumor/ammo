@@ -89,6 +89,8 @@ install    : <index>                          : Extract and manage an archive fr
            :                                  : - `install 0`
            :                                  : - `install all`
 ................................................................................................
+log        :                                  : Show debug log history.
+................................................................................................
 move       : (mod|plugin) <index> <new_index> : Larger numbers win file conflicts.
            :                                  : - `move mod 1 2`
            :                                  : - `move plugin 1 2`

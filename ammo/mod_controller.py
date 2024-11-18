@@ -1195,6 +1195,17 @@ class ModController(Controller):
                 for component in self.plugins:
                     component.visible = True
 
+    def log(self) -> None:
+        """
+        Show debug log history.
+        """
+        _log = ""
+        if self.game.ammo_log.exists():
+            with open(self.game.ammo_log, "r") as f:
+                _log = f.read()
+
+        raise Warning(_log)
+
     @_requires_sync
     def tools(self) -> None:
         """
