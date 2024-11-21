@@ -4,25 +4,17 @@ import shutil
 import subprocess
 import sys
 import readline
-import textwrap
-from collections.abc import Callable
 from pathlib import Path
-from dataclasses import (
-    dataclass,
-    field,
-)
 import typing
 from typing import Union
 from enum import (
     EnumMeta,
 )
-from .ui import (
-    UI,
-    Controller,
-)
+from .ui import Controller
 from .component import (
     Download,
     ToolEnum,
+    ComponentEnum,
 )
 from .lib import NO_EXTRACT_DIRS
 
