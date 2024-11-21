@@ -44,66 +44,77 @@ pipx install . --force
 
 `ammo` - Launch the interactive shell. Select a game via index if prompted.
 ```
+activate_mod      : <index>             : Enabled mods will be loaded by game.
+                  :                     : - `activate_mod 0`
+                  :                     : - `activate_mod all`
 ................................................................................................
-activate   : (mod|plugin) <index>             : Enabled components will be loaded by game.
-           :                                  : - `activate mod 1`
-           :                                  : - `activate mod all`
-           :                                  : - `activate plugin 1`
-           :                                  : - `activate plugin all`
+activate_plugin   : <index>             : Enabled plugins will be loaded by the game.
+                  :                     : - `activate_plugin 0`
+                  :                     : - `activate_plugin all`
 ................................................................................................
-collisions : <index>                          : Show file conflicts for a mod. Mods prefixed
-           :                                  : with asterisks have file conflicts. Mods
-           :                                  : prefixed with x install no files.
-           :                                  : - `collisions 0`
+collisions        : <index>             : Show file conflicts for a mod. Mods prefixed with
+                  :                     : asterisks have file conflicts. Mods prefixed with x
+                  :                     : install no files.
+                  :                     : - `collisions 0`
 ................................................................................................
-commit     :                                  : Apply pending changes.
+commit            :                     : Apply pending changes.
 ................................................................................................
-configure  : <index>                          : Configure a fomod.
-           :                                  : - `configure 0`
+configure         : <index>             : Configure a fomod.
+                  :                     : - `configure 0`
 ................................................................................................
-deactivate : (mod|plugin) <index>             : Disabled components will not be loaded by game.
-           :                                  : - `deactivate mod 1`
-           :                                  : - `deactivate mod all`
-           :                                  : - `deactivate plugin 1`
-           :                                  : - `deactivate plugin all`
+deactivate_mod    : <index>             : Diabled mods will not be loaded by game.
+                  :                     : - `deactivate_mod 0`
+                  :                     : - `deactivate_mod all`
 ................................................................................................
-delete     : (mod|download|plugin) <index>    : Removes specified file from the filesystem.
-           :                                  : - `delete download 1`
-           :                                  : - `delete download all`
-           :                                  : - `delete mod 1`
-           :                                  : - `delete mod all`
-           :                                  : - `delete plugin 1`
-           :                                  : - `delete plugin all`
+deactivate_plugin : <index>             : Disabled plugins will not be loaded by game.
+                  :                     : - `deactivate_plugin 0`
+                  :                     : - `deactivate_plugin all`
 ................................................................................................
-exit       :                                  : Quit.
+delete_download   : <index>             : Removes specified download from the filesystem.
+                  :                     : - `delete_download 0`
+                  :                     : - `delete_download all`
 ................................................................................................
-find       : [<keyword> ... ]                 : Show only components with any keyword. Execute
-           :                                  : without args to show all.
-           :                                  : - `find`
-           :                                  : - `find keyword1`
-           :                                  : - `find keyword1 keyword2`
+delete_mod        : <index>             : Removes specified mod from the filesystem.
+                  :                     : - `delete_mod 0`
+                  :                     : - `delete_mod all`
 ................................................................................................
-help       :                                  : Show this menu.
+delete_plugin     : <index>             : Removes specified plugin from the filesystem.
+                  :                     : - `delete_plugin 0`
+                  :                     : - `delete_plugin all`
 ................................................................................................
-install    : <index>                          : Extract and manage an archive from ~/Downloads.
-           :                                  : - `install 0`
-           :                                  : - `install all`
+exit              :                     : Quit.
 ................................................................................................
-log        :                                  : Show debug log history.
+find              : [<keyword> ... ]    : Show only components with any keyword. Execute without
+                  :                     : args to show all.
+                  :                     : - `find`
+                  :                     : - `find keyword1`
+                  :                     : - `find keyword1 keyword2`
 ................................................................................................
-move       : (mod|plugin) <index> <new_index> : Larger numbers win file conflicts.
-           :                                  : - `move mod 1 2`
-           :                                  : - `move plugin 1 2`
+help              :                     : Show this menu.
 ................................................................................................
-refresh    :                                  : Abandon pending changes.
+install           : <index>             : Extract and manage an archive from ~/Downloads.
+                  :                     : - `install 0`
+                  :                     : - `install all`
 ................................................................................................
-rename     : (mod|download) <index> <name>    : Names may contain alphanumerics and underscores.
-           :                                  : - `rename download 1 some_text`
-           :                                  : - `rename mod 1 some_text`
+log               :                     : Show debug log history.
 ................................................................................................
-sort       :                                  : Arrange plugins by mod order.
+move_mod          : <index> <new_index> : Larger numbers win file conflicts.
+                  :                     : - `move_mod 0 1`
 ................................................................................................
-tools      :                                  : Manage tools.
+move_plugin       : <index> <new_index> : Larger numbers win file conflicts.
+                  :                     : - `move_plugin 0 1`
+................................................................................................
+refresh           :                     : Abandon pending changes.
+................................................................................................
+rename_download   : <index> <name>      : Names may contain alphanumerics and underscores.
+                  :                     : - `rename_download 0 some_text`
+................................................................................................
+rename_mod        : <index> <name>      : Names may contain alphanumerics and underscores.
+                  :                     : - `rename_mod 0 some_text`
+................................................................................................
+sort              :                     : Arrange plugins by mod order.
+................................................................................................
+tools             :                     : Manage tools.
 ................................................................................................
 ```
 
