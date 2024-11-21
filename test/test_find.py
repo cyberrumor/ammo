@@ -2,7 +2,7 @@
 from pathlib import Path
 
 from ammo.component import (
-    BethesdaComponentNoDownload,
+    BethesdaComponentActivatable,
     BethesdaComponent,
 )
 from common import (
@@ -56,7 +56,7 @@ def test_find_activate_all_mods():
         extract_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.activate(BethesdaComponentNoDownload.MOD, "all")
+        controller.activate(BethesdaComponentActivatable.MOD, "all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -78,7 +78,7 @@ def test_find_deactivate_all_mods():
         install_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.deactivate(BethesdaComponentNoDownload.MOD, "all")
+        controller.deactivate(BethesdaComponentActivatable.MOD, "all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -95,10 +95,10 @@ def test_find_activate_all_plugins():
         extract_mod(controller, "normal_mod")
         extract_mod(controller, "conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
-        controller.activate(BethesdaComponentNoDownload.MOD, "all")
+        controller.activate(BethesdaComponentActivatable.MOD, "all")
 
         controller.find("normal", "mock")
-        controller.activate(BethesdaComponentNoDownload.PLUGIN, "all")
+        controller.activate(BethesdaComponentActivatable.PLUGIN, "all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             [
@@ -120,7 +120,7 @@ def test_find_deactivate_all_plugins():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "mock")
-        controller.deactivate(BethesdaComponentNoDownload.PLUGIN, "all")
+        controller.deactivate(BethesdaComponentActivatable.PLUGIN, "all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             ["no_data_folder_plugin.esp"]

@@ -29,7 +29,7 @@ from .component import (
     Download,
     Plugin,
     BethesdaComponent,
-    BethesdaComponentNoDownload,
+    BethesdaComponentActivatable,
     Component,
 )
 from .lib import (
@@ -385,27 +385,29 @@ class ModController(Controller):
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
 
-    def _get_validated_components(self, component: BethesdaComponentNoDownload) -> list:
+    def _get_validated_components(
+        self, component: BethesdaComponentActivatable
+    ) -> list:
         """
-        Turn a BethesdaComponentNoDownload into either self.mods or self.plugins.
+        Turn a BethesdaComponentActivatable into either self.mods or self.plugins.
         """
-        if isinstance(component, BethesdaComponentNoDownload):
+        if isinstance(component, BethesdaComponentActivatable):
             match component:
-                case BethesdaComponentNoDownload.PLUGIN:
+                case BethesdaComponentActivatable.PLUGIN:
                     return self.plugins
-                case BethesdaComponentNoDownload.MOD:
+                case BethesdaComponentActivatable.MOD:
                     return self.mods
         raise TypeError(
             textwrap.dedent(
                 f"""\
-                Expected {[i.value for i in list(BethesdaComponentNoDownload)]},
+                Expected {[i.value for i in list(BethesdaComponentActivatable)]},
                 got {component} of type {type(component)}
                 """
             )
         )
 
     def _set_component_state(
-        self, component: BethesdaComponentNoDownload, index: int, state: bool
+        self, component: BethesdaComponentActivatable, index: int, state: bool
     ):
         """
         Activate or deactivate a component.
@@ -570,7 +572,7 @@ class ModController(Controller):
 
         assert mod.modconf is not None
 
-        self.deactivate(BethesdaComponentNoDownload.MOD, index)
+        self.deactivate(BethesdaComponentActivatable.MOD, index)
         self.commit()
         self.refresh()
 
@@ -594,7 +596,7 @@ class ModController(Controller):
         self.refresh()
 
     def activate(
-        self, component: BethesdaComponentNoDownload, index: Union[int, str]
+        self, component: BethesdaComponentActivatable, index: Union[int, str]
     ) -> None:
         """
         Enabled components will be loaded by game.
@@ -626,7 +628,7 @@ class ModController(Controller):
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
     def deactivate(
-        self, component: BethesdaComponentNoDownload, index: Union[int, str]
+        self, component: BethesdaComponentActivatable, index: Union[int, str]
     ) -> None:
         """
         Disabled components will not be loaded by game.
@@ -789,7 +791,9 @@ class ModController(Controller):
                     for mod in visible_mods:
                         # Remove plugins that mod provides.
                         self._set_component_state(
-                            BethesdaComponentNoDownload.MOD, self.mods.index(mod), False
+                            BethesdaComponentActivatable.MOD,
+                            self.mods.index(mod),
+                            False,
                         )
                         self.mods.remove(mod)
                         try:
@@ -814,7 +818,7 @@ class ModController(Controller):
 
                     # Remove the mod from the controller then delete it.
                     self._set_component_state(
-                        BethesdaComponentNoDownload.MOD, self.mods.index(mod), False
+                        BethesdaComponentActivatable.MOD, self.mods.index(mod), False
                     )
                     self.mods.pop(index)
                     try:
@@ -1017,14 +1021,14 @@ class ModController(Controller):
         self.refresh()
 
     def move(
-        self, component: BethesdaComponentNoDownload, index: int, new_index: int
+        self, component: BethesdaComponentActivatable, index: int, new_index: int
     ) -> None:
         """
         Larger numbers win file conflicts.
         """
-        if not isinstance(component, BethesdaComponentNoDownload):
+        if not isinstance(component, BethesdaComponentActivatable):
             raise TypeError(
-                f"Expected BethesdaComponentNoDownload, got '{component}' of type '{type(component)}'"
+                f"Expected BethesdaComponentActivatable, got '{component}' of type '{type(component)}'"
             )
         components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed

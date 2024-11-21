@@ -6,7 +6,7 @@ import shutil
 import pytest
 
 from ammo.component import (
-    BethesdaComponentNoDownload,
+    BethesdaComponentActivatable,
     BethesdaComponent,
 )
 from common import (
@@ -71,10 +71,10 @@ def test_controller_subsequent_launch():
         install_everything(first_launch)
 
         # change some config to ensure it's not just alphabetic
-        first_launch.move(BethesdaComponentNoDownload.PLUGIN, 0, 2)
-        first_launch.move(BethesdaComponentNoDownload.MOD, 2, 0)
-        first_launch.deactivate(BethesdaComponentNoDownload.MOD, 1)
-        first_launch.deactivate(BethesdaComponentNoDownload.PLUGIN, 4)
+        first_launch.move(BethesdaComponentActivatable.PLUGIN, 0, 2)
+        first_launch.move(BethesdaComponentActivatable.MOD, 2, 0)
+        first_launch.deactivate(BethesdaComponentActivatable.MOD, 1)
+        first_launch.deactivate(BethesdaComponentActivatable.PLUGIN, 4)
         first_launch.commit()
 
         mods = [(i.name, i.location, i.enabled) for i in first_launch.mods]
@@ -117,7 +117,7 @@ def test_controller_move():
         assert controller.mods[2].name == "conflict_2"
         assert controller.mods[3].name == "multiple_plugins"
 
-        controller.move(BethesdaComponentNoDownload.MOD, 1, 3)
+        controller.move(BethesdaComponentActivatable.MOD, 1, 3)
         assert controller.mods[0].name == "normal_mod"
         assert controller.mods[1].name == "conflict_2"
         assert controller.mods[2].name == "multiple_plugins"
@@ -438,7 +438,7 @@ def test_controller_deactivate_mod_with_multiple_plugins():
         assert len(controller.plugins) == 3
 
         # Deactivate the mod
-        controller.deactivate(BethesdaComponentNoDownload.MOD, 0)
+        controller.deactivate(BethesdaComponentActivatable.MOD, 0)
 
         # Ensure all plugins are absent.
         assert len(controller.plugins) == 0
@@ -463,8 +463,8 @@ def test_controller_delete_plugin():
         assert len(controller.plugins) == 0
 
         # reinitialize the mod to force a rescan of its files.
-        controller.deactivate(BethesdaComponentNoDownload.MOD, 0)
-        controller.activate(BethesdaComponentNoDownload.MOD, 0)
+        controller.deactivate(BethesdaComponentActivatable.MOD, 0)
+        controller.activate(BethesdaComponentActivatable.MOD, 0)
         # Ensure the plugin hasn't returned.
         assert len(controller.plugins) == 0
 
@@ -484,13 +484,13 @@ def test_controller_plugin_wrong_spot():
     with AmmoController() as controller:
         extract_mod(controller, "plugin_wrong_spot")
         assert controller.mods[0].plugins == []
-        controller.activate(BethesdaComponentNoDownload.MOD, 0)
+        controller.activate(BethesdaComponentActivatable.MOD, 0)
         assert controller.mods[0].plugins == []
-        controller.deactivate(BethesdaComponentNoDownload.MOD, 0)
+        controller.deactivate(BethesdaComponentActivatable.MOD, 0)
         assert controller.mods[0].plugins == []
         controller.commit()
         assert controller.mods[0].plugins == []
-        controller.rename(BethesdaComponentNoDownload.MOD, 0, "new_name")
+        controller.rename(BethesdaComponentActivatable.MOD, 0, "new_name")
         assert controller.mods[0].plugins == []
 
 
@@ -521,7 +521,7 @@ def test_no_delete_all_if_plugin_active():
     with AmmoController() as controller:
         install_mod(controller, "conflict_1")
         install_mod(controller, "normal_mod")
-        controller.activate(BethesdaComponentNoDownload.PLUGIN, 1)
+        controller.activate(BethesdaComponentActivatable.PLUGIN, 1)
 
         expected = "You must deactivate all visible components of that type before deleting them with all."
 

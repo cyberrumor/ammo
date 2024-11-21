@@ -14,7 +14,7 @@ from .ui import Controller
 from .component import (
     Download,
     ToolEnum,
-    BethesdaComponentNoDownload,
+    BethesdaComponentActivatable,
 )
 from .lib import NO_EXTRACT_DIRS
 
@@ -219,7 +219,7 @@ class ToolController(Controller):
                     visible_tools = [i for i in self.tools if i.visible]
                     for tool in visible_tools:
                         self.deactivate(
-                            BethesdaComponentNoDownload.TOOL, self.tools.index(tool)
+                            BethesdaComponentActivatable.TOOL, self.tools.index(tool)
                         )
                     for tool in visible_tools:
                         self.tools.pop(self.tools.index(tool))

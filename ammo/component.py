@@ -25,7 +25,7 @@ class BethesdaComponent(str, Enum):
     PLUGIN = "plugin"
 
 
-class BethesdaComponentNoDownload(str, Enum):
+class BethesdaComponentActivatable(str, Enum):
     MOD = "mod"
     PLUGIN = "plugin"
 

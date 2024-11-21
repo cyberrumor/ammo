@@ -10,7 +10,7 @@ from ammo.mod_controller import (
 from ammo.fomod_controller import FomodController
 from ammo.component import (
     Mod,
-    BethesdaComponentNoDownload,
+    BethesdaComponentActivatable,
 )
 
 
@@ -176,11 +176,11 @@ def mod_installs_files(mod_name, files):
         )
         controller.install(mod_index_download)
         mod_index = [i.name for i in controller.mods].index(mod_name)
-        controller.activate(BethesdaComponentNoDownload.MOD, mod_index)
+        controller.activate(BethesdaComponentActivatable.MOD, mod_index)
 
         # activate any plugins this mod has
         for plugin in range(len(controller.plugins)):
-            controller.activate(BethesdaComponentNoDownload.PLUGIN, plugin)
+            controller.activate(BethesdaComponentActivatable.PLUGIN, plugin)
 
         controller.commit()
         expect_files(controller.game.directory, files)
@@ -261,11 +261,11 @@ def install_everything(controller):
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            controller.activate(BethesdaComponentNoDownload.MOD, index)
+            controller.activate(BethesdaComponentActivatable.MOD, index)
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)
-        controller.activate(BethesdaComponentNoDownload.PLUGIN, index)
+        controller.activate(BethesdaComponentActivatable.PLUGIN, index)
 
     controller.commit()
 
@@ -297,11 +297,11 @@ def install_mod(controller, mod_name: str):
     controller.install(index)
 
     mod_index = [i.name for i in controller.mods].index(mod_name)
-    controller.activate(BethesdaComponentNoDownload.MOD, mod_index)
+    controller.activate(BethesdaComponentActivatable.MOD, mod_index)
 
     for plugin in controller.mods[mod_index].plugins:
         plugin_index = [i.name for i in controller.plugins].index(plugin.name)
-        controller.activate(BethesdaComponentNoDownload.PLUGIN, plugin_index)
+        controller.activate(BethesdaComponentActivatable.PLUGIN, plugin_index)
 
     controller.commit()
     assert controller.mods[mod_index].enabled is True
