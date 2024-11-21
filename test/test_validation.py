@@ -2,9 +2,9 @@
 import os
 import pytest
 from ammo.component import (
-    ComponentEnum,
-    DeleteEnum,
-    RenameEnum,
+    BethesdaComponentNoDownload,
+    BethesdaComponent,
+    Component,
 )
 from common import (
     AmmoController,
@@ -23,40 +23,40 @@ def test_move_validation():
 
         # Test valid move mod input
         highest = len(controller.mods) - 1
-        controller.move(ComponentEnum.MOD, 0, highest)
-        controller.move(ComponentEnum.MOD, highest, 0)
+        controller.move(BethesdaComponentNoDownload.MOD, 0, highest)
+        controller.move(BethesdaComponentNoDownload.MOD, highest, 0)
 
         # Test valid move plugin input
         highest = len(controller.plugins) - 1
-        controller.move(ComponentEnum.PLUGIN, 0, highest)
-        controller.move(ComponentEnum.PLUGIN, highest, 0)
+        controller.move(BethesdaComponentNoDownload.PLUGIN, 0, highest)
+        controller.move(BethesdaComponentNoDownload.PLUGIN, highest, 0)
 
         # 'to index' that is too high for move should
         # automatically correct to highest location.
         # Test this on mods.
         highest = len(controller.mods)
-        controller.move(ComponentEnum.MOD, 0, highest)
+        controller.move(BethesdaComponentNoDownload.MOD, 0, highest)
 
         # Test invalid 'from index' for mods.
         with pytest.raises(Warning):
-            controller.move(ComponentEnum.MOD, highest, 0)
+            controller.move(BethesdaComponentNoDownload.MOD, highest, 0)
 
         # 'to index' that is too high for move should
         # automatically correct to highest location.
         # Test this on plugins.
         highest = len(controller.plugins)
-        controller.move(ComponentEnum.PLUGIN, 0, highest)
+        controller.move(BethesdaComponentNoDownload.PLUGIN, 0, highest)
 
         # Test invalid 'from index' for plugins.
         with pytest.raises(Warning):
-            controller.move(ComponentEnum.PLUGIN, highest, 0)
+            controller.move(BethesdaComponentNoDownload.PLUGIN, highest, 0)
 
         # Test invalid move component type
         with pytest.raises(TypeError):
-            controller.move(DeleteEnum.DOWNLOAD, 0, 1)
+            controller.move(BethesdaComponent.DOWNLOAD, 0, 1)
 
         with pytest.raises(TypeError):
-            controller.move(DeleteEnum.MOD, 0, 1)
+            controller.move(BethesdaComponent.MOD, 0, 1)
 
         with pytest.raises(TypeError):
             controller.move("bogus string", 0, 1)
@@ -70,27 +70,27 @@ def test_activate_validation():
         mod_index = extract_mod(controller, "normal_mod")
 
         # Activate valid mod
-        controller.activate(ComponentEnum.MOD, mod_index)
+        controller.activate(BethesdaComponentNoDownload.MOD, mod_index)
 
         plugin_index = [i.name for i in controller.plugins].index("normal_plugin.esp")
 
         # Activate valid plugin
-        controller.activate(ComponentEnum.PLUGIN, plugin_index)
+        controller.activate(BethesdaComponentNoDownload.PLUGIN, plugin_index)
 
         # Activate invalid mod
         with pytest.raises(Warning):
-            controller.activate(ComponentEnum.MOD, 1000)
+            controller.activate(BethesdaComponentNoDownload.MOD, 1000)
 
         # Activate invalid plugin
         with pytest.raises(Warning):
-            controller.activate(ComponentEnum.PLUGIN, 1000)
+            controller.activate(BethesdaComponentNoDownload.PLUGIN, 1000)
 
         # Activate invalid component type
         with pytest.raises(TypeError):
-            controller.activate(DeleteEnum.DOWNLOAD, 0)
+            controller.activate(BethesdaComponent.DOWNLOAD, 0)
 
         with pytest.raises(TypeError):
-            controller.activate(DeleteEnum.MOD, 0)
+            controller.activate(BethesdaComponent.MOD, 0)
 
         with pytest.raises(TypeError):
             controller.activate("bogus string", 0)
@@ -107,22 +107,22 @@ def test_deactivate_validation():
         )
 
         # valid deactivate plugin
-        controller.deactivate(ComponentEnum.PLUGIN, plugin_index)
+        controller.deactivate(BethesdaComponentNoDownload.PLUGIN, plugin_index)
 
         # valid deactivate mod
-        controller.deactivate(ComponentEnum.MOD, mod_index)
+        controller.deactivate(BethesdaComponentNoDownload.MOD, mod_index)
 
         # invalid deactivate plugin.
         with pytest.raises(Warning):
-            controller.deactivate(ComponentEnum.PLUGIN, plugin_index)
+            controller.deactivate(BethesdaComponentNoDownload.PLUGIN, plugin_index)
 
         # invalid deactivate mod
         with pytest.raises(Warning):
-            controller.deactivate(ComponentEnum.MOD, 1000)
+            controller.deactivate(BethesdaComponentNoDownload.MOD, 1000)
 
         # Deactivate invalid component type
         with pytest.raises(TypeError):
-            controller.deactivate(DeleteEnum.DOWNLOAD, 0)
+            controller.deactivate(BethesdaComponent.DOWNLOAD, 0)
 
         with pytest.raises(TypeError):
             controller.deactivate("bogus string", 0)
@@ -148,25 +148,25 @@ def test_delete_validation():
 
         # delete plugin out of range
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.PLUGIN, 1000)
+            controller.delete(BethesdaComponent.PLUGIN, 1000)
 
         # delete plugin in range
-        controller.delete(DeleteEnum.PLUGIN, 0)
+        controller.delete(BethesdaComponent.PLUGIN, 0)
 
         # delete mod out of range
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.MOD, 1000)
+            controller.delete(BethesdaComponent.MOD, 1000)
 
         # delete mod in range
-        controller.delete(DeleteEnum.MOD, 0)
+        controller.delete(BethesdaComponent.MOD, 0)
 
         # delete download out of range
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.DOWNLOAD, 1000)
+            controller.delete(BethesdaComponent.DOWNLOAD, 1000)
 
         # Delete invalid component type
         with pytest.raises(TypeError):
-            controller.delete(ComponentEnum.PLUGIN, 0)
+            controller.delete(BethesdaComponentNoDownload.PLUGIN, 0)
 
         with pytest.raises(TypeError):
             controller.delete("bogus string", 0)
@@ -181,7 +181,7 @@ def test_delete_validation():
         download_index = [i.name for i in controller.downloads].index(
             "temp_download.7z"
         )
-        controller.delete(DeleteEnum.DOWNLOAD, download_index)
+        controller.delete(BethesdaComponent.DOWNLOAD, download_index)
 
 
 def test_no_components_validation():
@@ -192,27 +192,27 @@ def test_no_components_validation():
     with AmmoController() as controller:
         # attempt to move mod/plugin
         with pytest.raises(Warning):
-            controller.move(ComponentEnum.MOD, 0, 1)
+            controller.move(BethesdaComponentNoDownload.MOD, 0, 1)
         with pytest.raises(Warning):
-            controller.move(ComponentEnum.PLUGIN, 0, 1)
+            controller.move(BethesdaComponentNoDownload.PLUGIN, 0, 1)
 
         # attempt to delete mod / plugin
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.MOD, 0)
+            controller.delete(BethesdaComponent.MOD, 0)
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.PLUGIN, 0)
+            controller.delete(BethesdaComponent.PLUGIN, 0)
 
         # attempt to activate mod/plugin
         with pytest.raises(Warning):
-            controller.activate(ComponentEnum.MOD, 0)
+            controller.activate(BethesdaComponentNoDownload.MOD, 0)
         with pytest.raises(Warning):
-            controller.activate(ComponentEnum.PLUGIN, 0)
+            controller.activate(BethesdaComponentNoDownload.PLUGIN, 0)
 
         # attempt to deactivate mod/plugin
         with pytest.raises(Warning):
-            controller.deactivate(ComponentEnum.MOD, 0)
+            controller.deactivate(BethesdaComponentNoDownload.MOD, 0)
         with pytest.raises(Warning):
-            controller.deactivate(ComponentEnum.PLUGIN, 0)
+            controller.deactivate(BethesdaComponentNoDownload.PLUGIN, 0)
 
 
 def test_no_install_twice():
@@ -248,7 +248,7 @@ def test_invisible_delete_mod():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.MOD, 0)
+            controller.delete(BethesdaComponent.MOD, 0)
 
 
 def test_invisible_delete_plugin():
@@ -261,7 +261,7 @@ def test_invisible_delete_plugin():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.PLUGIN, 0)
+            controller.delete(BethesdaComponent.PLUGIN, 0)
 
 
 def test_invisible_delete_download():
@@ -272,7 +272,7 @@ def test_invisible_delete_download():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.delete(DeleteEnum.DOWNLOAD, 0)
+            controller.delete(BethesdaComponent.DOWNLOAD, 0)
 
 
 def test_invisible_move_mod():
@@ -286,7 +286,7 @@ def test_invisible_move_mod():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.move(ComponentEnum.MOD, 0, 1)
+            controller.move(BethesdaComponentNoDownload.MOD, 0, 1)
 
 
 def test_invisible_move_plugin():
@@ -300,7 +300,7 @@ def test_invisible_move_plugin():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.move(ComponentEnum.PLUGIN, 0, 1)
+            controller.move(BethesdaComponentNoDownload.PLUGIN, 0, 1)
 
 
 def test_invisible_rename_mod():
@@ -313,7 +313,7 @@ def test_invisible_rename_mod():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.rename(RenameEnum.MOD, 0, "new_name")
+            controller.rename(Component.MOD, 0, "new_name")
 
 
 def test_invisible_configure():

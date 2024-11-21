@@ -28,9 +28,9 @@ from .component import (
     Mod,
     Download,
     Plugin,
-    DeleteEnum,
-    ComponentEnum,
-    RenameEnum,
+    BethesdaComponent,
+    BethesdaComponentNoDownload,
+    Component,
 )
 from .lib import (
     normalize,
@@ -385,26 +385,28 @@ class ModController(Controller):
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
 
-    def _get_validated_components(self, component: ComponentEnum) -> list:
+    def _get_validated_components(self, component: BethesdaComponentNoDownload) -> list:
         """
-        Turn a ComponentEnum into either self.mods or self.plugins.
+        Turn a BethesdaComponentNoDownload into either self.mods or self.plugins.
         """
-        if isinstance(component, ComponentEnum):
+        if isinstance(component, BethesdaComponentNoDownload):
             match component:
-                case ComponentEnum.PLUGIN:
+                case BethesdaComponentNoDownload.PLUGIN:
                     return self.plugins
-                case ComponentEnum.MOD:
+                case BethesdaComponentNoDownload.MOD:
                     return self.mods
         raise TypeError(
             textwrap.dedent(
                 f"""\
-                Expected {[i.value for i in list(ComponentEnum)]},
+                Expected {[i.value for i in list(BethesdaComponentNoDownload)]},
                 got {component} of type {type(component)}
                 """
             )
         )
 
-    def _set_component_state(self, component: ComponentEnum, index: int, state: bool):
+    def _set_component_state(
+        self, component: BethesdaComponentNoDownload, index: int, state: bool
+    ):
         """
         Activate or deactivate a component.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
@@ -568,7 +570,7 @@ class ModController(Controller):
 
         assert mod.modconf is not None
 
-        self.deactivate(ComponentEnum.MOD, index)
+        self.deactivate(BethesdaComponentNoDownload.MOD, index)
         self.commit()
         self.refresh()
 
@@ -591,7 +593,9 @@ class ModController(Controller):
         # will no longer be required.
         self.refresh()
 
-    def activate(self, component: ComponentEnum, index: Union[int, str]) -> None:
+    def activate(
+        self, component: BethesdaComponentNoDownload, index: Union[int, str]
+    ) -> None:
         """
         Enabled components will be loaded by game.
         """
@@ -621,7 +625,9 @@ class ModController(Controller):
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def deactivate(self, component: ComponentEnum, index: Union[int, str]) -> None:
+    def deactivate(
+        self, component: BethesdaComponentNoDownload, index: Union[int, str]
+    ) -> None:
         """
         Disabled components will not be loaded by game.
         """
@@ -670,13 +676,13 @@ class ModController(Controller):
         self.plugins = result
 
     @_requires_sync
-    def rename(self, component: RenameEnum, index: int, name: str) -> None:
+    def rename(self, component: Component, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores.
         """
-        if component not in list(RenameEnum):
+        if component not in list(Component):
             raise Warning(
-                f"Can only rename components of types {[i.value for i in list(RenameEnum)]}, not {component}"
+                f"Can only rename components of types {[i.value for i in list(Component)]}, not {component}"
             )
 
         if name != "".join([i for i in name if i.isalnum() or i == "_"]):
@@ -693,7 +699,7 @@ class ModController(Controller):
             )
 
         match component:
-            case RenameEnum.DOWNLOAD:
+            case Component.DOWNLOAD:
                 try:
                     download = self.downloads[index]
                 except IndexError as e:
@@ -724,7 +730,7 @@ class ModController(Controller):
                 download.location.rename(new_location)
                 self.refresh()
 
-            case RenameEnum.MOD:
+            case Component.MOD:
                 try:
                     mod = self.mods[index]
                 except IndexError as e:
@@ -755,13 +761,13 @@ class ModController(Controller):
                 self.commit()
 
     @_requires_sync
-    def delete(self, component: DeleteEnum, index: Union[int, str]) -> None:
+    def delete(self, component: BethesdaComponent, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
         """
-        if not isinstance(component, DeleteEnum):
+        if not isinstance(component, BethesdaComponent):
             raise TypeError(
-                f"Expected DeleteEnum, got '{component}' of type '{type(component)}'"
+                f"Expected BethesdaComponent, got '{component}' of type '{type(component)}'"
             )
         try:
             index = int(index)
@@ -770,7 +776,7 @@ class ModController(Controller):
                 raise Warning(f"Expected int, got '{index}'")
 
         match component:
-            case DeleteEnum.MOD:
+            case BethesdaComponent.MOD:
                 if index == "all":
                     deleted_mods = ""
                     visible_mods = [i for i in self.mods if i.visible]
@@ -783,7 +789,7 @@ class ModController(Controller):
                     for mod in visible_mods:
                         # Remove plugins that mod provides.
                         self._set_component_state(
-                            ComponentEnum.MOD, self.mods.index(mod), False
+                            BethesdaComponentNoDownload.MOD, self.mods.index(mod), False
                         )
                         self.mods.remove(mod)
                         try:
@@ -808,7 +814,7 @@ class ModController(Controller):
 
                     # Remove the mod from the controller then delete it.
                     self._set_component_state(
-                        ComponentEnum.MOD, self.mods.index(mod), False
+                        BethesdaComponentNoDownload.MOD, self.mods.index(mod), False
                     )
                     self.mods.pop(index)
                     try:
@@ -820,7 +826,7 @@ class ModController(Controller):
                     if originally_active:
                         self.commit()
 
-            case DeleteEnum.PLUGIN:
+            case BethesdaComponent.PLUGIN:
 
                 def get_plugin_files(plugin):
                     """
@@ -878,7 +884,7 @@ class ModController(Controller):
                     self.refresh()
                     self.commit()
 
-            case DeleteEnum.DOWNLOAD:
+            case BethesdaComponent.DOWNLOAD:
                 if index == "all":
                     visible_downloads = [i for i in self.downloads if i.visible]
                     for visible_download in visible_downloads:
@@ -1010,13 +1016,15 @@ class ModController(Controller):
 
         self.refresh()
 
-    def move(self, component: ComponentEnum, index: int, new_index: int) -> None:
+    def move(
+        self, component: BethesdaComponentNoDownload, index: int, new_index: int
+    ) -> None:
         """
         Larger numbers win file conflicts.
         """
-        if not isinstance(component, ComponentEnum):
+        if not isinstance(component, BethesdaComponentNoDownload):
             raise TypeError(
-                f"Expected ComponentEnum, got '{component}' of type '{type(component)}'"
+                f"Expected BethesdaComponentNoDownload, got '{component}' of type '{type(component)}'"
             )
         components = self._get_validated_components(component)
         # Since this operation it not atomic, validation must be performed

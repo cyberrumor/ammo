@@ -9,18 +9,7 @@ from dataclasses import (
 )
 
 
-class ComponentEnum(str, Enum):
-    MOD = "mod"
-    PLUGIN = "plugin"
-
-
-class DeleteEnum(str, Enum):
-    MOD = "mod"
-    DOWNLOAD = "download"
-    PLUGIN = "plugin"
-
-
-class RenameEnum(str, Enum):
+class Component(str, Enum):
     MOD = "mod"
     DOWNLOAD = "download"
 
@@ -28,6 +17,17 @@ class RenameEnum(str, Enum):
 class ToolEnum(str, Enum):
     TOOL = "tool"
     DOWNLOAD = "download"
+
+
+class BethesdaComponent(str, Enum):
+    MOD = "mod"
+    DOWNLOAD = "download"
+    PLUGIN = "plugin"
+
+
+class BethesdaComponentNoDownload(str, Enum):
+    MOD = "mod"
+    PLUGIN = "plugin"
 
 
 @dataclass(slots=True, kw_only=True)

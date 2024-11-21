@@ -14,7 +14,7 @@ from .ui import Controller
 from .component import (
     Download,
     ToolEnum,
-    ComponentEnum,
+    BethesdaComponentNoDownload,
 )
 from .lib import NO_EXTRACT_DIRS
 
@@ -218,7 +218,9 @@ class ToolController(Controller):
                     deleted_tools = ""
                     visible_tools = [i for i in self.tools if i.visible]
                     for tool in visible_tools:
-                        self.deactivate(ComponentEnum.TOOL, self.tools.index(tool))
+                        self.deactivate(
+                            BethesdaComponentNoDownload.TOOL, self.tools.index(tool)
+                        )
                     for tool in visible_tools:
                         self.tools.pop(self.tools.index(tool))
                         try:
