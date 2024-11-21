@@ -655,32 +655,6 @@ class ModController(Controller):
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def deactivate_plugin(self, index: Union[int, str]) -> None:
-        """
-        Disabled plugins will not be loaded by game.
-        """
-        try:
-            int(index)
-        except ValueError:
-            if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
-
-        if index == "all":
-            for i in range(len(self.plugins)):
-                if self.plugins[i].visible:
-                    self._set_component_state(
-                        BethesdaComponentActivatable.PLUGIN, i, False
-                    )
-        else:
-            try:
-                self._set_component_state(
-                    BethesdaComponentActivatable.PLUGIN, index, False
-                )
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
-        self._stage()
-
     def deactivate_mod(self, index: Union[int, str]) -> None:
         """
         Diabled mods will not be loaded by game.
@@ -707,31 +681,31 @@ class ModController(Controller):
                 raise Warning(e)
         self._stage()
 
-    def sort(self) -> None:
+    def deactivate_plugin(self, index: Union[int, str]) -> None:
         """
-        Arrange plugins by mod order.
+        Disabled plugins will not be loaded by game.
         """
-        plugins = []
-        for mod in self.mods[::-1]:
-            if not mod.enabled:
-                continue
-            for plugin in self.plugins[::-1]:
-                for plugin_file in mod.plugins:
-                    if plugin.name == plugin_file.name and plugin.name not in (
-                        i.name for i in plugins
-                    ):
-                        plugins.insert(0, plugin)
-                        break
-        result = []
-        for plugin in list(plugins):
-            if any([plugin.name.lower().endswith(i) for i in [".esl", ".esm"]]):
-                result.append(plugins.pop(plugins.index(plugin)))
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got '{index}'")
 
-        result.extend(plugins)
-
-        if self.changes is False:
-            self.changes = self.plugins != result
-        self.plugins = result
+        if index == "all":
+            for i in range(len(self.plugins)):
+                if self.plugins[i].visible:
+                    self._set_component_state(
+                        BethesdaComponentActivatable.PLUGIN, i, False
+                    )
+        else:
+            try:
+                self._set_component_state(
+                    BethesdaComponentActivatable.PLUGIN, index, False
+                )
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+        self._stage()
 
     @_requires_sync
     def rename_download(self, index: int, name: str) -> None:
@@ -1310,6 +1284,32 @@ class ModController(Controller):
                 _log = f.read()
 
         raise Warning(_log)
+
+    def sort(self) -> None:
+        """
+        Arrange plugins by mod order.
+        """
+        plugins = []
+        for mod in self.mods[::-1]:
+            if not mod.enabled:
+                continue
+            for plugin in self.plugins[::-1]:
+                for plugin_file in mod.plugins:
+                    if plugin.name == plugin_file.name and plugin.name not in (
+                        i.name for i in plugins
+                    ):
+                        plugins.insert(0, plugin)
+                        break
+        result = []
+        for plugin in list(plugins):
+            if any([plugin.name.lower().endswith(i) for i in [".esl", ".esm"]]):
+                result.append(plugins.pop(plugins.index(plugin)))
+
+        result.extend(plugins)
+
+        if self.changes is False:
+            self.changes = self.plugins != result
+        self.plugins = result
 
     @_requires_sync
     def tools(self) -> None:
