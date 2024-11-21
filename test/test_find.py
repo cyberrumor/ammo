@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-from ammo.component import (
-    BethesdaComponentActivatable,
-    BethesdaComponent,
-)
 from common import (
     AmmoController,
     install_mod,
@@ -56,7 +52,7 @@ def test_find_activate_all_mods():
         extract_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.activate(BethesdaComponentActivatable.MOD, "all")
+        controller.activate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -78,7 +74,7 @@ def test_find_deactivate_all_mods():
         install_mod(controller, "normal_mod")
 
         controller.find("conflict")
-        controller.deactivate(BethesdaComponentActivatable.MOD, "all")
+        controller.deactivate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -95,10 +91,10 @@ def test_find_activate_all_plugins():
         extract_mod(controller, "normal_mod")
         extract_mod(controller, "conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
-        controller.activate(BethesdaComponentActivatable.MOD, "all")
+        controller.activate_mod("all")
 
         controller.find("normal", "mock")
-        controller.activate(BethesdaComponentActivatable.PLUGIN, "all")
+        controller.activate_plugin("all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             [
@@ -120,7 +116,7 @@ def test_find_deactivate_all_plugins():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "mock")
-        controller.deactivate(BethesdaComponentActivatable.PLUGIN, "all")
+        controller.deactivate_plugin("all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             ["no_data_folder_plugin.esp"]
@@ -138,7 +134,7 @@ def test_find_delete_all_mods():
         extract_mod(controller, "no_data_folder_plugin")
 
         controller.find("normal", "conflict")
-        controller.delete(BethesdaComponent.MOD, "all")
+        controller.delete_mod("all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

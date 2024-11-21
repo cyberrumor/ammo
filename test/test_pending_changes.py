@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 import pytest
 
-from ammo.component import (
-    BethesdaComponentActivatable,
-    BethesdaComponent,
-    Component,
-)
 from common import (
     AmmoController,
     install_mod,
@@ -25,7 +20,7 @@ def test_pending_change_restrictions_delete_mod():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.MOD, 0)
+            controller.delete_mod(0)
 
 
 def test_pending_change_restrictions_delete_download():
@@ -52,7 +47,7 @@ def test_pending_change_restrictions_delete_download():
 
         try:
             with pytest.raises(Warning):
-                controller.delete(BethesdaComponent.DOWNLOAD, download_index)
+                controller.delete_download(download_index)
         finally:
             temp_download.unlink(missing_ok=True)
 
@@ -69,7 +64,7 @@ def test_pending_change_restrictions_delete_plugin():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.PLUGIN, 0)
+            controller.delete_plugin(0)
 
 
 def test_pending_change_restrictions_install():
@@ -98,7 +93,7 @@ def test_pending_change_restrictions_rename_mod():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.rename(Component.MOD, 0, "new_name")
+            controller.rename_mod(0, "new_name")
 
 
 def test_pending_change_restrictions_rename_download():
@@ -125,9 +120,7 @@ def test_pending_change_restrictions_rename_download():
 
         try:
             with pytest.raises(Warning):
-                controller.rename(
-                    Component.DOWNLOAD, download_index, "new_download_name"
-                )
+                controller.rename_download(download_index, "new_download_name")
         finally:
             temp_download.unlink(missing_ok=True)
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
@@ -140,7 +133,7 @@ def test_pending_change_move():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.move(BethesdaComponentActivatable.MOD, 0, 1)
+        controller.move_mod(0, 1)
         assert (
             controller.changes is True
         ), "move command did not create a pending change"
@@ -154,7 +147,7 @@ def test_pending_change_move_nowhere():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.move(BethesdaComponentActivatable.MOD, 0, 0)
+        controller.move_mod(0, 0)
         assert (
             controller.changes is False
         ), "move command created a pending change when it shouldn't have."
@@ -167,14 +160,14 @@ def test_pending_change_activate():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.activate(BethesdaComponentActivatable.MOD, 0)
+        controller.activate_mod(0)
         assert (
             controller.changes is False
         ), "activate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.activate(BethesdaComponentActivatable.MOD, 0)
+        controller.activate_mod(0)
         assert (
             controller.changes is True
         ), "activate command failed to create a pending change."
@@ -187,14 +180,14 @@ def test_pending_change_deactivate():
     """
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.deactivate(BethesdaComponentActivatable.MOD, 0)
+        controller.deactivate_mod(0)
         assert (
             controller.changes is False
         ), "deactivate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.deactivate(BethesdaComponentActivatable.MOD, 0)
+        controller.deactivate_mod(0)
         assert (
             controller.changes is True
         ), "deactivate command failed to create a pending change."
@@ -239,7 +232,7 @@ def test_pending_change_delete_mod():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.delete(BethesdaComponent.MOD, 0)
+        controller.delete_mod(0)
         assert (
             controller.changes is False
         ), "Delete mod command created a pending change."
@@ -260,7 +253,7 @@ def test_pending_change_delete_download():
         )
 
         try:
-            controller.delete(BethesdaComponent.DOWNLOAD, download_index)
+            controller.delete_download(download_index)
             assert (
                 controller.changes is False
             ), "Delete download command created a pending change."
@@ -275,7 +268,7 @@ def test_pending_change_delete_plugin():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.delete(BethesdaComponent.PLUGIN, 0)
+        controller.delete_plugin(0)
         assert (
             controller.changes is False
         ), "Delete plugin command created a pending change."
@@ -287,7 +280,7 @@ def test_pending_change_rename_mod():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.rename(Component.MOD, 0, "new_mod_name")
+        controller.rename_mod(0, "new_mod_name")
         assert (
             controller.changes is False
         ), "Rename mod command created a pending change."
@@ -311,7 +304,7 @@ def test_pending_change_rename_download():
         )
 
         try:
-            controller.rename(Component.DOWNLOAD, download_index, "new_download_name")
+            controller.rename_download(download_index, "new_download_name")
             assert (
                 controller.changes is False
             ), "Rename download command created a pending change."
@@ -327,7 +320,7 @@ def test_pending_change_sort():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.move(BethesdaComponentActivatable.PLUGIN, 0, -1)
+        controller.move_plugin(0, -1)
         controller.commit()
         controller.sort()
         assert (

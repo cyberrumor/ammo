@@ -8,10 +8,7 @@ from ammo.mod_controller import (
     Game,
 )
 from ammo.fomod_controller import FomodController
-from ammo.component import (
-    Mod,
-    BethesdaComponentActivatable,
-)
+from ammo.component import Mod
 
 
 # Create a configuration for the mock controller to use.
@@ -176,11 +173,11 @@ def mod_installs_files(mod_name, files):
         )
         controller.install(mod_index_download)
         mod_index = [i.name for i in controller.mods].index(mod_name)
-        controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+        controller.activate_mod(mod_index)
 
         # activate any plugins this mod has
         for plugin in range(len(controller.plugins)):
-            controller.activate(BethesdaComponentActivatable.PLUGIN, plugin)
+            controller.activate_plugin(plugin)
 
         controller.commit()
         expect_files(controller.game.directory, files)
@@ -261,11 +258,11 @@ def install_everything(controller):
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            controller.activate(BethesdaComponentActivatable.MOD, index)
+            controller.activate_mod(index)
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)
-        controller.activate(BethesdaComponentActivatable.PLUGIN, index)
+        controller.activate_plugin(index)
 
     controller.commit()
 
@@ -297,11 +294,11 @@ def install_mod(controller, mod_name: str):
     controller.install(index)
 
     mod_index = [i.name for i in controller.mods].index(mod_name)
-    controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+    controller.activate_mod(mod_index)
 
     for plugin in controller.mods[mod_index].plugins:
         plugin_index = [i.name for i in controller.plugins].index(plugin.name)
-        controller.activate(BethesdaComponentActivatable.PLUGIN, plugin_index)
+        controller.activate_plugin(plugin_index)
 
     controller.commit()
     assert controller.mods[mod_index].enabled is True

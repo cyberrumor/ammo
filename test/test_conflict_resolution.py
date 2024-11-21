@@ -8,11 +8,6 @@ from common import (
     install_mod,
     extract_mod,
 )
-from ammo.component import (
-    BethesdaComponentActivatable,
-    BethesdaComponent,
-    Component,
-)
 
 import pytest
 
@@ -29,7 +24,7 @@ def test_duplicate_plugin():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+            controller.activate_mod(mod_index)
             # Ensure there is only one esp
             assert len(controller.plugins) == 1
             controller.commit()
@@ -55,11 +50,11 @@ def test_conflict_resolution():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+            controller.activate_mod(mod_index)
             controller.commit()
 
         # Activate the plugin
-        controller.activate(BethesdaComponentActivatable.PLUGIN, 0)
+        controller.activate_plugin(0)
 
         # Commit changes
         controller.commit()
@@ -87,7 +82,7 @@ def test_conflict_resolution():
             check_links(expected_game_file, expected_mod_file)
 
         # Rearrange the mods
-        controller.move(BethesdaComponentActivatable.MOD, 1, 0)
+        controller.move_mod(1, 0)
         controller.commit()
 
         # Assert that the symlinks point to "conflict_1" now.
@@ -114,20 +109,20 @@ def test_conflicting_plugins_disable():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+            controller.activate_mod(mod_index)
             controller.commit()
 
         # plugin is disabled, changes were not / are not committed
-        controller.deactivate(BethesdaComponentActivatable.MOD, 1)
+        controller.deactivate_mod(1)
         assert (
             len(controller.plugins) == 1
         ), "Deactivating a mod hid a plugin provided by another mod"
 
         # plugin is enabled, changes were / are committed
-        controller.activate(BethesdaComponentActivatable.MOD, 1)
-        controller.activate(BethesdaComponentActivatable.PLUGIN, 0)
+        controller.activate_mod(1)
+        controller.activate_plugin(0)
         controller.commit()
-        controller.deactivate(BethesdaComponentActivatable.MOD, 1)
+        controller.deactivate_mod(1)
         controller.commit()
         assert (
             len(controller.plugins) == 1
@@ -162,10 +157,10 @@ def test_conflicting_plugins_delete():
         for mod in ["conflict_1", "conflict_2"]:
             extract_mod(controller, mod)
             mod_index = [i.name for i in controller.mods].index(mod)
-            controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+            controller.activate_mod(mod_index)
             controller.commit()
 
-        controller.delete(BethesdaComponent.MOD, 1)
+        controller.delete_mod(1)
         assert (
             len(controller.plugins) == 1
         ), "Deleting a mod hid a plugin provided by another mod"
@@ -180,17 +175,17 @@ def test_conflicting_plugins_delete_plugin():
         for mod in ["conflict_1", "conflict_2"]:
             extract_mod(controller, mod)
             mod_index = [i.name for i in controller.mods].index(mod)
-            controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+            controller.activate_mod(mod_index)
             controller.commit()
 
-        controller.delete(BethesdaComponent.PLUGIN, 0)
+        controller.delete_plugin(0)
 
         assert (
             len(controller.plugins) == 0
         ), "A plugin provided by multiple enabled mods wasn't deleted."
 
-        controller.deactivate(BethesdaComponentActivatable.MOD, "all")
-        controller.activate(BethesdaComponentActivatable.MOD, "all")
+        controller.deactivate_mod("all")
+        controller.activate_mod("all")
 
         assert (
             len(controller.plugins) == 0
@@ -208,7 +203,7 @@ def test_conflicting_plugins_mult_delete_plugin():
         for mod in ["plugin_wrong_spot", "mult_plugins_same_name"]:
             install_mod(controller, mod)
 
-        controller.delete(BethesdaComponent.PLUGIN, 0)
+        controller.delete_plugin(0)
         files = controller.mods[
             [i.name for i in controller.mods].index("plugin_wrong_spot")
         ].files
@@ -269,7 +264,7 @@ def test_conflicting_mods_have_conflict_flag_after_move():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        controller.move(BethesdaComponentActivatable.MOD, 2, 0)
+        controller.move_mod(2, 0)
 
         assert (
             controller.mods[
@@ -300,9 +295,9 @@ def test_conflicting_mods_have_conflict_flag_after_actviate():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             extract_mod(controller, mod)
 
-        controller.activate(BethesdaComponentActivatable.MOD, 0)
-        controller.activate(BethesdaComponentActivatable.MOD, 1)
-        controller.activate(BethesdaComponentActivatable.MOD, 2)
+        controller.activate_mod(0)
+        controller.activate_mod(1)
+        controller.activate_mod(2)
 
         assert (
             controller.mods[
@@ -333,7 +328,7 @@ def test_conflicting_mods_have_conflict_flag_after_deactivate():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        controller.deactivate(BethesdaComponentActivatable.MOD, 2)
+        controller.deactivate_mod(2)
 
         assert (
             controller.mods[
@@ -366,11 +361,11 @@ def test_conflicting_mods_only_conflict_when_activated():
         assert controller.mods[0].conflict is False
         assert controller.mods[1].conflict is False
 
-        controller.activate(BethesdaComponentActivatable.MOD, 0)
+        controller.activate_mod(0)
         assert controller.mods[0].conflict is False
         assert controller.mods[1].conflict is False
 
-        controller.activate(BethesdaComponentActivatable.MOD, 1)
+        controller.activate_mod(1)
         assert controller.mods[0].conflict is True
         assert controller.mods[1].conflict is True
 
@@ -383,7 +378,7 @@ def test_conflicting_mods_conflict_after_rename():
         for mod in ["conflict_1", "conflict_2"]:
             install_mod(controller, mod)
 
-        controller.rename(Component.MOD, 0, "new_name")
+        controller.rename_mod(0, "new_name")
 
         assert controller.mods[0].conflict is True
         assert controller.mods[1].conflict is True
@@ -447,7 +442,7 @@ def test_obsolete_init():
         assert controller.mods[normal_mod].obsolete is False
 
         # perform a move
-        controller.move(BethesdaComponentActivatable.MOD, conflict_1, conflict_2)
+        controller.move_mod(conflict_1, conflict_2)
         # fix indices
         conflict_1, conflict_2 = conflict_2, conflict_1
 
@@ -456,6 +451,6 @@ def test_obsolete_init():
         assert controller.mods[normal_mod].obsolete is False
 
         # Perform a deactivate
-        controller.deactivate(BethesdaComponentActivatable.MOD, conflict_1)
+        controller.deactivate_mod(conflict_1)
         assert controller.mods[conflict_2].obsolete is False
         assert controller.mods[normal_mod].obsolete is False

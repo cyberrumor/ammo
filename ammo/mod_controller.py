@@ -28,9 +28,7 @@ from .component import (
     Mod,
     Download,
     Plugin,
-    BethesdaComponent,
     BethesdaComponentActivatable,
-    Component,
 )
 from .lib import (
     normalize,
@@ -324,21 +322,17 @@ class ModController(Controller):
             target_type = list(type_hints.values())[max(0, abs(len(args) - 1))]
 
         if hasattr(target_type, "__args__"):
-            if int in target_type.__args__ and len(args) > 0:
-                match args[0]:
-                    case "download":
-                        components = self.downloads
-                    case "mod":
-                        components = self.mods
-                    case "plugin":
-                        components = self.plugins
-                    case _:
-                        components = []
             if func not in [
                 self.install.__func__,
                 self.configure.__func__,
                 self.collisions.__func__,
             ]:
+                components = self.mods
+                if name.endswith("download"):
+                    components = self.downloads
+                elif name.endswith("plugin"):
+                    components = self.plugins
+
                 for i in range(len(components)):
                     if str(i).startswith(text):
                         completions.append(str(i))
@@ -572,7 +566,7 @@ class ModController(Controller):
 
         assert mod.modconf is not None
 
-        self.deactivate(BethesdaComponentActivatable.MOD, index)
+        self.deactivate_mod(index)
         self.commit()
         self.refresh()
 
@@ -595,11 +589,9 @@ class ModController(Controller):
         # will no longer be required.
         self.refresh()
 
-    def activate(
-        self, component: BethesdaComponentActivatable, index: Union[int, str]
-    ) -> None:
+    def activate_mod(self, index: Union[int, str]) -> None:
         """
-        Enabled components will be loaded by game.
+        Enabled mods will be loaded by game.
         """
         try:
             int(index)
@@ -610,15 +602,17 @@ class ModController(Controller):
         warnings = []
 
         if index == "all":
-            for i in range(len(self.__dict__[f"{component.value}s"])):
-                if self.__dict__[f"{component.value}s"][i].visible:
+            for i in range(len(self.mods)):
+                if self.mods[i].visible:
                     try:
-                        self._set_component_state(component, i, True)
+                        self._set_component_state(
+                            BethesdaComponentActivatable.MOD, i, True
+                        )
                     except Warning as e:
                         warnings.append(e)
         else:
             try:
-                self._set_component_state(component, index, True)
+                self._set_component_state(BethesdaComponentActivatable.MOD, index, True)
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
@@ -627,11 +621,43 @@ class ModController(Controller):
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def deactivate(
-        self, component: BethesdaComponentActivatable, index: Union[int, str]
-    ) -> None:
+    def activate_plugin(self, index: Union[int, str]) -> None:
         """
-        Disabled components will not be loaded by game.
+        Enabled plugins will be loaded by the game.
+        """
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got '{index}'")
+
+        warnings = []
+
+        if index == "all":
+            for i in range(len(self.plugins)):
+                if self.plugins[i].visible:
+                    try:
+                        self._set_component_state(
+                            BethesdaComponentActivatable.PLUGIN, i, True
+                        )
+                    except Warning as e:
+                        warnings.append(e)
+        else:
+            try:
+                self._set_component_state(
+                    BethesdaComponentActivatable.PLUGIN, index, True
+                )
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+
+        self._stage()
+        if warnings:
+            raise Warning("\n".join(set([i.args[0] for i in warnings])))
+
+    def deactivate_plugin(self, index: Union[int, str]) -> None:
+        """
+        Disabled plugins will not be loaded by game.
         """
         try:
             int(index)
@@ -640,12 +666,42 @@ class ModController(Controller):
                 raise Warning(f"Expected int, got '{index}'")
 
         if index == "all":
-            for i in range(len(self.__dict__[f"{component.value}s"])):
-                if self.__dict__[f"{component.value}s"][i].visible:
-                    self._set_component_state(component, i, False)
+            for i in range(len(self.plugins)):
+                if self.plugins[i].visible:
+                    self._set_component_state(
+                        BethesdaComponentActivatable.PLUGIN, i, False
+                    )
         else:
             try:
-                self._set_component_state(component, index, False)
+                self._set_component_state(
+                    BethesdaComponentActivatable.PLUGIN, index, False
+                )
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+        self._stage()
+
+    def deactivate_mod(self, index: Union[int, str]) -> None:
+        """
+        Diabled mods will not be loaded by game.
+        """
+        try:
+            int(index)
+        except ValueError:
+            if index != "all":
+                raise Warning(f"Expected int, got'{index}'")
+
+        if index == "all":
+            for i in range(len(self.mods)):
+                if self.mods[i].visible:
+                    self._set_component_state(
+                        BethesdaComponentActivatable.MOD, i, False
+                    )
+        else:
+            try:
+                self._set_component_state(
+                    BethesdaComponentActivatable.MOD, index, False
+                )
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
@@ -678,15 +734,10 @@ class ModController(Controller):
         self.plugins = result
 
     @_requires_sync
-    def rename(self, component: Component, index: int, name: str) -> None:
+    def rename_download(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores.
         """
-        if component not in list(Component):
-            raise Warning(
-                f"Can only rename components of types {[i.value for i in list(Component)]}, not {component}"
-            )
-
         if name != "".join([i for i in name if i.isalnum() or i == "_"]):
             raise Warning(
                 "Names can only contain alphanumeric characters or underscores"
@@ -700,224 +751,234 @@ class ModController(Controller):
                 f"Choose something else. These names are forbidden: {forbidden_names}"
             )
 
-        match component:
-            case Component.DOWNLOAD:
-                try:
-                    download = self.downloads[index]
-                except IndexError as e:
-                    raise Warning(e)
+        try:
+            download = self.downloads[index]
+        except IndexError as e:
+            raise Warning(e)
 
-                if not download.visible:
-                    raise Warning("You can only rename visible components.")
+        if not download.visible:
+            raise Warning("You can only rename visible components.")
 
-                if "pytest" not in sys.modules:
-                    # Don't run this during tests because it's slow.
-                    try:
-                        print("Verifying archive integrity...")
-                        subprocess.check_output(["7z", "t", f"{download.location}"])
-                    except subprocess.CalledProcessError:
-                        raise Warning(
-                            f"Rename of {index} failed at integrity check. Incomplete download?"
-                        )
-
-                new_location = (
-                    download.location.parent / f"{name}{download.location.suffix}"
+        if "pytest" not in sys.modules:
+            # Don't run this during tests because it's slow.
+            try:
+                print("Verifying archive integrity...")
+                subprocess.check_output(["7z", "t", f"{download.location}"])
+            except subprocess.CalledProcessError:
+                raise Warning(
+                    f"Rename of {index} failed at integrity check. Incomplete download?"
                 )
-                if new_location.exists():
-                    raise Warning(
-                        f"Can't rename because download {new_location} exists."
-                    )
 
-                log.info(f"Renaming {component} {download.location} to {new_location}")
-                download.location.rename(new_location)
-                self.refresh()
+        new_location = download.location.parent / f"{name}{download.location.suffix}"
+        if new_location.exists():
+            raise Warning(f"Can't rename because download {new_location} exists.")
 
-            case Component.MOD:
-                try:
-                    mod = self.mods[index]
-                except IndexError as e:
-                    raise Warning(e)
-
-                if not mod.visible:
-                    raise Warning("You can only rename visible components.")
-
-                new_location = self.game.ammo_mods_dir / name
-                if new_location.exists():
-                    raise Warning(f"A mod named {str(new_location)} already exists!")
-
-                if mod.enabled:
-                    # Remove symlinks instead of breaking them in case something goes
-                    # wrong with the rename and ammo exits before it can commit.
-                    self._clean_game_dir()
-
-                # Move the folder, update the mod.
-                log.info(f"Renaming {component} {mod.location} to {new_location}")
-                mod.location.rename(new_location)
-                mod.location = new_location
-                mod.name = name
-
-                # re-assess mod files
-                mod.__post_init__()
-
-                # re-install symlinks
-                self.commit()
+        log.info(f"Renaming Component.DOWNLOAD {download.location} to {new_location}")
+        download.location.rename(new_location)
+        self.refresh()
 
     @_requires_sync
-    def delete(self, component: BethesdaComponent, index: Union[int, str]) -> None:
+    def rename_mod(self, index: int, name: str) -> None:
         """
-        Removes specified file from the filesystem.
+        Names may contain alphanumerics and underscores.
         """
-        if not isinstance(component, BethesdaComponent):
-            raise TypeError(
-                f"Expected BethesdaComponent, got '{component}' of type '{type(component)}'"
+        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+            raise Warning(
+                "Names can only contain alphanumeric characters or underscores"
             )
+
+        forbidden_names = []
+        for i in self.game.data.parts:
+            forbidden_names.append(i.lower())
+        if name.lower() in forbidden_names:
+            raise Warning(
+                f"Choose something else. These names are forbidden: {forbidden_names}"
+            )
+        try:
+            mod = self.mods[index]
+        except IndexError as e:
+            raise Warning(e)
+
+        if not mod.visible:
+            raise Warning("You can only rename visible components.")
+
+        new_location = self.game.ammo_mods_dir / name
+        if new_location.exists():
+            raise Warning(f"A mod named {str(new_location)} already exists!")
+
+        if mod.enabled:
+            # Remove symlinks instead of breaking them in case something goes
+            # wrong with the rename and ammo exits before it can commit.
+            self._clean_game_dir()
+
+        # Move the folder, update the mod.
+        log.info(
+            f"Renaming BethesdaComponentActivatable.MOD {mod.location} to {new_location}"
+        )
+        mod.location.rename(new_location)
+        mod.location = new_location
+        mod.name = name
+
+        # re-assess mod files
+        mod.__post_init__()
+
+        # re-install symlinks
+        self.commit()
+
+    @_requires_sync
+    def delete_mod(self, index: Union[int, str]) -> None:
+        """
+        Removes specified mod from the filesystem.
+        """
         try:
             index = int(index)
         except ValueError:
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
-        match component:
-            case BethesdaComponent.MOD:
-                if index == "all":
-                    deleted_mods = ""
-                    visible_mods = [i for i in self.mods if i.visible]
-                    # Don't allow deleting mods with "all" unless they're inactive.
-                    for mod in visible_mods:
-                        if mod.enabled:
-                            raise Warning(
-                                "You can only delete all visible components if they are all deactivated."
-                            )
-                    for mod in visible_mods:
-                        # Remove plugins that mod provides.
-                        self._set_component_state(
-                            BethesdaComponentActivatable.MOD,
-                            self.mods.index(mod),
-                            False,
-                        )
-                        self.mods.remove(mod)
-                        try:
-                            log.info(f"Deleting {component}: {mod.location}")
-                            shutil.rmtree(mod.location)
-                        except FileNotFoundError:
-                            pass
-                        deleted_mods += f"{mod.name}\n"
-                    self.commit()
-                else:
-                    try:
-                        mod = self.mods[index]
-
-                    except IndexError as e:
-                        # Demote IndexErrors
-                        raise Warning(e)
-
-                    if not mod.visible:
-                        raise Warning("You can only delete visible components.")
-
-                    originally_active = mod.enabled
-
-                    # Remove the mod from the controller then delete it.
-                    self._set_component_state(
-                        BethesdaComponentActivatable.MOD, self.mods.index(mod), False
+        if index == "all":
+            deleted_mods = ""
+            visible_mods = [i for i in self.mods if i.visible]
+            # Don't allow deleting mods with "all" unless they're inactive.
+            for mod in visible_mods:
+                if mod.enabled:
+                    raise Warning(
+                        "You can only delete all visible components if they are all deactivated."
                     )
-                    self.mods.pop(index)
-                    try:
-                        log.info(f"Deleting {component}: {mod.location}")
-                        shutil.rmtree(mod.location)
-                    except FileNotFoundError:
-                        pass
+            for mod in visible_mods:
+                # Remove plugins that mod provides.
+                self._set_component_state(
+                    BethesdaComponentActivatable.MOD,
+                    self.mods.index(mod),
+                    False,
+                )
+                self.mods.remove(mod)
+                try:
+                    log.info(f"Deleting Component: {mod.location}")
+                    shutil.rmtree(mod.location)
+                except FileNotFoundError:
+                    pass
+                deleted_mods += f"{mod.name}\n"
+            self.commit()
+        else:
+            try:
+                mod = self.mods[index]
 
-                    if originally_active:
-                        self.commit()
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
 
-            case BethesdaComponent.PLUGIN:
+            if not mod.visible:
+                raise Warning("You can only delete visible components.")
 
-                def get_plugin_files(plugin):
-                    """
-                    Get plugin files from all enabled mods.
-                    """
-                    for mod in self.mods:
-                        if not mod.enabled:
-                            continue
-                        for file in mod.plugins:
-                            if file.name == plugin.name:
-                                yield file
+            originally_active = mod.enabled
 
-                if index == "all":
-                    deleted_plugins = ""
-                    visible_plugins = [i for i in self.plugins if i.visible]
-                    for plugin in visible_plugins:
-                        if plugin.enabled:
-                            raise Warning(
-                                "You can only delete all visible components if they are all deactivated."
-                            )
+            # Remove the mod from the controller then delete it.
+            self._set_component_state(
+                BethesdaComponentActivatable.MOD, self.mods.index(mod), False
+            )
+            self.mods.pop(index)
+            try:
+                log.info(f"Deleting BethesdaComponentActivatable.MOD: {mod.location}")
+                shutil.rmtree(mod.location)
+            except FileNotFoundError:
+                pass
 
-                    for plugin in visible_plugins:
-                        if plugin.mod is None or plugin.name in (
-                            p.name for p in self.dlc
-                        ):
-                            self.refresh()
-                            self.commit()
-                        self.plugins.remove(plugin)
-                        for file in get_plugin_files(plugin):
-                            try:
-                                log.info(f"Deleting {component}: {file}")
-                                file.unlink()
-                            except FileNotFoundError:
-                                pass
-                        deleted_plugins += f"{plugin.name}\n"
+            if originally_active:
+                self.commit()
+
+    @_requires_sync
+    def delete_plugin(self, index: Union[int, str]) -> None:
+        """
+        Removes specified plugin from the filesystem.
+        """
+
+        def get_plugin_files(plugin):
+            """
+            Get plugin files from all enabled mods.
+            """
+            for mod in self.mods:
+                if not mod.enabled:
+                    continue
+                for file in mod.plugins:
+                    if file.name == plugin.name:
+                        yield file
+
+        if index == "all":
+            deleted_plugins = ""
+            visible_plugins = [i for i in self.plugins if i.visible]
+            for plugin in visible_plugins:
+                if plugin.enabled:
+                    raise Warning(
+                        "You can only delete all visible components if they are all deactivated."
+                    )
+
+            for plugin in visible_plugins:
+                if plugin.mod is None or plugin.name in (p.name for p in self.dlc):
                     self.refresh()
                     self.commit()
-                else:
+                self.plugins.remove(plugin)
+                for file in get_plugin_files(plugin):
                     try:
-                        plugin = self.plugins[index]
-                    except IndexError as e:
-                        # Demote IndexErrors
-                        raise Warning(e)
-                    if not plugin.visible:
-                        raise Warning("You can only delete visible components.")
-
-                    self.plugins.remove(plugin)
-                    for file in get_plugin_files(plugin):
-                        try:
-                            log.info(f"Deleting {component}: {file}")
-                            file.unlink()
-                        except FileNotFoundError:
-                            pass
-
-                    self.refresh()
-                    self.commit()
-
-            case BethesdaComponent.DOWNLOAD:
-                if index == "all":
-                    visible_downloads = [i for i in self.downloads if i.visible]
-                    for visible_download in visible_downloads:
-                        download = self.downloads.pop(
-                            self.downloads.index(visible_download)
-                        )
-                        try:
-                            log.info(f"Deleting {component}: {download.location}")
-                            download.location.unlink()
-                        except FileNotFoundError:
-                            pass
-                else:
-                    index = int(index)
-                    try:
-                        download = self.downloads[index]
-                    except IndexError as e:
-                        # Demote IndexErrors
-                        raise Warning(e)
-
-                    if not download.visible:
-                        raise Warning("You can only delete visible components")
-
-                    self.downloads.remove(download)
-
-                    try:
-                        log.info(f"Deleting {component}: {download.location}")
-                        download.location.unlink()
+                        log.info(f"Deleting BethesdaComponent.PLUGIN: {file}")
+                        file.unlink()
                     except FileNotFoundError:
                         pass
+                deleted_plugins += f"{plugin.name}\n"
+            self.refresh()
+            self.commit()
+        else:
+            try:
+                plugin = self.plugins[index]
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+            if not plugin.visible:
+                raise Warning("You can only delete visible components.")
+
+            self.plugins.remove(plugin)
+            for file in get_plugin_files(plugin):
+                try:
+                    log.info(f"Deleting BethesdaComponent.PLUGIN: {file}")
+                    file.unlink()
+                except FileNotFoundError:
+                    pass
+
+            self.refresh()
+            self.commit()
+
+    @_requires_sync
+    def delete_download(self, index: Union[int, str]) -> None:
+        """
+        Removes specified download from the filesystem.
+        """
+        if index == "all":
+            visible_downloads = [i for i in self.downloads if i.visible]
+            for visible_download in visible_downloads:
+                download = self.downloads.pop(self.downloads.index(visible_download))
+                try:
+                    log.info(f"Deleting Component.DOWNLOAD: {download.location}")
+                    download.location.unlink()
+                except FileNotFoundError:
+                    pass
+        else:
+            index = int(index)
+            try:
+                download = self.downloads[index]
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+
+            if not download.visible:
+                raise Warning("You can only delete visible components")
+
+            self.downloads.remove(download)
+
+            try:
+                log.info(f"Deleting Component.DOWNLOAD: {download.location}")
+                download.location.unlink()
+            except FileNotFoundError:
+                pass
 
     @_requires_sync
     def install(self, index: Union[int, str]) -> None:
@@ -1020,17 +1081,11 @@ class ModController(Controller):
 
         self.refresh()
 
-    def move(
-        self, component: BethesdaComponentActivatable, index: int, new_index: int
-    ) -> None:
+    def move_mod(self, index: int, new_index: int) -> None:
         """
         Larger numbers win file conflicts.
         """
-        if not isinstance(component, BethesdaComponentActivatable):
-            raise TypeError(
-                f"Expected BethesdaComponentActivatable, got '{component}' of type '{type(component)}'"
-            )
-        components = self._get_validated_components(component)
+        components = self._get_validated_components(BethesdaComponentActivatable.MOD)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
         try:
@@ -1049,7 +1104,40 @@ class ModController(Controller):
             # Auto correct astronomical <to index> to max.
             new_index = len(components) - 1
 
-        log.info(f"moving {component} {comp.name} from {index=} to {new_index=}")
+        log.info(
+            f"moving BethesdaComponentActivatable.MOD {comp.name} from {index=} to {new_index=}"
+        )
+        components.pop(index)
+        components.insert(new_index, comp)
+        self._stage()
+        self.changes = True
+
+    def move_plugin(self, index: int, new_index: int) -> None:
+        """
+        Larger numbers win file conflicts.
+        """
+        components = self._get_validated_components(BethesdaComponentActivatable.PLUGIN)
+        # Since this operation it not atomic, validation must be performed
+        # before anything is attempted to ensure nothing can become mangled.
+        try:
+            comp = components[index]
+        except IndexError as e:
+            # Demote IndexErrors
+            raise Warning(e)
+
+        if not comp.visible:
+            raise Warning("You can only move visible components.")
+
+        if index == new_index:
+            return
+
+        if new_index > len(components) - 1:
+            # Auto correct astronomical <to index> to max.
+            new_index = len(components) - 1
+
+        log.info(
+            f"moving BethesdaComponentActivatable.PLUGIN {comp.name} from {index=} to {new_index=}"
+        )
         components.pop(index)
         components.insert(new_index, comp)
         self._stage()

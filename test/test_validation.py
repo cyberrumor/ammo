@@ -23,43 +23,33 @@ def test_move_validation():
 
         # Test valid move mod input
         highest = len(controller.mods) - 1
-        controller.move(BethesdaComponentActivatable.MOD, 0, highest)
-        controller.move(BethesdaComponentActivatable.MOD, highest, 0)
+        controller.move_mod(0, highest)
+        controller.move_mod(highest, 0)
 
         # Test valid move plugin input
         highest = len(controller.plugins) - 1
-        controller.move(BethesdaComponentActivatable.PLUGIN, 0, highest)
-        controller.move(BethesdaComponentActivatable.PLUGIN, highest, 0)
+        controller.move_plugin(0, highest)
+        controller.move_plugin(highest, 0)
 
         # 'to index' that is too high for move should
         # automatically correct to highest location.
         # Test this on mods.
         highest = len(controller.mods)
-        controller.move(BethesdaComponentActivatable.MOD, 0, highest)
+        controller.move_mod(0, highest)
 
         # Test invalid 'from index' for mods.
         with pytest.raises(Warning):
-            controller.move(BethesdaComponentActivatable.MOD, highest, 0)
+            controller.move_mod(highest, 0)
 
         # 'to index' that is too high for move should
         # automatically correct to highest location.
         # Test this on plugins.
         highest = len(controller.plugins)
-        controller.move(BethesdaComponentActivatable.PLUGIN, 0, highest)
+        controller.move_plugin(0, highest)
 
         # Test invalid 'from index' for plugins.
         with pytest.raises(Warning):
-            controller.move(BethesdaComponentActivatable.PLUGIN, highest, 0)
-
-        # Test invalid move component type
-        with pytest.raises(TypeError):
-            controller.move(BethesdaComponent.DOWNLOAD, 0, 1)
-
-        with pytest.raises(TypeError):
-            controller.move(BethesdaComponent.MOD, 0, 1)
-
-        with pytest.raises(TypeError):
-            controller.move("bogus string", 0, 1)
+            controller.move_plugin(highest, 0)
 
 
 def test_activate_validation():
@@ -70,30 +60,20 @@ def test_activate_validation():
         mod_index = extract_mod(controller, "normal_mod")
 
         # Activate valid mod
-        controller.activate(BethesdaComponentActivatable.MOD, mod_index)
+        controller.activate_mod(mod_index)
 
         plugin_index = [i.name for i in controller.plugins].index("normal_plugin.esp")
 
         # Activate valid plugin
-        controller.activate(BethesdaComponentActivatable.PLUGIN, plugin_index)
+        controller.activate_plugin(plugin_index)
 
         # Activate invalid mod
         with pytest.raises(Warning):
-            controller.activate(BethesdaComponentActivatable.MOD, 1000)
+            controller.activate_mod(1000)
 
         # Activate invalid plugin
         with pytest.raises(Warning):
-            controller.activate(BethesdaComponentActivatable.PLUGIN, 1000)
-
-        # Activate invalid component type
-        with pytest.raises(TypeError):
-            controller.activate(BethesdaComponent.DOWNLOAD, 0)
-
-        with pytest.raises(TypeError):
-            controller.activate(BethesdaComponent.MOD, 0)
-
-        with pytest.raises(TypeError):
-            controller.activate("bogus string", 0)
+            controller.activate_plugin(1000)
 
 
 def test_deactivate_validation():
@@ -107,25 +87,18 @@ def test_deactivate_validation():
         )
 
         # valid deactivate plugin
-        controller.deactivate(BethesdaComponentActivatable.PLUGIN, plugin_index)
+        controller.deactivate_plugin(plugin_index)
 
         # valid deactivate mod
-        controller.deactivate(BethesdaComponentActivatable.MOD, mod_index)
+        controller.deactivate_mod(mod_index)
 
         # invalid deactivate plugin.
         with pytest.raises(Warning):
-            controller.deactivate(BethesdaComponentActivatable.PLUGIN, plugin_index)
+            controller.deactivate_plugin(plugin_index)
 
         # invalid deactivate mod
         with pytest.raises(Warning):
-            controller.deactivate(BethesdaComponentActivatable.MOD, 1000)
-
-        # Deactivate invalid component type
-        with pytest.raises(TypeError):
-            controller.deactivate(BethesdaComponent.DOWNLOAD, 0)
-
-        with pytest.raises(TypeError):
-            controller.deactivate("bogus string", 0)
+            controller.deactivate_mod(1000)
 
 
 def test_install_validation():
@@ -148,28 +121,21 @@ def test_delete_validation():
 
         # delete plugin out of range
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.PLUGIN, 1000)
+            controller.delete_plugin(1000)
 
         # delete plugin in range
-        controller.delete(BethesdaComponent.PLUGIN, 0)
+        controller.delete_plugin(0)
 
         # delete mod out of range
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.MOD, 1000)
+            controller.delete_mod(1000)
 
         # delete mod in range
-        controller.delete(BethesdaComponent.MOD, 0)
+        controller.delete_mod(0)
 
         # delete download out of range
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.DOWNLOAD, 1000)
-
-        # Delete invalid component type
-        with pytest.raises(TypeError):
-            controller.delete(BethesdaComponentActivatable.PLUGIN, 0)
-
-        with pytest.raises(TypeError):
-            controller.delete("bogus string", 0)
+            controller.delete_download(1000)
 
         # generate an expendable download file, delete
         # download in range.
@@ -181,7 +147,7 @@ def test_delete_validation():
         download_index = [i.name for i in controller.downloads].index(
             "temp_download.7z"
         )
-        controller.delete(BethesdaComponent.DOWNLOAD, download_index)
+        controller.delete_download(download_index)
 
 
 def test_no_components_validation():
@@ -192,27 +158,27 @@ def test_no_components_validation():
     with AmmoController() as controller:
         # attempt to move mod/plugin
         with pytest.raises(Warning):
-            controller.move(BethesdaComponentActivatable.MOD, 0, 1)
+            controller.move_mod(0, 1)
         with pytest.raises(Warning):
-            controller.move(BethesdaComponentActivatable.PLUGIN, 0, 1)
+            controller.move_plugin(0, 1)
 
         # attempt to delete mod / plugin
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.MOD, 0)
+            controller.delete_mod(0)
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.PLUGIN, 0)
+            controller.delete_plugin(0)
 
         # attempt to activate mod/plugin
         with pytest.raises(Warning):
-            controller.activate(BethesdaComponentActivatable.MOD, 0)
+            controller.activate_mod(0)
         with pytest.raises(Warning):
-            controller.activate(BethesdaComponentActivatable.PLUGIN, 0)
+            controller.activate_plugin(0)
 
         # attempt to deactivate mod/plugin
         with pytest.raises(Warning):
-            controller.deactivate(BethesdaComponentActivatable.MOD, 0)
+            controller.deactivate_mod(0)
         with pytest.raises(Warning):
-            controller.deactivate(BethesdaComponentActivatable.PLUGIN, 0)
+            controller.deactivate_plugin(0)
 
 
 def test_no_install_twice():
@@ -248,7 +214,7 @@ def test_invisible_delete_mod():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.MOD, 0)
+            controller.delete_mod(0)
 
 
 def test_invisible_delete_plugin():
@@ -261,7 +227,7 @@ def test_invisible_delete_plugin():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.PLUGIN, 0)
+            controller.delete_plugin(0)
 
 
 def test_invisible_delete_download():
@@ -272,7 +238,7 @@ def test_invisible_delete_download():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.delete(BethesdaComponent.DOWNLOAD, 0)
+            controller.delete_download(0)
 
 
 def test_invisible_move_mod():
@@ -286,7 +252,7 @@ def test_invisible_move_mod():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.move(BethesdaComponentActivatable.MOD, 0, 1)
+            controller.move_mod(0, 1)
 
 
 def test_invisible_move_plugin():
@@ -300,7 +266,7 @@ def test_invisible_move_plugin():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.move(BethesdaComponentActivatable.PLUGIN, 0, 1)
+            controller.move_plugin(0, 1)
 
 
 def test_invisible_rename_mod():
@@ -313,7 +279,7 @@ def test_invisible_rename_mod():
         controller.find("nothing")
 
         with pytest.raises(Warning):
-            controller.rename(Component.MOD, 0, "new_name")
+            controller.rename_mod(0, "new_name")
 
 
 def test_invisible_configure():
