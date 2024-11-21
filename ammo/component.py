@@ -32,20 +32,21 @@ class ToolEnum(str, Enum):
 
 @dataclass(slots=True, kw_only=True)
 class Mod:
+    # Generic attributes
     location: Path
     game_root: Path
     game_data: Path
-
+    name: str = field(default_factory=str, init=False)
     visible: bool = field(init=False, default=True, compare=False)
-    modconf: Union[None, Path] = field(init=False, default=None)
     install_dir: Path = field(init=False)
-    fomod: bool = field(init=False, default=False)
     enabled: bool = field(init=False, default=False)
     conflict: bool = field(init=False, default=False)
     obsolete: bool = field(init=False, default=True)
     files: list[Path] = field(default_factory=list, init=False)
+    # Bethesda attributes
+    modconf: Union[None, Path] = field(init=False, default=None)
+    fomod: bool = field(init=False, default=False)
     plugins: list[str] = field(default_factory=list, init=False)
-    name: str = field(default_factory=str, init=False)
 
     def __post_init__(self) -> None:
         self.name = self.location.name

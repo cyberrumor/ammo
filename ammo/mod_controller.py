@@ -43,11 +43,13 @@ log = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
 class Game:
+    # Generic attributes
     ammo_conf: Path
     ammo_log: Path
     ammo_mods_dir: Path
     name: str
     directory: Path
+    # Bethesda attributes
     data: Path
     dlc_file: Path
     plugin_file: Path
@@ -81,14 +83,17 @@ class ModController(Controller):
         return wrapper
 
     def __init__(self, downloads_dir: Path, game: Game, *keywords):
+        # Generic attributes
         self.downloads_dir: Path = downloads_dir
         self.game: Game = game
+        self.keywords = [*keywords]
         self.changes: bool = False
         self.downloads: list[Download] = []
         self.mods: list[Mod] = []
+
+        # Bethesda attributes
         self.plugins: list[Plugin] = []
         self.dlc: list[Plugin] = []
-        self.keywords = [*keywords]
 
         logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
         log.info("initializing")

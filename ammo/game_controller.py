@@ -185,11 +185,13 @@ class GameController(Controller):
                     return line.strip().startswith("*")
 
         game = Game(
+            # Generic attributes
             ammo_conf=ammo_conf,
             ammo_log=ammo_log,
             ammo_mods_dir=ammo_mods_dir,
             name=game_selection.name,
             directory=game_selection.directory,
+            # Bethesda attributes
             data=game_selection.data,
             dlc_file=game_selection.dlc_file,
             plugin_file=game_selection.plugin_file,
