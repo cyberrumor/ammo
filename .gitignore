@@ -1,2 +1,4 @@
 /target
 __pycache__/
+ammo.egg-info/
+build/
