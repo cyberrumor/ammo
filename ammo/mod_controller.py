@@ -41,7 +41,7 @@ from .lib import (
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Game:
     ammo_conf: Path
     ammo_log: Path

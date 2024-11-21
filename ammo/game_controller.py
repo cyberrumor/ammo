@@ -185,15 +185,15 @@ class GameController(Controller):
                     return line.strip().startswith("*")
 
         game = Game(
-            ammo_conf,
-            ammo_log,
-            ammo_mods_dir,
-            game_selection.name,
-            game_selection.directory,
-            game_selection.data,
-            game_selection.dlc_file,
-            game_selection.plugin_file,
-            enabled_formula,
+            ammo_conf=ammo_conf,
+            ammo_log=ammo_log,
+            ammo_mods_dir=ammo_mods_dir,
+            name=game_selection.name,
+            directory=game_selection.directory,
+            data=game_selection.data,
+            dlc_file=game_selection.dlc_file,
+            plugin_file=game_selection.plugin_file,
+            enabled_formula=enabled_formula,
         )
 
         # Launch the main mod organizer.
