@@ -28,7 +28,6 @@ from .component import (
     Mod,
     Download,
     Plugin,
-    BethesdaComponentActivatable,
 )
 from .lib import (
     normalize,
@@ -379,89 +378,83 @@ class ModController(Controller):
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
 
-    def _get_validated_components(
-        self, component: BethesdaComponentActivatable
-    ) -> list:
+    def _set_mod_state(self, index: int, desired_state: bool):
         """
-        Turn a BethesdaComponentActivatable into either self.mods or self.plugins.
-        """
-        if isinstance(component, BethesdaComponentActivatable):
-            match component:
-                case BethesdaComponentActivatable.PLUGIN:
-                    return self.plugins
-                case BethesdaComponentActivatable.MOD:
-                    return self.mods
-        raise TypeError(
-            textwrap.dedent(
-                f"""\
-                Expected {[i.value for i in list(BethesdaComponentActivatable)]},
-                got {component} of type {type(component)}
-                """
-            )
-        )
-
-    def _set_component_state(
-        self, component: BethesdaComponentActivatable, index: int, state: bool
-    ):
-        """
-        Activate or deactivate a component.
+        Activate or deactivate a mod.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
         if they aren't also provided by another mod.
         """
-        components = self._get_validated_components(component)
-        subject = components[index]
+        try:
+            target_mod = self.mods[index]
+        except IndexError as e:
+            # Demote IndexErrors
+            raise Warning(e)
 
-        if not subject.visible:
+        if not target_mod.visible:
             raise Warning("You can only de/activate visible components.")
 
-        starting_state = subject.enabled
-        # Handle mods
-        if isinstance(subject, Mod):
-            # Handle configuration of fomods
-            if (
-                state
-                and subject.fomod
-                and not (subject.location / "ammo_fomod").exists()
-            ):
-                raise Warning("Fomods must be configured before they can be enabled.")
+        starting_state = target_mod.enabled
+        # Handle configuration of fomods
+        if (
+            desired_state
+            and target_mod.fomod
+            and not (target_mod.location / "ammo_fomod").exists()
+        ):
+            raise Warning("Fomods must be configured before they can be enabled.")
 
-            subject.enabled = state
-            if subject.enabled:
-                # Show plugins owned by this mod
-                for subject_plugin in subject.plugins:
-                    if subject_plugin.name not in (i.name for i in self.plugins):
-                        plugin = Plugin(
-                            name=subject_plugin.name,
-                            mod=subject,
-                            enabled=False,
-                        )
-                        self.plugins.append(plugin)
-            else:
-                # Hide plugins owned by this mod and not another mod
-                for plugin in subject.plugins:
-                    if plugin.name not in (i.name for i in self.plugins):
-                        continue
-                    provided_elsewhere = False
-                    for mod in self.mods:
-                        if not mod.enabled:
-                            continue
-                        if mod == subject:
-                            continue
-                        if plugin.name in (i.name for i in mod.plugins):
-                            provided_elsewhere = True
-                            break
-                    if not provided_elsewhere:
-                        index = [i.name for i in self.plugins].index(plugin.name)
-                        self.plugins.pop(index)
-
-        # Handle plugins
-        elif isinstance(subject, Plugin):
-            subject.enabled = state
+        target_mod.enabled = desired_state
+        if target_mod.enabled:
+            # Show plugins owned by this mod
+            for mod_plugin in target_mod.plugins:
+                if mod_plugin.name not in (i.name for i in self.plugins):
+                    plugin = Plugin(
+                        name=mod_plugin.name,
+                        mod=target_mod,
+                        enabled=False,
+                    )
+                    self.plugins.append(plugin)
         else:
-            raise NotImplementedError
+            # Hide plugins owned by this mod and not another mod
+            for target_plugin in target_mod.plugins:
+                if target_plugin.name not in (i.name for i in self.plugins):
+                    continue
+                provided_elsewhere = False
+                for mod in self.mods:
+                    if not mod.enabled:
+                        continue
+                    if target_mod == mod:
+                        continue
+                    if target_plugin.name in (i.name for i in mod.plugins):
+                        provided_elsewhere = True
+                        break
+                if not provided_elsewhere:
+                    index = [i.name for i in self.plugins].index(target_plugin.name)
+                    self.plugins.pop(index)
 
         if not self.changes:
-            self.changes = starting_state != subject.enabled
+            self.changes = starting_state != target_mod.enabled
+
+    def _set_plugin_state(self, index: int, desired_state: bool):
+        """
+        Activate or deactivate a plugin.
+        If a mod with plugins was deactivated, remove those plugins from self.plugins
+        if they aren't also provided by another mod.
+        """
+        try:
+            target_plugin = self.plugins[index]
+        except IndexError as e:
+            # Demote IndexErrors
+            raise Warning(e)
+
+        if not target_plugin.visible:
+            raise Warning("You can only de/activate visible components.")
+
+        starting_state = target_plugin.enabled
+        # Handle plugins
+        target_plugin.enabled = desired_state
+
+        if not self.changes:
+            self.changes = starting_state != target_plugin.enabled
 
     def _stage(self) -> dict:
         """
@@ -605,17 +598,11 @@ class ModController(Controller):
             for i in range(len(self.mods)):
                 if self.mods[i].visible:
                     try:
-                        self._set_component_state(
-                            BethesdaComponentActivatable.MOD, i, True
-                        )
+                        self._set_mod_state(i, True)
                     except Warning as e:
                         warnings.append(e)
         else:
-            try:
-                self._set_component_state(BethesdaComponentActivatable.MOD, index, True)
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
+            self._set_mod_state(index, True)
 
         self._stage()
         if warnings:
@@ -637,19 +624,11 @@ class ModController(Controller):
             for i in range(len(self.plugins)):
                 if self.plugins[i].visible:
                     try:
-                        self._set_component_state(
-                            BethesdaComponentActivatable.PLUGIN, i, True
-                        )
+                        self._set_plugin_state(i, True)
                     except Warning as e:
                         warnings.append(e)
         else:
-            try:
-                self._set_component_state(
-                    BethesdaComponentActivatable.PLUGIN, index, True
-                )
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
+            self._set_plugin_state(index, True)
 
         self._stage()
         if warnings:
@@ -668,17 +647,10 @@ class ModController(Controller):
         if index == "all":
             for i in range(len(self.mods)):
                 if self.mods[i].visible:
-                    self._set_component_state(
-                        BethesdaComponentActivatable.MOD, i, False
-                    )
+                    self._set_mod_state(i, False)
         else:
-            try:
-                self._set_component_state(
-                    BethesdaComponentActivatable.MOD, index, False
-                )
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
+            self._set_mod_state(index, False)
+
         self._stage()
 
     def deactivate_plugin(self, index: Union[int, str]) -> None:
@@ -694,17 +666,10 @@ class ModController(Controller):
         if index == "all":
             for i in range(len(self.plugins)):
                 if self.plugins[i].visible:
-                    self._set_component_state(
-                        BethesdaComponentActivatable.PLUGIN, i, False
-                    )
+                    self._set_plugin_state(i, False)
         else:
-            try:
-                self._set_component_state(
-                    BethesdaComponentActivatable.PLUGIN, index, False
-                )
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
+            self._set_plugin_state(index, False)
+
         self._stage()
 
     @_requires_sync
@@ -747,7 +712,7 @@ class ModController(Controller):
         if new_location.exists():
             raise Warning(f"Can't rename because download {new_location} exists.")
 
-        log.info(f"Renaming Component.DOWNLOAD {download.location} to {new_location}")
+        log.info(f"Renaming DOWNLOAD {download.location} to {new_location}")
         download.location.rename(new_location)
         self.refresh()
 
@@ -786,9 +751,7 @@ class ModController(Controller):
             self._clean_game_dir()
 
         # Move the folder, update the mod.
-        log.info(
-            f"Renaming BethesdaComponentActivatable.MOD {mod.location} to {new_location}"
-        )
+        log.info(f"Renaming MOD {mod.location} to {new_location}")
         mod.location.rename(new_location)
         mod.location = new_location
         mod.name = name
@@ -819,42 +782,36 @@ class ModController(Controller):
                     raise Warning(
                         "You can only delete all visible components if they are all deactivated."
                     )
-            for mod in visible_mods:
+            for target_mod in visible_mods:
                 # Remove plugins that mod provides.
-                self._set_component_state(
-                    BethesdaComponentActivatable.MOD,
-                    self.mods.index(mod),
-                    False,
-                )
-                self.mods.remove(mod)
+                self._set_mod_state(self.mods.index(target_mod), False)
+                self.mods.remove(target_mod)
                 try:
-                    log.info(f"Deleting Component: {mod.location}")
-                    shutil.rmtree(mod.location)
+                    log.info(f"Deleting Component: {target_mod.location}")
+                    shutil.rmtree(target_mod.location)
                 except FileNotFoundError:
                     pass
-                deleted_mods += f"{mod.name}\n"
+                deleted_mods += f"{target_mod.name}\n"
             self.commit()
         else:
             try:
-                mod = self.mods[index]
+                target_mod = self.mods[index]
 
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
 
-            if not mod.visible:
+            if not target_mod.visible:
                 raise Warning("You can only delete visible components.")
 
-            originally_active = mod.enabled
+            originally_active = target_mod.enabled
 
             # Remove the mod from the controller then delete it.
-            self._set_component_state(
-                BethesdaComponentActivatable.MOD, self.mods.index(mod), False
-            )
+            self._set_mod_state(self.mods.index(target_mod), False)
             self.mods.pop(index)
             try:
-                log.info(f"Deleting BethesdaComponentActivatable.MOD: {mod.location}")
-                shutil.rmtree(mod.location)
+                log.info(f"Deleting MOD: {target_mod.location}")
+                shutil.rmtree(target_mod.location)
             except FileNotFoundError:
                 pass
 
@@ -894,7 +851,7 @@ class ModController(Controller):
                 self.plugins.remove(plugin)
                 for file in get_plugin_files(plugin):
                     try:
-                        log.info(f"Deleting BethesdaComponent.PLUGIN: {file}")
+                        log.info(f"Deleting PLUGIN: {file}")
                         file.unlink()
                     except FileNotFoundError:
                         pass
@@ -913,7 +870,7 @@ class ModController(Controller):
             self.plugins.remove(plugin)
             for file in get_plugin_files(plugin):
                 try:
-                    log.info(f"Deleting BethesdaComponent.PLUGIN: {file}")
+                    log.info(f"Deleting PLUGIN: {file}")
                     file.unlink()
                 except FileNotFoundError:
                     pass
@@ -931,7 +888,7 @@ class ModController(Controller):
             for visible_download in visible_downloads:
                 download = self.downloads.pop(self.downloads.index(visible_download))
                 try:
-                    log.info(f"Deleting Component.DOWNLOAD: {download.location}")
+                    log.info(f"Deleting DOWNLOAD: {download.location}")
                     download.location.unlink()
                 except FileNotFoundError:
                     pass
@@ -949,7 +906,7 @@ class ModController(Controller):
             self.downloads.remove(download)
 
             try:
-                log.info(f"Deleting Component.DOWNLOAD: {download.location}")
+                log.info(f"Deleting DOWNLOAD: {download.location}")
                 download.location.unlink()
             except FileNotFoundError:
                 pass
@@ -1059,11 +1016,10 @@ class ModController(Controller):
         """
         Larger numbers win file conflicts.
         """
-        components = self._get_validated_components(BethesdaComponentActivatable.MOD)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
         try:
-            comp = components[index]
+            comp = self.mods[index]
         except IndexError as e:
             # Demote IndexErrors
             raise Warning(e)
@@ -1074,15 +1030,13 @@ class ModController(Controller):
         if index == new_index:
             return
 
-        if new_index > len(components) - 1:
+        if new_index > len(self.mods) - 1:
             # Auto correct astronomical <to index> to max.
-            new_index = len(components) - 1
+            new_index = len(self.mods) - 1
 
-        log.info(
-            f"moving BethesdaComponentActivatable.MOD {comp.name} from {index=} to {new_index=}"
-        )
-        components.pop(index)
-        components.insert(new_index, comp)
+        log.info(f"moving MOD {comp.name} from {index=} to {new_index=}")
+        self.mods.pop(index)
+        self.mods.insert(new_index, comp)
         self._stage()
         self.changes = True
 
@@ -1090,11 +1044,10 @@ class ModController(Controller):
         """
         Larger numbers win file conflicts.
         """
-        components = self._get_validated_components(BethesdaComponentActivatable.PLUGIN)
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.
         try:
-            comp = components[index]
+            comp = self.plugins[index]
         except IndexError as e:
             # Demote IndexErrors
             raise Warning(e)
@@ -1105,15 +1058,13 @@ class ModController(Controller):
         if index == new_index:
             return
 
-        if new_index > len(components) - 1:
+        if new_index > len(self.plugins) - 1:
             # Auto correct astronomical <to index> to max.
-            new_index = len(components) - 1
+            new_index = len(self.plugins) - 1
 
-        log.info(
-            f"moving BethesdaComponentActivatable.PLUGIN {comp.name} from {index=} to {new_index=}"
-        )
-        components.pop(index)
-        components.insert(new_index, comp)
+        log.info(f"moving PLUGIN {comp.name} from {index=} to {new_index=}")
+        self.plugins.pop(index)
+        self.plugins.insert(new_index, comp)
         self._stage()
         self.changes = True
 
@@ -1165,12 +1116,12 @@ class ModController(Controller):
         have file conflicts. Mods prefixed with x install no files.
         """
         try:
-            subject = self.mods[index]
+            target_mod = self.mods[index]
         except IndexError as e:
             # Demote index errors
             raise Warning(e)
 
-        if not subject.conflict:
+        if not target_mod.conflict:
             raise Warning("No conflicts.")
 
         def get_relative_files(mod: Mod):
@@ -1192,18 +1143,18 @@ class ModController(Controller):
 
         enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
         enabled_mod_names = [i.name for i in enabled_mods]
-        subject_files = list(get_relative_files(subject))
+        target_mod_files = list(get_relative_files(target_mod))
         conflicts = {}
 
         for mod in enabled_mods:
-            if mod.name == subject.name:
+            if mod.name == target_mod.name:
                 continue
             for file in get_relative_files(mod):
-                if file in subject_files:
+                if file in target_mod_files:
                     if conflicts.get(file, None):
                         conflicts[file].append(mod.name)
                     else:
-                        conflicts[file] = [mod.name, subject.name]
+                        conflicts[file] = [mod.name, target_mod.name]
 
         result = ""
         for file, mods in conflicts.items():
