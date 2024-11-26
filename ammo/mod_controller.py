@@ -92,16 +92,17 @@ class ModController(Controller):
         self.plugins: list[Plugin] = []
         self.dlc: list[Plugin] = []
 
-        logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
-        log.info("initializing")
-
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         Path.mkdir(self.game.data, parents=True, exist_ok=True)
+        Path.mkdir(self.game.plugin_file.parent, parents=True, exist_ok=True)
+        Path.mkdir(self.game.ammo_log.parent, parents=True, exist_ok=True)
+
+        logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
+        log.info("initializing")
 
         # Instance a Mod class for each mod folder in the mod directory.
         mods = []
-        Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
         for path in mod_folders:
             mod = Mod(
@@ -134,7 +135,6 @@ class ModController(Controller):
             if mod not in self.mods:
                 self.mods.append(mod)
 
-        Path.mkdir(self.game.plugin_file.parent, parents=True, exist_ok=True)
         if not self.game.plugin_file.exists():
             with open(self.game.plugin_file, "w") as file:
                 file.write("")
