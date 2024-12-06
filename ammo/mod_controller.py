@@ -303,6 +303,7 @@ class ModController(Controller):
     def autocomplete(self, text: str, state: int) -> Union[str, None]:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
+        name = f"do_{name}"
         completions = []
 
         assert name in dir(self)

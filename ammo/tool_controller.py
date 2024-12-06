@@ -90,6 +90,7 @@ class ToolController(Controller):
     def autocomplete(self, text: str, state: int) -> Union[str, None]:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
+        name = f"do_{name}"
         completions = []
 
         assert name in dir(self)
@@ -108,27 +109,17 @@ class ToolController(Controller):
             target_type = list(type_hints.values())[max(0, abs(len(args) - 1))]
 
         if hasattr(target_type, "__args__"):
-            if int in target_type.__args__ and len(args) > 0:
-                match args[0]:
-                    case "download":
-                        components = self.downloads
-                    case "tool":
-                        components = self.tools
-                    case _:
-                        components = []
-            if func not in [self.install.__func__, self.configure.__func__]:
+            if func not in [self.do_install.__func__]:
+                components = self.tools
+                if name.endswith("download"):
+                    components = self.downloads
                 for i in range(len(components)):
                     if str(i).startswith(text):
                         completions.append(str(i))
                 if "all".startswith(text):
                     completions.append("all")
 
-        elif isinstance(target_type, EnumMeta):
-            for i in list(target_type):
-                if i.value.startswith(text):
-                    completions.append(i.value)
-
-        if func == self.install.__func__:
+        if func == self.do_install.__func__:
             for i in range(len(self.downloads)):
                 if str(i).startswith(text):
                     completions.append(str(i))
