@@ -11,12 +11,13 @@ from enum import (
     EnumMeta,
 )
 from .ui import Controller
-from .component import (
-    Download,
-    ToolEnum,
-)
+from .component import Download
 from .lib import NO_EXTRACT_DIRS
 
+class Tool:
+    def __init__(self, path: Path):
+        self.visible = True
+        self.path = path
 
 class ToolController(Controller):
     """
@@ -29,7 +30,7 @@ class ToolController(Controller):
         self.tools_dir: Path = tools_dir
 
         self.downloads: list[Download] = []
-        self.tools: list[Path] = []
+        self.tools: list[Tool] = []
 
         self.do_exit: bool = False
 
@@ -39,7 +40,7 @@ class ToolController(Controller):
         # Instance a Tool class for each tool folder in the tool directory.
         for path in self.tools_dir.iterdir():
             if path.is_dir():
-                self.tools.append(path)
+                self.tools.append(Tool(path))
 
         downloads: list[Path] = []
         for file in self.downloads_dir.iterdir():
@@ -68,7 +69,7 @@ class ToolController(Controller):
         result += "-------|----------\n"
         for i, tool in enumerate(self.tools):
             priority = f"[{i}]"
-            result += f"{priority:<7} {tool.name}\n"
+            result += f"{priority:<7} {tool.path.name}\n"
 
         if not result:
             result = "\n"
@@ -81,7 +82,7 @@ class ToolController(Controller):
     def _post_exec(self) -> bool:
         if self.do_exit:
             return True
-        self.refresh()
+        self.do_refresh()
         return False
 
     def _autocomplete(self, text: str, state: int) -> Union[str, None]:
@@ -134,15 +135,10 @@ class ToolController(Controller):
 
         return completions[state] + " "
 
-    def rename(self, component: ToolEnum, index: int, name: str) -> None:
+    def rename_download(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics or underscores.
         """
-        if component not in list(ToolEnum):
-            raise Warning(
-                f"Can only rename components of types {[i.value for i in list(ToolEnum)]}, not {component}"
-            )
-
         if name != "".join([i for i in name if i.isalnum() or i == "_"]):
             raise Warning(
                 "Names can only contain alphanumeric characters or underscores"
@@ -156,106 +152,110 @@ class ToolController(Controller):
                 f"Choose something else. These names are forbidden: {forbidden_names}"
             )
 
-        match component:
-            case ToolEnum.DOWNLOAD:
-                try:
-                    download = self.downloads[index]
-                except IndexError as e:
-                    raise Warning(e)
+        try:
+            download = self.downloads[index]
+        except IndexError as e:
+            raise Warning(e)
 
-                if "pytest" not in sys.modules:
-                    # Don't run this during tests because it's slow.
-                    try:
-                        print("Verifying archive integrity...")
-                        subprocess.check_output(["7z", "t", f"{download.location}"])
-                    except subprocess.CalledProcessError:
-                        raise Warning(
-                            f"Rename of {index} failed at integrity check. Incomplete download?"
-                        )
-
-                new_location = (
-                    download.location.parent / f"{name}{download.location.suffix}"
+        if "pytest" not in sys.modules:
+            # Don't run this during tests because it's slow.
+            try:
+                print("Verifying archive integrity...")
+                subprocess.check_output(["7z", "t", f"{download.location}"])
+            except subprocess.CalledProcessError:
+                raise Warning(
+                    f"Rename of {index} failed at integrity check. Incomplete download?"
                 )
-                if new_location.exists():
-                    raise Warning(
-                        f"Can't rename because download {new_location} exists."
-                    )
 
-                download.location.rename(new_location)
+        new_location = download.location.parent / f"{name}{download.location.suffix}"
+        if new_location.exists():
+            raise Warning(f"Can't rename because download {new_location} exists.")
 
-            case ToolEnum.TOOL:
-                try:
-                    tool = self.tools[index]
-                except IndexError as e:
-                    raise Warning(e)
+        download.location.rename(new_location)
 
-                new_location = self.tools_dir / name
-                if new_location.exists():
-                    raise Warning(f"A tool named {str(new_location)} already exists!")
+    def rename_tool(self, index: int, name: str) -> None:
+        """
+        Names may contain alphanumerics or underscores.
+        """
+        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+            raise Warning(
+                "Names can only contain alphanumeric characters or underscores"
+            )
 
-                # Move the folder, update the tool.
-                tool.rename(new_location)
-                tool = new_location
+        forbidden_names = []
+        for i in self.tools_dir.parts:
+            forbidden_names.append(i.lower())
+        if name.lower() in forbidden_names:
+            raise Warning(
+                f"Choose something else. These names are forbidden: {forbidden_names}"
+            )
 
-    def delete(self, component: ToolEnum, index: Union[int, str]) -> None:
+        try:
+            tool = self.tools[index]
+        except IndexError as e:
+            raise Warning(e)
+
+        new_location = self.tools_dir / name
+        if new_location.exists():
+            raise Warning(f"A tool named {str(new_location)} already exists!")
+
+        # Move the folder, update the tool.
+        tool.path.rename(new_location)
+        tool.path = new_location
+
+    def delete_tool(self, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
         """
-        if not isinstance(component, ToolEnum):
-            raise TypeError(
-                f"Expected ToolEnum, got '{component}' of type '{type(component)}'"
-            )
         try:
             index = int(index)
         except ValueError:
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
-        match component:
-            case ToolEnum.TOOL:
-                if index == "all":
-                    deleted_tools = ""
-                    visible_tools = [i for i in self.tools if i.visible]
-                    for tool in visible_tools:
-                        self.tools.pop(self.tools.index(tool))
-                        try:
-                            shutil.rmtree(tool)
-                        except FileNotFoundError:
-                            pass
-                        deleted_tools += f"{tool.name}\n"
-                    self.commit()
-                else:
-                    try:
-                        tool = self.tools.pop(index)
+        if index == "all":
+            deleted_tools = ""
+            visible_tools = [i for i in self.tools if i.visible]
+            for tool in visible_tools:
+                self.tools.pop(self.tools.index(tool))
+                try:
+                    shutil.rmtree(tool.path)
+                except FileNotFoundError:
+                    pass
+                deleted_tools += f"{tool.path.name}\n"
+        else:
+            try:
+                tool = self.tools.pop(index)
 
-                    except IndexError as e:
-                        # Demote IndexErrors
-                        raise Warning(e)
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
 
-                    try:
-                        shutil.rmtree(tool)
-                    except FileNotFoundError:
-                        pass
+            try:
+                shutil.rmtree(tool.path)
+            except FileNotFoundError:
+                pass
 
-            case ToolEnum.DOWNLOAD:
-                if index == "all":
-                    visible_downloads = [i for i in self.downloads if i.visible]
-                    for visible_download in visible_downloads:
-                        download = self.downloads.pop(
-                            self.downloads.index(visible_download)
-                        )
-                        download.location.unlink()
-                else:
-                    index = int(index)
-                    try:
-                        download = self.downloads.pop(index)
-                    except IndexError as e:
-                        # Demote IndexErrors
-                        raise Warning(e)
-                    try:
-                        download.location.unlink()
-                    except FileNotFoundError:
-                        pass
+    def delete_download(self, index: Union[int, str]) -> None:
+        """
+        Removes specified file from the filesystem.
+        """
+        if index == "all":
+            visible_downloads = [i for i in self.downloads if i.visible]
+            for visible_download in visible_downloads:
+                download = self.downloads.pop(self.downloads.index(visible_download))
+                download.location.unlink()
+        else:
+            index = int(index)
+            try:
+                download = self.downloads.pop(index)
+            except IndexError as e:
+                # Demote IndexErrors
+                raise Warning(e)
+            try:
+                download.location.unlink()
+            except FileNotFoundError:
+                pass
 
     def install(self, index: Union[int, str]) -> None:
         """
