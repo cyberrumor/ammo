@@ -30,9 +30,9 @@ TERM_WIDTH = 96
 
 class Controller(ABC):
     """
-    Public methods of class derivatives will be exposed
-    to the UI. A Controller must implement the following
-    methods, as they are consumed by the UI.
+    Command methods (which are methods prefixed with 'do_') of class
+    derivatives will be exposed to the UI. A Controller must implement
+    the following methods, as they are consumed by the UI.
 
     The UI performs validation and type casting based on type
     hinting and doc inspection, so type hints for public methods
@@ -47,14 +47,14 @@ class Controller(ABC):
     """
 
     @abstractmethod
-    def _prompt(self) -> str:
+    def prompt(self) -> str:
         """
         This returns the prompt for user input.
         """
         return ">_: "
 
     @abstractmethod
-    def _post_exec(self) -> bool:
+    def post_exec(self) -> bool:
         """
         This function is executed after every command.
         It returns whether the UI should break from repl.
@@ -72,7 +72,7 @@ class Controller(ABC):
         return ""
 
     @abstractmethod
-    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
         """
         Returns the next possible autocompletion beginning with text.
         This should only be used for arguments of existing functions.
@@ -122,7 +122,7 @@ class UI:
         """
         Autocomplete function desired by the readline interface.
         If we can complete a command, do it. Otherwise, attempt to
-        return results from self.controller._autocomplete.
+        return results from self.controller.autocomplete.
         """
         buf = readline.get_line_buffer()
         if len(buf.split()) <= 1 and not buf.endswith(" "):
@@ -142,7 +142,7 @@ class UI:
             return completions[state] + " "
 
         # There was more than one word.
-        return self.controller._autocomplete(text, state)
+        return self.controller.autocomplete(text, state)
 
     def populate_commands(self):
         """
@@ -196,8 +196,8 @@ class UI:
         )
 
         for name in dir(self.controller):
-            # Collect instance methods (rather than class methods).
-            if name.startswith("_"):
+            # Collect command methods
+            if not name.startswith("do_"):
                 continue
 
             attribute = getattr(self.controller, name)
@@ -240,7 +240,7 @@ class UI:
                         # which kwargs are accepted. Just hint at the collective.
                         description = f"[{param.name}=<value>]"
                         expressions.append("")
-                        expressions.append("undocumnted_arg1=some_value")
+                        expressions.append("undocumented_arg1=some_value")
                         expressions.append(
                             "undocumented_arg1=some_value undocumented_arg2=some_value"
                         )
@@ -286,14 +286,16 @@ class UI:
             expressions_lists = [arg.expressions for arg in args]
             product_combinations = product(*expressions_lists)
             for combination in product_combinations:
-                examples.add(f"{name} {' '.join(combination)}".strip())
+                examples.add(
+                    f"{name.replace('do_', '')} {' '.join(combination)}".strip()
+                )
             examples = sorted(list(examples))
 
             # Get rid of examples that are just the command name alone.
-            if len(examples) == 1 and examples[0] == name:
+            if len(examples) == 1 and examples[0] == name.replace("do_", ""):
                 examples = []
 
-            self.command[name] = Command(
+            self.command[name.replace("do_", "")] = Command(
                 name=name,
                 func=func,
                 args=args,
@@ -426,7 +428,7 @@ class UI:
             print(self.controller)
 
             try:
-                if not (stdin := input(f"{self.controller._prompt()}")):
+                if not (stdin := input(f"{self.controller.prompt()}")):
                     continue
             except (KeyboardInterrupt, EOFError):
                 print()
@@ -489,7 +491,7 @@ class UI:
                 command.func(*prepared_args)
                 if command.instance is not None:
                     controller_instance = command.instance
-                    if controller_instance._post_exec():
+                    if controller_instance.post_exec():
                         break
 
             except Warning as warning:

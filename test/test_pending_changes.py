@@ -20,7 +20,7 @@ def test_pending_change_restrictions_delete_mod():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.delete_mod(0)
+            controller.do_delete_mod(0)
 
 
 def test_pending_change_restrictions_delete_download():
@@ -38,7 +38,7 @@ def test_pending_change_restrictions_delete_download():
         with open(temp_download, "w") as f:
             f.write("")
 
-        controller.refresh()
+        controller.do_refresh()
         controller.changes = True
 
         download_index = [i.name for i in controller.downloads].index(
@@ -47,7 +47,7 @@ def test_pending_change_restrictions_delete_download():
 
         try:
             with pytest.raises(Warning):
-                controller.delete_download(download_index)
+                controller.do_delete_download(download_index)
         finally:
             temp_download.unlink(missing_ok=True)
 
@@ -64,7 +64,7 @@ def test_pending_change_restrictions_delete_plugin():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.delete_plugin(0)
+            controller.do_delete_plugin(0)
 
 
 def test_pending_change_restrictions_install():
@@ -78,7 +78,7 @@ def test_pending_change_restrictions_install():
         install_mod(controller, "normal_mod")
         controller.changes = True
         with pytest.raises(Warning):
-            controller.install(1)
+            controller.do_install(1)
 
 
 def test_pending_change_restrictions_rename_mod():
@@ -93,7 +93,7 @@ def test_pending_change_restrictions_rename_mod():
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.rename_mod(0, "new_name")
+            controller.do_rename_mod(0, "new_name")
 
 
 def test_pending_change_restrictions_rename_download():
@@ -111,7 +111,7 @@ def test_pending_change_restrictions_rename_download():
         with open(temp_download, "w") as f:
             f.write("")
 
-        controller.refresh()
+        controller.do_refresh()
         controller.changes = True
 
         download_index = [i.name for i in controller.downloads].index(
@@ -120,7 +120,7 @@ def test_pending_change_restrictions_rename_download():
 
         try:
             with pytest.raises(Warning):
-                controller.rename_download(download_index, "new_download_name")
+                controller.do_rename_download(download_index, "new_download_name")
         finally:
             temp_download.unlink(missing_ok=True)
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
@@ -133,7 +133,7 @@ def test_pending_change_move():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.move_mod(0, 1)
+        controller.do_move_mod(0, 1)
         assert (
             controller.changes is True
         ), "move command did not create a pending change"
@@ -147,7 +147,7 @@ def test_pending_change_move_nowhere():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.move_mod(0, 0)
+        controller.do_move_mod(0, 0)
         assert (
             controller.changes is False
         ), "move command created a pending change when it shouldn't have."
@@ -160,14 +160,14 @@ def test_pending_change_activate():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.activate_mod(0)
+        controller.do_activate_mod(0)
         assert (
             controller.changes is False
         ), "activate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.activate_mod(0)
+        controller.do_activate_mod(0)
         assert (
             controller.changes is True
         ), "activate command failed to create a pending change."
@@ -180,14 +180,14 @@ def test_pending_change_deactivate():
     """
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.deactivate_mod(0)
+        controller.do_deactivate_mod(0)
         assert (
             controller.changes is False
         ), "deactivate command created a pending change when it shouldn't have."
 
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.deactivate_mod(0)
+        controller.do_deactivate_mod(0)
         assert (
             controller.changes is True
         ), "deactivate command failed to create a pending change."
@@ -199,7 +199,7 @@ def test_pending_change_refresh():
     """
     with AmmoController() as controller:
         controller.changes = True
-        controller.refresh()
+        controller.do_refresh()
         assert (
             controller.changes is False
         ), "refresh command failed to clear pending changes."
@@ -211,7 +211,7 @@ def test_pending_change_commit():
     """
     with AmmoController() as controller:
         controller.changes = False
-        controller.commit()
+        controller.do_commit()
         assert (
             controller.changes is False
         ), "commit command failed to clear pending changes."
@@ -222,7 +222,7 @@ def test_pending_change_install():
     Tests that install does not create a pending change.
     """
     with AmmoController() as controller:
-        controller.install(0)
+        controller.do_install(0)
         assert controller.changes is False, "Install command created a pending change"
 
 
@@ -232,7 +232,7 @@ def test_pending_change_delete_mod():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.delete_mod(0)
+        controller.do_delete_mod(0)
         assert (
             controller.changes is False
         ), "Delete mod command created a pending change."
@@ -246,14 +246,14 @@ def test_pending_change_delete_download():
         temp_download = controller.downloads_dir / "temp_download.7z"
         with open(temp_download, "w") as f:
             f.write("")
-        controller.refresh()
+        controller.do_refresh()
 
         download_index = [i.name for i in controller.downloads].index(
             "temp_download.7z"
         )
 
         try:
-            controller.delete_download(download_index)
+            controller.do_delete_download(download_index)
             assert (
                 controller.changes is False
             ), "Delete download command created a pending change."
@@ -268,7 +268,7 @@ def test_pending_change_delete_plugin():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.delete_plugin(0)
+        controller.do_delete_plugin(0)
         assert (
             controller.changes is False
         ), "Delete plugin command created a pending change."
@@ -280,7 +280,7 @@ def test_pending_change_rename_mod():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.rename_mod(0, "new_mod_name")
+        controller.do_rename_mod(0, "new_mod_name")
         assert (
             controller.changes is False
         ), "Rename mod command created a pending change."
@@ -297,14 +297,14 @@ def test_pending_change_rename_download():
         with open(temp_download, "w") as f:
             f.write("")
 
-        controller.refresh()
+        controller.do_refresh()
 
         download_index = [i.name for i in controller.downloads].index(
             "temp_download.7z"
         )
 
         try:
-            controller.rename_download(download_index, "new_download_name")
+            controller.do_rename_download(download_index, "new_download_name")
             assert (
                 controller.changes is False
             ), "Rename download command created a pending change."
@@ -320,9 +320,9 @@ def test_pending_change_sort():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.move_plugin(0, -1)
-        controller.commit()
-        controller.sort()
+        controller.do_move_plugin(0, -1)
+        controller.do_commit()
+        controller.do_sort()
         assert (
             controller.changes is True
         ), "Sort command didn't create a pending change."
@@ -334,7 +334,7 @@ def test_pending_change_sort_no_op():
     if it doesn't change the plugin load order.
     """
     with AmmoController() as controller:
-        controller.sort()
+        controller.do_sort()
         assert (
             controller.changes is False
         ), "Sort command created a pending change when it shouldn't have."

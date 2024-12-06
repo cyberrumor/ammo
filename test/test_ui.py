@@ -21,17 +21,17 @@ class MockController(Controller):
     def __init__(self):
         pass
 
-    def _prompt(self) -> str:
-        return super()._prompt()
+    def prompt(self) -> str:
+        return super().prompt()
 
-    def _post_exec(self) -> bool:
-        return super()._post_exec()
+    def post_exec(self) -> bool:
+        return super().post_exec()
 
     def __str__(self) -> str:
         return super().__str__()
 
-    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
-        return super()._autocomplete(text, state)
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super().autocomplete(text, state)
 
 
 def test_cast_to_int():

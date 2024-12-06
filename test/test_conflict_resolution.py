@@ -24,10 +24,10 @@ def test_duplicate_plugin():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate_mod(mod_index)
+            controller.do_activate_mod(mod_index)
             # Ensure there is only one esp
             assert len(controller.plugins) == 1
-            controller.commit()
+            controller.do_commit()
             assert len(controller.plugins) == 1
 
 
@@ -50,14 +50,14 @@ def test_conflict_resolution():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate_mod(mod_index)
-            controller.commit()
+            controller.do_activate_mod(mod_index)
+            controller.do_commit()
 
         # Activate the plugin
-        controller.activate_plugin(0)
+        controller.do_activate_plugin(0)
 
         # Commit changes
-        controller.commit()
+        controller.do_commit()
 
         # Track our expected mod files to confirm they're different later.
         uniques = []
@@ -82,8 +82,8 @@ def test_conflict_resolution():
             check_links(expected_game_file, expected_mod_file)
 
         # Rearrange the mods
-        controller.move_mod(1, 0)
-        controller.commit()
+        controller.do_move_mod(1, 0)
+        controller.do_commit()
 
         # Assert that the symlinks point to "conflict_1" now.
         for file in files:
@@ -109,21 +109,21 @@ def test_conflicting_plugins_disable():
 
             mod_index = [i.name for i in controller.mods].index(mod)
 
-            controller.activate_mod(mod_index)
-            controller.commit()
+            controller.do_activate_mod(mod_index)
+            controller.do_commit()
 
         # plugin is disabled, changes were not / are not committed
-        controller.deactivate_mod(1)
+        controller.do_deactivate_mod(1)
         assert (
             len(controller.plugins) == 1
         ), "Deactivating a mod hid a plugin provided by another mod"
 
         # plugin is enabled, changes were / are committed
-        controller.activate_mod(1)
-        controller.activate_plugin(0)
-        controller.commit()
-        controller.deactivate_mod(1)
-        controller.commit()
+        controller.do_activate_mod(1)
+        controller.do_activate_plugin(0)
+        controller.do_commit()
+        controller.do_deactivate_mod(1)
+        controller.do_commit()
         assert (
             len(controller.plugins) == 1
         ), "Deactivating a mod hid a plugin provided by another mod"
@@ -132,7 +132,7 @@ def test_conflicting_plugins_disable():
         if (plugin := controller.game.data / "mock_plugin.esp").is_symlink():
             # Symlink
             assert plugin.readlink() == (
-                (controller.mods[0].location / "Data/mock_plugin.esp")
+                controller.mods[0].location / "Data/mock_plugin.esp"
             ), "Plugin pointed to the wrong mod!"
         else:
             # Hardlink
@@ -157,10 +157,10 @@ def test_conflicting_plugins_delete():
         for mod in ["conflict_1", "conflict_2"]:
             extract_mod(controller, mod)
             mod_index = [i.name for i in controller.mods].index(mod)
-            controller.activate_mod(mod_index)
-            controller.commit()
+            controller.do_activate_mod(mod_index)
+            controller.do_commit()
 
-        controller.delete_mod(1)
+        controller.do_delete_mod(1)
         assert (
             len(controller.plugins) == 1
         ), "Deleting a mod hid a plugin provided by another mod"
@@ -175,17 +175,17 @@ def test_conflicting_plugins_delete_plugin():
         for mod in ["conflict_1", "conflict_2"]:
             extract_mod(controller, mod)
             mod_index = [i.name for i in controller.mods].index(mod)
-            controller.activate_mod(mod_index)
-            controller.commit()
+            controller.do_activate_mod(mod_index)
+            controller.do_commit()
 
-        controller.delete_plugin(0)
+        controller.do_delete_plugin(0)
 
         assert (
             len(controller.plugins) == 0
         ), "A plugin provided by multiple enabled mods wasn't deleted."
 
-        controller.deactivate_mod("all")
-        controller.activate_mod("all")
+        controller.do_deactivate_mod("all")
+        controller.do_activate_mod("all")
 
         assert (
             len(controller.plugins) == 0
@@ -203,7 +203,7 @@ def test_conflicting_plugins_mult_delete_plugin():
         for mod in ["plugin_wrong_spot", "mult_plugins_same_name"]:
             install_mod(controller, mod)
 
-        controller.delete_plugin(0)
+        controller.do_delete_plugin(0)
         files = controller.mods[
             [i.name for i in controller.mods].index("plugin_wrong_spot")
         ].files
@@ -264,7 +264,7 @@ def test_conflicting_mods_have_conflict_flag_after_move():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        controller.move_mod(2, 0)
+        controller.do_move_mod(2, 0)
 
         assert (
             controller.mods[
@@ -295,9 +295,9 @@ def test_conflicting_mods_have_conflict_flag_after_actviate():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             extract_mod(controller, mod)
 
-        controller.activate_mod(0)
-        controller.activate_mod(1)
-        controller.activate_mod(2)
+        controller.do_activate_mod(0)
+        controller.do_activate_mod(1)
+        controller.do_activate_mod(2)
 
         assert (
             controller.mods[
@@ -328,7 +328,7 @@ def test_conflicting_mods_have_conflict_flag_after_deactivate():
         for mod in ["conflict_1", "conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        controller.deactivate_mod(2)
+        controller.do_deactivate_mod(2)
 
         assert (
             controller.mods[
@@ -361,11 +361,11 @@ def test_conflicting_mods_only_conflict_when_activated():
         assert controller.mods[0].conflict is False
         assert controller.mods[1].conflict is False
 
-        controller.activate_mod(0)
+        controller.do_activate_mod(0)
         assert controller.mods[0].conflict is False
         assert controller.mods[1].conflict is False
 
-        controller.activate_mod(1)
+        controller.do_activate_mod(1)
         assert controller.mods[0].conflict is True
         assert controller.mods[1].conflict is True
 
@@ -378,7 +378,7 @@ def test_conflicting_mods_conflict_after_rename():
         for mod in ["conflict_1", "conflict_2"]:
             install_mod(controller, mod)
 
-        controller.rename_mod(0, "new_name")
+        controller.do_rename_mod(0, "new_name")
 
         assert controller.mods[0].conflict is True
         assert controller.mods[1].conflict is True
@@ -413,15 +413,15 @@ def test_collisions():
         )
 
         with pytest.raises(Warning) as warning:
-            controller.collisions(conflict_1)
+            controller.do_collisions(conflict_1)
         assert warning.value.args == (expected,)
 
         with pytest.raises(Warning) as warning:
-            controller.collisions(conflict_2)
+            controller.do_collisions(conflict_2)
         assert warning.value.args == (expected,)
 
         with pytest.raises(Warning) as warning:
-            controller.collisions(normal_mod)
+            controller.do_collisions(normal_mod)
         assert warning.value.args == ("No conflicts.",)
 
 
@@ -442,7 +442,7 @@ def test_obsolete_init():
         assert controller.mods[normal_mod].obsolete is False
 
         # perform a move
-        controller.move_mod(conflict_1, conflict_2)
+        controller.do_move_mod(conflict_1, conflict_2)
         # fix indices
         conflict_1, conflict_2 = conflict_2, conflict_1
 
@@ -451,6 +451,6 @@ def test_obsolete_init():
         assert controller.mods[normal_mod].obsolete is False
 
         # Perform a deactivate
-        controller.deactivate_mod(conflict_1)
+        controller.do_deactivate_mod(conflict_1)
         assert controller.mods[conflict_2].obsolete is False
         assert controller.mods[normal_mod].obsolete is False

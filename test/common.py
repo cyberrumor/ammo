@@ -108,7 +108,7 @@ def mod_extracts_files(mod_name, files):
         mod_index_download = [i.name for i in controller.downloads].index(
             mod_name + ".7z"
         )
-        controller.install(mod_index_download)
+        controller.do_install(mod_index_download)
 
         # Assert the mod extracted to the expected place
         assert mod_name == controller.mods[0].name
@@ -156,9 +156,9 @@ def expect_files(directory, files) -> None:
         for file in filenames:
             exists = os.path.join(path, file)
             local_exists = exists.split(str(directory))[-1].lstrip("/")
-            assert local_exists in [
-                str(i) for i in files
-            ], f"Got an extra file: {local_exists}\nExpected only: {[str(i) for i in files]}"
+            assert (
+                local_exists in [str(i) for i in files]
+            ), f"Got an extra file: {local_exists}\nExpected only: {[str(i) for i in files]}"
 
 
 def mod_installs_files(mod_name, files):
@@ -171,15 +171,15 @@ def mod_installs_files(mod_name, files):
         mod_index_download = [i.name for i in controller.downloads].index(
             mod_name + ".7z"
         )
-        controller.install(mod_index_download)
+        controller.do_install(mod_index_download)
         mod_index = [i.name for i in controller.mods].index(mod_name)
-        controller.activate_mod(mod_index)
+        controller.do_activate_mod(mod_index)
 
         # activate any plugins this mod has
         for plugin in range(len(controller.plugins)):
-            controller.activate_plugin(plugin)
+            controller.do_activate_plugin(plugin)
 
-        controller.commit()
+        controller.do_commit()
         expect_files(controller.game.directory, files)
 
 
@@ -196,7 +196,7 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
         mod_index_download = [i.name for i in controller.downloads].index(
             mod_name + ".7z"
         )
-        controller.install(mod_index_download)
+        controller.do_install(mod_index_download)
 
         mod_index = [i.name for i in controller.mods].index(mod_name)
         mod = controller.mods[mod_index]
@@ -212,11 +212,11 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
                         fomod_controller.visible_pages[selection["page"]]
                     )
                 ]
-                fomod_controller._select(selection["option"])
+                fomod_controller.select(selection["option"])
 
-            fomod_controller.flags = fomod_controller._get_flags()
-            install_nodes = fomod_controller._get_nodes()
-            fomod_controller._install_files(install_nodes)
+            fomod_controller.flags = fomod_controller.get_flags()
+            install_nodes = fomod_controller.get_nodes()
+            fomod_controller.install_files(install_nodes)
 
         # Check that all the expected files exist.
         for file in files:
@@ -252,19 +252,19 @@ def install_everything(controller):
     # install everything
     for download in controller.downloads:
         index = controller.downloads.index(download)
-        controller.install(index)
+        controller.do_install(index)
 
     # activate everything that's not a fomod.
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            controller.activate_mod(index)
+            controller.do_activate_mod(index)
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)
-        controller.activate_plugin(index)
+        controller.do_activate_plugin(index)
 
-    controller.commit()
+    controller.do_commit()
 
 
 def extract_mod(controller, mod_name: str):
@@ -274,7 +274,7 @@ def extract_mod(controller, mod_name: str):
     Returns the index the mod inhabits.
     """
     index = [i.name for i in controller.downloads].index(f"{mod_name}.7z")
-    controller.install(index)
+    controller.do_install(index)
     try:
         mod_index = [i.name for i in controller.mods].index(mod_name)
         return mod_index
@@ -291,16 +291,16 @@ def install_mod(controller, mod_name: str):
     Returns the index the mod inhabits.
     """
     index = [i.name for i in controller.downloads].index(f"{mod_name}.7z")
-    controller.install(index)
+    controller.do_install(index)
 
     mod_index = [i.name for i in controller.mods].index(mod_name)
-    controller.activate_mod(mod_index)
+    controller.do_activate_mod(mod_index)
 
     for plugin in controller.mods[mod_index].plugins:
         plugin_index = [i.name for i in controller.plugins].index(plugin.name)
-        controller.activate_plugin(plugin_index)
+        controller.do_activate_plugin(plugin_index)
 
-    controller.commit()
+    controller.do_commit()
     assert controller.mods[mod_index].enabled is True
     for plugin in controller.mods[mod_index].plugins:
         plugin_index = [i.name for i in controller.plugins].index(plugin.name)

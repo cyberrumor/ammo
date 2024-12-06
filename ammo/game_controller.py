@@ -125,14 +125,14 @@ class GameController(Controller):
                 f"Supported games {list(self.ids)} not found in {self.libraries}"
             )
         elif len(self.games) == 1:
-            self._manage_game(0)
+            self.manage_game(0)
         else:
-            self._populate_index_commands()
+            self.populate_index_commands()
 
-    def _prompt(self) -> str:
-        return super()._prompt()
+    def prompt(self) -> str:
+        return super().prompt()
 
-    def _post_exec(self) -> bool:
+    def post_exec(self) -> bool:
         # When we're done managing a game, just quit.
         return True
 
@@ -145,20 +145,20 @@ class GameController(Controller):
             result += f"{index:<7} {game.name} ({game.directory})\n"
         return result
 
-    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
-        return super()._autocomplete(text, state)
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super().autocomplete(text, state)
 
-    def _populate_index_commands(self) -> None:
+    def populate_index_commands(self) -> None:
         """
         Hack to get methods named after numbers,
         one for each selectable option.
         """
         for i, game in enumerate(self.games):
-            setattr(self, str(i), lambda self, i=i: self._manage_game(i))
+            setattr(self, f"do_{i}", lambda self, i=i: self.manage_game(i))
             full_location = str(game.directory).replace(str(Path.home()), "~", 1)
-            self.__dict__[str(i)].__doc__ = full_location
+            self.__dict__[f"do_{i}"].__doc__ = full_location
 
-    def _manage_game(self, index: int) -> None:
+    def manage_game(self, index: int) -> None:
         """
         Gather paths for the game at <index>. Create an instance of
         ModController for that game, then run it under the UI.

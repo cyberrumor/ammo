@@ -14,10 +14,12 @@ from .ui import Controller
 from .component import Download
 from .lib import NO_EXTRACT_DIRS
 
+
 class Tool:
     def __init__(self, path: Path):
         self.visible = True
         self.path = path
+
 
 class ToolController(Controller):
     """
@@ -76,16 +78,16 @@ class ToolController(Controller):
 
         return result
 
-    def _prompt(self):
+    def prompt(self):
         return "Tools >_: "
 
-    def _post_exec(self) -> bool:
+    def post_exec(self) -> bool:
         if self.do_exit:
             return True
         self.do_refresh()
         return False
 
-    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
         completions = []
@@ -135,7 +137,7 @@ class ToolController(Controller):
 
         return completions[state] + " "
 
-    def rename_download(self, index: int, name: str) -> None:
+    def do_rename_download(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics or underscores.
         """
@@ -173,7 +175,7 @@ class ToolController(Controller):
 
         download.location.rename(new_location)
 
-    def rename_tool(self, index: int, name: str) -> None:
+    def do_rename_tool(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics or underscores.
         """
@@ -203,7 +205,7 @@ class ToolController(Controller):
         tool.path.rename(new_location)
         tool.path = new_location
 
-    def delete_tool(self, index: Union[int, str]) -> None:
+    def do_delete_tool(self, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
         """
@@ -236,7 +238,7 @@ class ToolController(Controller):
             except FileNotFoundError:
                 pass
 
-    def delete_download(self, index: Union[int, str]) -> None:
+    def do_delete_download(self, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
         """
@@ -257,7 +259,7 @@ class ToolController(Controller):
             except FileNotFoundError:
                 pass
 
-    def install(self, index: Union[int, str]) -> None:
+    def do_install(self, index: Union[int, str]) -> None:
         """
         Extract and manage an archive from ~/Downloads.
         """
@@ -336,13 +338,13 @@ class ToolController(Controller):
 
             install_download(index, download)
 
-    def mods(self) -> None:
+    def do_mods(self) -> None:
         """
         Return to the mod controller.
         """
         self.do_exit = True
 
-    def refresh(self) -> None:
+    def do_refresh(self) -> None:
         """
         Scan for tools in the tool folder.
         """

@@ -14,11 +14,6 @@ class Component(str, Enum):
     DOWNLOAD = "download"
 
 
-class ToolEnum(str, Enum):
-    TOOL = "tool"
-    DOWNLOAD = "download"
-
-
 class BethesdaComponent(str, Enum):
     MOD = "mod"
     DOWNLOAD = "download"

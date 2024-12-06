@@ -20,7 +20,7 @@ def test_find_no_args_shows_all():
         for i in controller.mods + controller.downloads + controller.plugins:
             i.visible = False
 
-        controller.find()
+        controller.do_find()
 
         for i in controller.mods + controller.downloads + controller.plugins:
             assert i.visible is True
@@ -33,8 +33,8 @@ def test_find_install_all():
     visible components.
     """
     with AmmoController() as controller:
-        controller.find("conflict")
-        controller.install("all")
+        controller.do_find("conflict")
+        controller.do_install("all")
         assert set([i.name for i in controller.mods]) == set(
             ["conflict_2", "conflict_1"]
         )
@@ -51,8 +51,8 @@ def test_find_activate_all_mods():
         extract_mod(controller, "conflict_2")
         extract_mod(controller, "normal_mod")
 
-        controller.find("conflict")
-        controller.activate_mod("all")
+        controller.do_find("conflict")
+        controller.do_activate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -73,8 +73,8 @@ def test_find_deactivate_all_mods():
         install_mod(controller, "conflict_2")
         install_mod(controller, "normal_mod")
 
-        controller.find("conflict")
-        controller.deactivate_mod("all")
+        controller.do_find("conflict")
+        controller.do_deactivate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -91,10 +91,10 @@ def test_find_activate_all_plugins():
         extract_mod(controller, "normal_mod")
         extract_mod(controller, "conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
-        controller.activate_mod("all")
+        controller.do_activate_mod("all")
 
-        controller.find("normal", "mock")
-        controller.activate_plugin("all")
+        controller.do_find("normal", "mock")
+        controller.do_activate_plugin("all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             [
@@ -115,8 +115,8 @@ def test_find_deactivate_all_plugins():
         install_mod(controller, "conflict_1")
         install_mod(controller, "no_data_folder_plugin")
 
-        controller.find("normal", "mock")
-        controller.deactivate_plugin("all")
+        controller.do_find("normal", "mock")
+        controller.do_deactivate_plugin("all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             ["no_data_folder_plugin.esp"]
@@ -133,8 +133,8 @@ def test_find_delete_all_mods():
         extract_mod(controller, "conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
 
-        controller.find("normal", "conflict")
-        controller.delete_mod("all")
+        controller.do_find("normal", "conflict")
+        controller.do_delete_mod("all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 
@@ -148,7 +148,7 @@ def test_find_plugin_by_mod_name():
     with AmmoController() as controller:
         install_mod(controller, "conflict_1")
 
-        controller.find("conflict")
+        controller.do_find("conflict")
 
         assert set([i.name for i in controller.plugins if i.visible]) == set(
             ["mock_plugin.esp"]
@@ -165,7 +165,7 @@ def test_find_mod_by_plugin_name():
         install_mod(controller, "normal_mod")
         install_mod(controller, "conflict_1")
         install_mod(controller, "conflict_2")
-        controller.find("mock_plugin.esp")
+        controller.do_find("mock_plugin.esp")
 
         assert set([i.name for i in controller.mods if i.visible]) == set(
             ["conflict_1", "conflict_2"]
@@ -178,8 +178,8 @@ def test_find_filter_persists_after_refresh():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.find("conflict")
-        controller.install("all")
+        controller.do_find("conflict")
+        controller.do_install("all")
 
         assert set([m.name for m in controller.mods if m.visible]) == set(
             ["conflict_1", "conflict_2"]
@@ -193,7 +193,7 @@ def test_find_fomods():
     with AmmoController() as controller:
         install_everything(controller)
 
-        controller.find("fomods")
+        controller.do_find("fomods")
 
         for i in controller.mods:
             if i.fomod:
@@ -232,7 +232,7 @@ def test_find_dlc_no_crash():
 
         # Test that the find command works.
         with AmmoController() as controller:
-            controller.find("normal_plugin.esp")
+            controller.do_find("normal_plugin.esp")
             # No mod to check here since DLC doesn't have an
             # associated mod. Check that our plugin is visible.
             assert controller.plugins[0].visible is True

@@ -63,7 +63,7 @@ class ModController(Controller):
     display them.
     """
 
-    def _requires_sync(func: Callable) -> Callable:
+    def requires_sync(func: Callable) -> Callable:
         """
         Decorator which prevents decorated function from executing
         if self.changes is True.
@@ -242,8 +242,8 @@ class ModController(Controller):
                 downloads.append(download)
         self.downloads = downloads
         self.changes = False
-        self.find(*self.keywords)
-        self._stage()
+        self.do_find(*self.keywords)
+        self.stage()
 
     def __str__(self) -> str:
         """
@@ -292,15 +292,15 @@ class ModController(Controller):
 
         return result
 
-    def _prompt(self):
+    def prompt(self):
         changes = "*" if self.changes else "_"
         name = self.game.name
         return f"{name} >{changes}: "
 
-    def _post_exec(self) -> bool:
+    def post_exec(self) -> bool:
         return False
 
-    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
         completions = []
@@ -322,9 +322,9 @@ class ModController(Controller):
 
         if hasattr(target_type, "__args__"):
             if func not in [
-                self.install.__func__,
-                self.configure.__func__,
-                self.collisions.__func__,
+                self.do_install.__func__,
+                self.do_configure.__func__,
+                self.do_collisions.__func__,
             ]:
                 components = self.mods
                 if name.endswith("download"):
@@ -343,20 +343,20 @@ class ModController(Controller):
                 if i.value.startswith(text):
                     completions.append(i.value)
 
-        if func == self.install.__func__:
+        if func == self.do_install.__func__:
             for i in range(len(self.downloads)):
                 if str(i).startswith(text):
                     completions.append(str(i))
             if "all".startswith(text) and len(self.downloads) > 0:
                 completions.append("all")
 
-        elif func == self.configure.__func__:
+        elif func == self.do_configure.__func__:
             for i in range(len(self.mods)):
                 if str(i).startswith(text):
                     if self.mods[i].fomod:
                         completions.append(str(i))
 
-        elif func == self.collisions.__func__:
+        elif func == self.do_collisions.__func__:
             for i in range(len(self.mods)):
                 if str(i).startswith(text):
                     if self.mods[i].conflict:
@@ -364,7 +364,7 @@ class ModController(Controller):
 
         return completions[state] + " "
 
-    def _save_order(self):
+    def save_order(self):
         """
         Writes ammo.conf and Plugins.txt.
         """
@@ -378,7 +378,7 @@ class ModController(Controller):
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
 
-    def _set_mod_state(self, index: int, desired_state: bool):
+    def set_mod_state(self, index: int, desired_state: bool):
         """
         Activate or deactivate a mod.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
@@ -434,7 +434,7 @@ class ModController(Controller):
         if not self.changes:
             self.changes = starting_state != target_mod.enabled
 
-    def _set_plugin_state(self, index: int, desired_state: bool):
+    def set_plugin_state(self, index: int, desired_state: bool):
         """
         Activate or deactivate a plugin.
         If a mod with plugins was deactivated, remove those plugins from self.plugins
@@ -456,7 +456,7 @@ class ModController(Controller):
         if not self.changes:
             self.changes = starting_state != target_plugin.enabled
 
-    def _stage(self) -> dict:
+    def stage(self) -> dict:
         """
         Responsible for assigning mod.conflict for the staged configuration.
         Returns a dict containing the final symlinks that would be installed.
@@ -511,7 +511,7 @@ class ModController(Controller):
 
         return result
 
-    def _remove_empty_dirs(self):
+    def remove_empty_dirs(self):
         """
         Removes empty folders.
         """
@@ -523,7 +523,7 @@ class ModController(Controller):
                 except OSError:
                     pass
 
-    def _clean_game_dir(self):
+    def clean_game_dir(self):
         """
         Removes all links and deletes empty folders.
         """
@@ -537,10 +537,10 @@ class ModController(Controller):
                     except FileNotFoundError:
                         pass
 
-        self._remove_empty_dirs()
+        self.remove_empty_dirs()
 
-    @_requires_sync
-    def configure(self, index: int) -> None:
+    @requires_sync
+    def do_configure(self, index: int) -> None:
         """
         Configure a fomod.
         """
@@ -559,9 +559,9 @@ class ModController(Controller):
 
         assert mod.modconf is not None
 
-        self.deactivate_mod(index)
-        self.commit()
-        self.refresh()
+        self.do_deactivate_mod(index)
+        self.do_commit()
+        self.do_refresh()
 
         # Clean up previous configuration, if it exists.
         try:
@@ -580,9 +580,9 @@ class ModController(Controller):
         # If we can rebuild the "files" property of the mod, refreshing the controller
         # and preventing configuration when there are unsaved changes
         # will no longer be required.
-        self.refresh()
+        self.do_refresh()
 
-    def activate_mod(self, index: Union[int, str]) -> None:
+    def do_activate_mod(self, index: Union[int, str]) -> None:
         """
         Enabled mods will be loaded by game.
         """
@@ -598,17 +598,17 @@ class ModController(Controller):
             for i in range(len(self.mods)):
                 if self.mods[i].visible:
                     try:
-                        self._set_mod_state(i, True)
+                        self.set_mod_state(i, True)
                     except Warning as e:
                         warnings.append(e)
         else:
-            self._set_mod_state(index, True)
+            self.set_mod_state(index, True)
 
-        self._stage()
+        self.stage()
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def activate_plugin(self, index: Union[int, str]) -> None:
+    def do_activate_plugin(self, index: Union[int, str]) -> None:
         """
         Enabled plugins will be loaded by the game.
         """
@@ -624,17 +624,17 @@ class ModController(Controller):
             for i in range(len(self.plugins)):
                 if self.plugins[i].visible:
                     try:
-                        self._set_plugin_state(i, True)
+                        self.set_plugin_state(i, True)
                     except Warning as e:
                         warnings.append(e)
         else:
-            self._set_plugin_state(index, True)
+            self.set_plugin_state(index, True)
 
-        self._stage()
+        self.stage()
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def deactivate_mod(self, index: Union[int, str]) -> None:
+    def do_deactivate_mod(self, index: Union[int, str]) -> None:
         """
         Diabled mods will not be loaded by game.
         """
@@ -647,13 +647,13 @@ class ModController(Controller):
         if index == "all":
             for i in range(len(self.mods)):
                 if self.mods[i].visible:
-                    self._set_mod_state(i, False)
+                    self.set_mod_state(i, False)
         else:
-            self._set_mod_state(index, False)
+            self.set_mod_state(index, False)
 
-        self._stage()
+        self.stage()
 
-    def deactivate_plugin(self, index: Union[int, str]) -> None:
+    def do_deactivate_plugin(self, index: Union[int, str]) -> None:
         """
         Disabled plugins will not be loaded by game.
         """
@@ -666,14 +666,14 @@ class ModController(Controller):
         if index == "all":
             for i in range(len(self.plugins)):
                 if self.plugins[i].visible:
-                    self._set_plugin_state(i, False)
+                    self.set_plugin_state(i, False)
         else:
-            self._set_plugin_state(index, False)
+            self.set_plugin_state(index, False)
 
-        self._stage()
+        self.stage()
 
-    @_requires_sync
-    def rename_download(self, index: int, name: str) -> None:
+    @requires_sync
+    def do_rename_download(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores.
         """
@@ -714,10 +714,10 @@ class ModController(Controller):
 
         log.info(f"Renaming DOWNLOAD {download.location} to {new_location}")
         download.location.rename(new_location)
-        self.refresh()
+        self.do_refresh()
 
-    @_requires_sync
-    def rename_mod(self, index: int, name: str) -> None:
+    @requires_sync
+    def do_rename_mod(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics and underscores.
         """
@@ -748,7 +748,7 @@ class ModController(Controller):
         if mod.enabled:
             # Remove symlinks instead of breaking them in case something goes
             # wrong with the rename and ammo exits before it can commit.
-            self._clean_game_dir()
+            self.clean_game_dir()
 
         # Move the folder, update the mod.
         log.info(f"Renaming MOD {mod.location} to {new_location}")
@@ -760,10 +760,10 @@ class ModController(Controller):
         mod.__post_init__()
 
         # re-install symlinks
-        self.commit()
+        self.do_commit()
 
-    @_requires_sync
-    def delete_mod(self, index: Union[int, str]) -> None:
+    @requires_sync
+    def do_delete_mod(self, index: Union[int, str]) -> None:
         """
         Removes specified mod from the filesystem.
         """
@@ -784,7 +784,7 @@ class ModController(Controller):
                     )
             for target_mod in visible_mods:
                 # Remove plugins that mod provides.
-                self._set_mod_state(self.mods.index(target_mod), False)
+                self.set_mod_state(self.mods.index(target_mod), False)
                 self.mods.remove(target_mod)
                 try:
                     log.info(f"Deleting Component: {target_mod.location}")
@@ -792,7 +792,7 @@ class ModController(Controller):
                 except FileNotFoundError:
                     pass
                 deleted_mods += f"{target_mod.name}\n"
-            self.commit()
+            self.do_commit()
         else:
             try:
                 target_mod = self.mods[index]
@@ -807,7 +807,7 @@ class ModController(Controller):
             originally_active = target_mod.enabled
 
             # Remove the mod from the controller then delete it.
-            self._set_mod_state(self.mods.index(target_mod), False)
+            self.set_mod_state(self.mods.index(target_mod), False)
             self.mods.pop(index)
             try:
                 log.info(f"Deleting MOD: {target_mod.location}")
@@ -816,10 +816,10 @@ class ModController(Controller):
                 pass
 
             if originally_active:
-                self.commit()
+                self.do_commit()
 
-    @_requires_sync
-    def delete_plugin(self, index: Union[int, str]) -> None:
+    @requires_sync
+    def do_delete_plugin(self, index: Union[int, str]) -> None:
         """
         Removes specified plugin from the filesystem.
         """
@@ -846,8 +846,8 @@ class ModController(Controller):
 
             for plugin in visible_plugins:
                 if plugin.mod is None or plugin.name in (p.name for p in self.dlc):
-                    self.refresh()
-                    self.commit()
+                    self.do_refresh()
+                    self.do_commit()
                 self.plugins.remove(plugin)
                 for file in get_plugin_files(plugin):
                     try:
@@ -856,8 +856,8 @@ class ModController(Controller):
                     except FileNotFoundError:
                         pass
                 deleted_plugins += f"{plugin.name}\n"
-            self.refresh()
-            self.commit()
+            self.do_refresh()
+            self.do_commit()
         else:
             try:
                 plugin = self.plugins[index]
@@ -875,11 +875,11 @@ class ModController(Controller):
                 except FileNotFoundError:
                     pass
 
-            self.refresh()
-            self.commit()
+            self.do_refresh()
+            self.do_commit()
 
-    @_requires_sync
-    def delete_download(self, index: Union[int, str]) -> None:
+    @requires_sync
+    def do_delete_download(self, index: Union[int, str]) -> None:
         """
         Removes specified download from the filesystem.
         """
@@ -911,8 +911,8 @@ class ModController(Controller):
             except FileNotFoundError:
                 pass
 
-    @_requires_sync
-    def install(self, index: Union[int, str]) -> None:
+    @requires_sync
+    def do_install(self, index: Union[int, str]) -> None:
         """
         Extract and manage an archive from ~/Downloads.
         """
@@ -1010,9 +1010,9 @@ class ModController(Controller):
 
             install_download(index, download)
 
-        self.refresh()
+        self.do_refresh()
 
-    def move_mod(self, index: int, new_index: int) -> None:
+    def do_move_mod(self, index: int, new_index: int) -> None:
         """
         Larger numbers win file conflicts.
         """
@@ -1037,10 +1037,10 @@ class ModController(Controller):
         log.info(f"moving MOD {comp.name} from {index=} to {new_index=}")
         self.mods.pop(index)
         self.mods.insert(new_index, comp)
-        self._stage()
+        self.stage()
         self.changes = True
 
-    def move_plugin(self, index: int, new_index: int) -> None:
+    def do_move_plugin(self, index: int, new_index: int) -> None:
         """
         Larger numbers win file conflicts.
         """
@@ -1065,17 +1065,17 @@ class ModController(Controller):
         log.info(f"moving PLUGIN {comp.name} from {index=} to {new_index=}")
         self.plugins.pop(index)
         self.plugins.insert(new_index, comp)
-        self._stage()
+        self.stage()
         self.changes = True
 
-    def commit(self) -> None:
+    def do_commit(self) -> None:
         """
         Apply pending changes.
         """
         log.info("Committing pending changes to storage")
-        self._save_order()
-        stage = self._stage()
-        self._clean_game_dir()
+        self.save_order()
+        stage = self.stage()
+        self.clean_game_dir()
 
         count = len(stage)
         skipped_files = []
@@ -1099,18 +1099,18 @@ class ModController(Controller):
             warn += f"{skipped_file}\n"
 
         # Don't leave empty folders lying around
-        self._remove_empty_dirs()
+        self.remove_empty_dirs()
         self.changes = False
         if warn:
             raise Warning(warn)
 
-    def refresh(self) -> None:
+    def do_refresh(self) -> None:
         """
         Abandon pending changes.
         """
         self.__init__(self.downloads_dir, self.game, *self.keywords)
 
-    def collisions(self, index: int) -> None:
+    def do_collisions(self, index: int) -> None:
         """
         Show file conflicts for a mod. Mods prefixed with asterisks
         have file conflicts. Mods prefixed with x install no files.
@@ -1166,7 +1166,7 @@ class ModController(Controller):
 
         raise Warning(result)
 
-    def find(self, *keyword: str) -> None:
+    def do_find(self, *keyword: str) -> None:
         """
         Show only components with any keyword. Execute without args to show all.
         """
@@ -1225,7 +1225,7 @@ class ModController(Controller):
                 for component in self.plugins:
                     component.visible = True
 
-    def log(self) -> None:
+    def do_log(self) -> None:
         """
         Show debug log history.
         """
@@ -1236,7 +1236,7 @@ class ModController(Controller):
 
         raise Warning(_log)
 
-    def sort(self) -> None:
+    def do_sort(self) -> None:
         """
         Arrange plugins by mod order.
         """
@@ -1262,8 +1262,8 @@ class ModController(Controller):
             self.changes = self.plugins != result
         self.plugins = result
 
-    @_requires_sync
-    def tools(self) -> None:
+    @requires_sync
+    def do_tools(self) -> None:
         """
         Manage tools.
         """
@@ -1273,4 +1273,4 @@ class ModController(Controller):
         )
         ui = UI(tool_controller)
         ui.repl()
-        self.refresh()
+        self.do_refresh()

@@ -73,16 +73,16 @@ class FomodController(Controller):
         self.module_name: str = self.xml_root_node.find("moduleName").text
 
         # Get the pages
-        self.steps: list[Page] = self._get_pages()
+        self.steps: list[Page] = self.get_pages()
         self.page_index: int = 0
-        self.flags = self._get_flags()
-        self.visible_pages: list[Page] = self._get_visible_pages()
+        self.flags = self.get_flags()
+        self.visible_pages: list[Page] = self.get_visible_pages()
         self.page: Page = self.steps[
             self.steps.index(self.visible_pages[self.page_index])
         ]
         self.selection_type: str = self.page.archtype.lower()
         self.do_exit: bool = False
-        self._populate_index_commands()
+        self.populate_index_commands()
 
     def __str__(self) -> str:
         num_pages = len(self.visible_pages)
@@ -108,32 +108,32 @@ class FomodController(Controller):
         result += "\n"
         return result
 
-    def _prompt(self) -> str:
+    def prompt(self) -> str:
         return f"{self.selection_type} >_: "
 
-    def _post_exec(self) -> bool:
+    def post_exec(self) -> bool:
         if self.do_exit:
             return True
 
-        self.flags = self._get_flags()
-        self.visible_pages: list[Page] = self._get_visible_pages()
+        self.flags = self.get_flags()
+        self.visible_pages: list[Page] = self.get_visible_pages()
         if self.page_index >= len(self.visible_pages):
             # The user advanced to the end of the installer.
-            install_nodes: list[ElementTree.Element] = self._get_nodes()
-            self._install_files(install_nodes)
+            install_nodes: list[ElementTree.Element] = self.get_nodes()
+            self.install_files(install_nodes)
             return True
 
         self.page: Page = self.steps[
             self.steps.index(self.visible_pages[self.page_index])
         ]
         self.selection_type: str = self.page.archtype.lower()
-        self._populate_index_commands()
+        self.populate_index_commands()
         return False
 
-    def _autocomplete(self, text: str, state: int) -> Union[str, None]:
-        return super()._autocomplete(text, state)
+    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+        return super().autocomplete(text, state)
 
-    def _populate_index_commands(self) -> None:
+    def populate_index_commands(self) -> None:
         """
         Hack to get dynamically allocated methods which are
         named after numbers, one for each selectable option.
@@ -142,14 +142,14 @@ class FomodController(Controller):
         for i in list(self.__dict__.keys()):
             try:
                 int(i)
-                del self.__dict__[i]
+                del self.__dict__[f"do_{i}"]
             except ValueError:
                 pass
         for i in range(len(self.page.selections)):
-            setattr(self, str(i), lambda self, i=i: self._select(i))
-            self.__dict__[str(i)].__doc__ = f"Toggle {self.page.selections[i].name}"
+            setattr(self, f"do_{i}", lambda self, i=i: self.select(i))
+            self.__dict__[f"do_{i}"].__doc__ = f"Toggle {self.page.selections[i].name}"
 
-    def _get_pages(self) -> list[Page]:
+    def get_pages(self) -> list[Page]:
         """
         Get a representation of every install step for this fomod.
         """
@@ -235,7 +235,7 @@ class FomodController(Controller):
                     steps.append(page)
         return steps
 
-    def _get_flags(self) -> dict:
+    def get_flags(self) -> dict:
         """
         Expects a dictionary of fomod install steps.
         Returns a dictionary where keys are flag names
@@ -249,7 +249,7 @@ class FomodController(Controller):
                         flags[k] = v
         return flags
 
-    def _flags_match(self, flags: dict, operator=None) -> bool:
+    def flags_match(self, flags: dict, operator=None) -> bool:
         """
         Compare actual flags with dependency flags to determine whether
         the plugin associated with dependency should be included.
@@ -272,11 +272,12 @@ class FomodController(Controller):
                 return False
         return match
 
-    def _select(self, index: int) -> None:
+    def select(self, index: int) -> None:
         """
         Toggle the 'selected' switch on appropriate plugins.
         This logic ensures any constraints on selections are obeyed.
         """
+
         val = not self.page.selections[index].selected
         if "SelectExactlyOne" == self.page.archtype:
             for i in range(len(self.page.selections)):
@@ -288,7 +289,7 @@ class FomodController(Controller):
         else:
             self.page.selections[index].selected = val
 
-    def _get_visible_pages(self) -> list[Page]:
+    def get_visible_pages(self) -> list[Page]:
         """
         Returns a list of only fomod pages that should be visible,
         determined by current flags.
@@ -299,10 +300,10 @@ class FomodController(Controller):
             # if there's no condition for visibility, just show it.
             if not page.dependency.flags
             # if there's conditions, only include if the conditions are met.
-            or self._flags_match(page.dependency.flags, page.dependency.operator)
+            or self.flags_match(page.dependency.flags, page.dependency.operator)
         ]
 
-    def _get_nodes(self) -> list[ElementTree.Element]:
+    def get_nodes(self) -> list[ElementTree.Element]:
         """
         Returns a flat list of xml folder nodes that matched configured flags.
         """
@@ -316,7 +317,7 @@ class FomodController(Controller):
                 if plugin.selected:
                     if plugin.conditional:
                         # conditional normal file
-                        if self._flags_match(plugin.flags):
+                        if self.flags_match(plugin.flags):
                             selected_nodes.extend(plugin.files)
                         continue
                     # unconditional file install
@@ -352,7 +353,7 @@ class FomodController(Controller):
             if not dependency.flags:
                 # No requirements for these files to be used.
                 selected_nodes.extend(xml_files)
-            elif self._flags_match(dependency.flags, dependency.operator):
+            elif self.flags_match(dependency.flags, dependency.operator):
                 selected_nodes.extend(xml_files)
 
         xml_required_files = self.xml_root_node.find("requiredInstallFiles")
@@ -369,7 +370,7 @@ class FomodController(Controller):
         ), "The selected options failed to map to installable components."
         return selected_nodes
 
-    def _install_files(self, selected_nodes: list) -> None:
+    def install_files(self, selected_nodes: list) -> None:
         """
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's game files folder.
@@ -435,14 +436,12 @@ class FomodController(Controller):
         # install the new files
         for k, v in stage.items():
             Path.mkdir(k.parent, parents=True, exist_ok=True)
-            assert (
-                v.exists()
-            ), f"expected {v} but it did not exist.\nWe were going to copy to {k}\n\nIssue with fomod configurator."
+            assert v.exists(), f"expected {v} but it did not exist.\nWe were going to copy to {k}\n\nIssue with fomod configurator."
             shutil.copy(v, k)
 
         self.mod.install_dir = self.mod.game_root
 
-    def b(self) -> None:
+    def do_b(self) -> None:
         """
         Return to the previous page
         """
@@ -451,13 +450,13 @@ class FomodController(Controller):
             self.page_index = 0
             raise Warning("Can't go back from here.")
 
-    def n(self) -> None:
+    def do_n(self) -> None:
         """
         Advance to the next page
         """
         self.page_index += 1
 
-    def exit(self) -> None:
+    def do_exit(self) -> None:
         """
         Abandon configuration
         """

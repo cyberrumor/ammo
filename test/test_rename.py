@@ -22,7 +22,7 @@ def test_rename_mod_moves_folder():
         assert location_original.exists()
 
         # Rename.
-        controller.rename_mod(index, "normal_mod_renamed")
+        controller.do_rename_mod(index, "normal_mod_renamed")
 
         # Verify the original folder doesn't exist after rename.
         assert location_original.exists() is False
@@ -47,7 +47,7 @@ def test_rename_mod_fomod():
         assert original_modconf.exists() is True
 
         # Rename.
-        controller.rename_mod(original_index, "bos")
+        controller.do_rename_mod(original_index, "bos")
 
         # Verify the original modconf doesn't exist
         assert original_modconf.exists() is False
@@ -71,7 +71,7 @@ def test_rename_mod_preserves_enabled_state():
         assert controller.mods[index].enabled is True
 
         # Rename.
-        controller.rename_mod(index, "normal_mod_renamed")
+        controller.do_rename_mod(index, "normal_mod_renamed")
 
         assert (
             controller.mods[index].enabled is True
@@ -87,7 +87,7 @@ def test_rename_mod_preserves_disabled_state():
         assert controller.mods[index].enabled is False
 
         # Rename.
-        controller.rename_mod(index, "normal_mod_renamed")
+        controller.do_rename_mod(index, "normal_mod_renamed")
 
         assert (
             controller.mods[index].enabled is False
@@ -103,7 +103,7 @@ def test_rename_mod_preserves_index():
         original_index = [i.name for i in controller.mods].index("normal_mod")
 
         # Rename.
-        controller.rename_mod(original_index, "normal_mod_renamed")
+        controller.do_rename_mod(original_index, "normal_mod_renamed")
         new_index = [i.name for i in controller.mods].index("normal_mod_renamed")
 
         assert new_index == original_index, "A renamed mod didn't preserve load order!"
@@ -121,7 +121,7 @@ def test_rename_mod_preserves_plugin_index():
         )
 
         # Rename.
-        controller.rename_mod(original_index, "normal_mod_renamed")
+        controller.do_rename_mod(original_index, "normal_mod_renamed")
 
         new_plugin_index = [i.name for i in controller.plugins].index(
             "normal_plugin.esp"
@@ -143,7 +143,7 @@ def test_rename_mod_name_exists():
         index_2 = [i.name for i in controller.mods].index("conflict_2")
 
         with pytest.raises(Warning):
-            controller.rename_mod(index_1, "conflict_2")
+            controller.do_rename_mod(index_1, "conflict_2")
 
         assert controller.mods[index_1].location.exists()
         assert controller.mods[index_1].location.stem == "conflict_1"
@@ -164,13 +164,13 @@ def test_rename_download_moves_file():
         renamed_download = controller.downloads_dir / "i_was_renamed.7z"
 
         try:
-            controller.refresh()
+            controller.do_refresh()
 
             index = [i.name for i in controller.downloads].index("rename_me.7z")
             original_download = controller.downloads[index]
 
             # Rename.
-            controller.rename_download(index, "i_was_renamed")
+            controller.do_rename_download(index, "i_was_renamed")
 
             new_index = [i.name for i in controller.downloads].index("i_was_renamed.7z")
             new_download = controller.downloads[new_index]
