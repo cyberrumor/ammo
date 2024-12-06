@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import sys
 import readline
-import textwrap
 import logging
 from collections.abc import Callable
 from functools import wraps
@@ -388,7 +387,6 @@ class ModController(Controller):
         try:
             target_mod = self.mods[index]
         except IndexError as e:
-            # Demote IndexErrors
             raise Warning(e)
 
         if not target_mod.visible:
@@ -444,7 +442,6 @@ class ModController(Controller):
         try:
             target_plugin = self.plugins[index]
         except IndexError as e:
-            # Demote IndexErrors
             raise Warning(e)
 
         if not target_plugin.visible:
@@ -592,9 +589,9 @@ class ModController(Controller):
         """
         try:
             int(index)
-        except ValueError:
+        except ValueError as e:
             if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
+                raise Warning(e)
 
         warnings = []
 
@@ -618,9 +615,9 @@ class ModController(Controller):
         """
         try:
             int(index)
-        except ValueError:
+        except ValueError as e:
             if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
+                raise Warning(e)
 
         warnings = []
 
@@ -644,9 +641,9 @@ class ModController(Controller):
         """
         try:
             int(index)
-        except ValueError:
+        except ValueError as e:
             if index != "all":
-                raise Warning(f"Expected int, got'{index}'")
+                raise Warning(e)
 
         if index == "all":
             for i in range(len(self.mods)):
@@ -663,9 +660,9 @@ class ModController(Controller):
         """
         try:
             int(index)
-        except ValueError:
+        except ValueError as e:
             if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
+                raise Warning(e)
 
         if index == "all":
             for i in range(len(self.plugins)):
@@ -773,9 +770,9 @@ class ModController(Controller):
         """
         try:
             index = int(index)
-        except ValueError:
+        except ValueError as e:
             if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
+                raise Warning(e)
 
         if index == "all":
             deleted_mods = ""
@@ -802,7 +799,6 @@ class ModController(Controller):
                 target_mod = self.mods[index]
 
             except IndexError as e:
-                # Demote IndexErrors
                 raise Warning(e)
 
             if not target_mod.visible:
@@ -865,8 +861,7 @@ class ModController(Controller):
         else:
             try:
                 plugin = self.plugins[index]
-            except IndexError as e:
-                # Demote IndexErrors
+            except (TypeError, IndexError) as e:
                 raise Warning(e)
             if not plugin.visible:
                 raise Warning("You can only delete visible components.")
@@ -897,11 +892,10 @@ class ModController(Controller):
                 except FileNotFoundError:
                     pass
         else:
-            index = int(index)
             try:
+                index = int(index)
                 download = self.downloads[index]
-            except IndexError as e:
-                # Demote IndexErrors
+            except (ValueError, IndexError) as e:
                 raise Warning(e)
 
             if not download.visible:
@@ -922,9 +916,9 @@ class ModController(Controller):
         """
         try:
             int(index)
-        except ValueError:
+        except ValueError as e:
             if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
+                raise Warning(e)
 
         def has_extra_folder(path) -> bool:
             files = list(path.iterdir())
@@ -1006,7 +1000,6 @@ class ModController(Controller):
             try:
                 download = self.downloads[index]
             except IndexError as e:
-                # Demote IndexErrors
                 raise Warning(e)
 
             if not download.visible:
@@ -1024,8 +1017,8 @@ class ModController(Controller):
         # before anything is attempted to ensure nothing can become mangled.
         try:
             comp = self.mods[index]
-        except IndexError as e:
-            # Demote IndexErrors
+            new_index = int(new_index)
+        except (ValueError, TypeError, IndexError) as e:
             raise Warning(e)
 
         if not comp.visible:
@@ -1052,8 +1045,8 @@ class ModController(Controller):
         # before anything is attempted to ensure nothing can become mangled.
         try:
             comp = self.plugins[index]
-        except IndexError as e:
-            # Demote IndexErrors
+            new_index = int(new_index)
+        except (ValueError, TypeError, IndexError) as e:
             raise Warning(e)
 
         if not comp.visible:
@@ -1121,8 +1114,7 @@ class ModController(Controller):
         """
         try:
             target_mod = self.mods[index]
-        except IndexError as e:
-            # Demote index errors
+        except (TypeError, IndexError) as e:
             raise Warning(e)
 
         if not target_mod.conflict:

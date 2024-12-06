@@ -46,6 +46,22 @@ def test_move_validation():
         with pytest.raises(Warning):
             controller.do_move_plugin(highest, 0)
 
+        # test non-int first arg for plugins
+        with pytest.raises(Warning):
+            controller.do_move_plugin("nan", 0)
+
+        # test non-int second arg for plugins
+        with pytest.raises(Warning):
+            controller.do_move_plugin(0, "nan")
+
+        # test non-int first arg for mods
+        with pytest.raises(Warning):
+            controller.do_move_mod("nan", 0)
+
+        # test non-int second arg for mods
+        with pytest.raises(Warning):
+            controller.do_move_mod(0, "nan")
+
 
 def test_activate_validation():
     """
@@ -69,6 +85,10 @@ def test_activate_validation():
         # Activate invalid plugin
         with pytest.raises(Warning):
             controller.do_activate_plugin(1000)
+
+        # Activate non-int
+        with pytest.raises(Warning):
+            controller.do_activate_plugin("nan")
 
 
 def test_deactivate_validation():
@@ -94,6 +114,10 @@ def test_deactivate_validation():
         # invalid deactivate mod
         with pytest.raises(Warning):
             controller.do_deactivate_mod(1000)
+
+        # non-int
+        with pytest.raises(Warning):
+            controller.do_deactivate_mod("nan")
 
 
 def test_install_validation():
@@ -143,6 +167,18 @@ def test_delete_validation():
             "temp_download.7z"
         )
         controller.do_delete_download(download_index)
+
+        # Delete non-int download
+        with pytest.raises(Warning):
+            controller.do_delete_download("nan")
+
+        # Delete non-int plugin
+        with pytest.raises(Warning):
+            controller.do_delete_plugin("nan")
+
+        # Delete non-int mod
+        with pytest.raises(Warning):
+            controller.do_delete_mod("nan")
 
 
 def test_no_components_validation():
@@ -197,6 +233,15 @@ def test_invisible_install():
 
         with pytest.raises(Warning):
             controller.do_install(0)
+
+
+def test_install_nan():
+    """
+    Don't allow installing non-ints
+    """
+    with AmmoController() as controller:
+        with pytest.raises(Warning):
+            controller.do_install("nan")
 
 
 def test_invisible_delete_mod():
@@ -297,3 +342,17 @@ def test_configure_high_index():
     with AmmoController() as controller:
         with pytest.raises(Warning):
             controller.do_configure(0)
+
+
+def test_collisions():
+    """
+    Don't crash if collisions gets bad arguments
+    """
+    with AmmoController() as controller:
+        # int that's out of range
+        with pytest.raises(Warning):
+            controller.do_collisions(0)
+
+        # non-int
+        with pytest.raises(Warning):
+            controller.do_collisions("nan")
