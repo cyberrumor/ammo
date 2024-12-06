@@ -550,7 +550,10 @@ class ModController(Controller):
         # and quit ammo without running 'commit', which could leave broken symlinks in their
         # game.directory.
 
-        mod = self.mods[index]
+        try:
+            mod = self.mods[index]
+        except IndexError as e:
+            raise Warning(e)
 
         if not mod.visible:
             raise Warning("You can only configure visible mods.")

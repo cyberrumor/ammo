@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 import os
 import pytest
-from ammo.component import (
-    BethesdaComponentActivatable,
-    BethesdaComponent,
-    Component,
-)
 from common import (
     AmmoController,
     install_mod,
@@ -291,5 +286,14 @@ def test_invisible_configure():
 
         controller.do_find("nothing")
 
+        with pytest.raises(Warning):
+            controller.do_configure(0)
+
+
+def test_configure_high_index():
+    """
+    Don't crash when configuring an index out of range.
+    """
+    with AmmoController() as controller:
         with pytest.raises(Warning):
             controller.do_configure(0)
