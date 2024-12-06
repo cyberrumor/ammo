@@ -344,6 +344,15 @@ def test_configure_high_index():
             controller.do_configure(0)
 
 
+def test_configure_nan():
+    """
+    Don't crash when configuring nan
+    """
+    with AmmoController() as controller:
+        with pytest.raises(Warning):
+            controller.do_configure("nan")
+
+
 def test_collisions():
     """
     Don't crash if collisions gets bad arguments

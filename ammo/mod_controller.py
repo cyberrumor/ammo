@@ -889,7 +889,7 @@ class ModController(Controller):
 
         try:
             mod = self.mods[index]
-        except IndexError as e:
+        except (TypeError, IndexError) as e:
             raise Warning(e)
 
         if not mod.visible:
