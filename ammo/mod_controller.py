@@ -62,22 +62,6 @@ class ModController(Controller):
     display them.
     """
 
-    def requires_sync(func: Callable) -> Callable:
-        """
-        Decorator which prevents decorated function from executing
-        if self.changes is True.
-        """
-
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if self.changes:
-                raise Warning(
-                    "Not executed. You must refresh or commit before doing that."
-                )
-            return func(self, *args, **kwargs)
-
-        return wrapper
-
     def __init__(self, downloads_dir: Path, game: Game, *keywords):
         # Generic attributes
         self.downloads_dir: Path = downloads_dir
@@ -537,52 +521,6 @@ class ModController(Controller):
 
         self.remove_empty_dirs()
 
-    @requires_sync
-    def do_configure(self, index: int) -> None:
-        """
-        Configure a fomod.
-        """
-        # Since there must be a hard refresh after the fomod wizard to load the mod's new
-        # files, deactivate this mod and commit changes. This prevents a scenario where
-        # the user could re-configure a fomod (thereby changing mod.location/self.game.data.name),
-        # and quit ammo without running 'commit', which could leave broken symlinks in their
-        # game.directory.
-
-        try:
-            mod = self.mods[index]
-        except IndexError as e:
-            raise Warning(e)
-
-        if not mod.visible:
-            raise Warning("You can only configure visible mods.")
-        if not mod.fomod:
-            raise Warning("Only fomods can be configured.")
-
-        assert mod.modconf is not None
-
-        self.do_deactivate_mod(index)
-        self.do_commit()
-        self.do_refresh()
-
-        # Clean up previous configuration, if it exists.
-        try:
-            shutil.rmtree(mod.location / "ammo_fomod" / self.game.data.name)
-        except FileNotFoundError:
-            pass
-
-        # We need to instantiate a FomodController and run it against the UI.
-        # This will be a new instance of the UI.
-        fomod_controller = FomodController(mod)
-        ui = UI(fomod_controller)
-        # ui read/execute/print/loop will break from its loop when the user
-        # exits or advances past the last page of the fomod config wizard.
-        ui.repl()
-
-        # If we can rebuild the "files" property of the mod, refreshing the controller
-        # and preventing configuration when there are unsaved changes
-        # will no longer be required.
-        self.do_refresh()
-
     def do_activate_mod(self, index: Union[int, str]) -> None:
         """
         Enabled mods will be loaded by game.
@@ -672,6 +610,317 @@ class ModController(Controller):
             self.set_plugin_state(index, False)
 
         self.stage()
+
+    def do_move_mod(self, index: int, new_index: int) -> None:
+        """
+        Larger numbers win file conflicts.
+        """
+        # Since this operation it not atomic, validation must be performed
+        # before anything is attempted to ensure nothing can become mangled.
+        try:
+            comp = self.mods[index]
+            new_index = int(new_index)
+        except (ValueError, TypeError, IndexError) as e:
+            raise Warning(e)
+
+        if not comp.visible:
+            raise Warning("You can only move visible components.")
+
+        if index == new_index:
+            return
+
+        if new_index > len(self.mods) - 1:
+            # Auto correct astronomical <to index> to max.
+            new_index = len(self.mods) - 1
+
+        log.info(f"moving MOD {comp.name} from {index=} to {new_index=}")
+        self.mods.pop(index)
+        self.mods.insert(new_index, comp)
+        self.stage()
+        self.changes = True
+
+    def do_move_plugin(self, index: int, new_index: int) -> None:
+        """
+        Larger numbers win file conflicts.
+        """
+        # Since this operation it not atomic, validation must be performed
+        # before anything is attempted to ensure nothing can become mangled.
+        try:
+            comp = self.plugins[index]
+            new_index = int(new_index)
+        except (ValueError, TypeError, IndexError) as e:
+            raise Warning(e)
+
+        if not comp.visible:
+            raise Warning("You can only move visible components.")
+
+        if index == new_index:
+            return
+
+        if new_index > len(self.plugins) - 1:
+            # Auto correct astronomical <to index> to max.
+            new_index = len(self.plugins) - 1
+
+        log.info(f"moving PLUGIN {comp.name} from {index=} to {new_index=}")
+        self.plugins.pop(index)
+        self.plugins.insert(new_index, comp)
+        self.stage()
+        self.changes = True
+
+    def do_commit(self) -> None:
+        """
+        Apply pending changes.
+        """
+        log.info("Committing pending changes to storage")
+        self.save_order()
+        stage = self.stage()
+        self.clean_game_dir()
+
+        count = len(stage)
+        skipped_files = []
+        for i, (dest, source) in enumerate(stage.items()):
+            (name, src) = source
+            assert dest.is_absolute()
+            assert src.is_absolute()
+            Path.mkdir(dest.parent, parents=True, exist_ok=True)
+            try:
+                dest.symlink_to(src)
+            except FileExistsError:
+                skipped_files.append(
+                    f"{name} skipped overwriting an unmanaged file: \
+                        {str(dest).split(str(self.game.directory))[-1].lstrip('/')}."
+                )
+            finally:
+                print(f"files processed: {i+1}/{count}", end="\r", flush=True)
+
+        warn = ""
+        for skipped_file in skipped_files:
+            warn += f"{skipped_file}\n"
+
+        # Don't leave empty folders lying around
+        self.remove_empty_dirs()
+        self.changes = False
+        if warn:
+            raise Warning(warn)
+
+    def do_refresh(self) -> None:
+        """
+        Abandon pending changes.
+        """
+        self.__init__(self.downloads_dir, self.game, *self.keywords)
+
+    def do_collisions(self, index: int) -> None:
+        """
+        Show file conflicts for a mod. Mods prefixed with asterisks
+        have file conflicts. Mods prefixed with x install no files.
+        """
+        try:
+            target_mod = self.mods[index]
+        except (TypeError, IndexError) as e:
+            raise Warning(e)
+
+        if not target_mod.conflict:
+            raise Warning("No conflicts.")
+
+        def get_relative_files(mod: Mod):
+            # Iterate through the source files of the mod
+            for src in mod.files:
+                # Get the sanitized full path relative to the game.directory.
+                if mod.fomod:
+                    corrected_name = (
+                        str(src).split(f"{mod.name}/ammo_fomod", 1)[-1].strip("/")
+                    )
+                else:
+                    corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
+
+                dest = mod.install_dir / corrected_name
+                dest = normalize(dest, self.game.directory)
+                dest = str(dest).split(str(self.game.directory), 1)[-1].strip("/")
+
+                yield dest
+
+        enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
+        enabled_mod_names = [i.name for i in enabled_mods]
+        target_mod_files = list(get_relative_files(target_mod))
+        conflicts = {}
+
+        for mod in enabled_mods:
+            if mod.name == target_mod.name:
+                continue
+            for file in get_relative_files(mod):
+                if file in target_mod_files:
+                    if conflicts.get(file, None):
+                        conflicts[file].append(mod.name)
+                    else:
+                        conflicts[file] = [mod.name, target_mod.name]
+
+        result = ""
+        for file, mods in conflicts.items():
+            result += f"{file}\n"
+            sorted_mods = sorted(mods, key=lambda x: enabled_mod_names.index(x))
+            for index, mod in enumerate(sorted_mods):
+                winner = "*" if index == len(sorted_mods) - 1 else " "
+                result += f"  {winner} {mod}\n"
+
+        raise Warning(result)
+
+    def do_find(self, *keyword: str) -> None:
+        """
+        Show only components with any keyword. Execute without args to show all.
+        """
+        self.keywords = [*keyword]
+
+        for component in self.mods + self.plugins + self.downloads:
+            component.visible = True
+            name = component.name.lower()
+
+            for kw in self.keywords:
+                component.visible = False
+
+                # Hack to filter by fomods
+                if kw.lower() == "fomods" and isinstance(component, Mod):
+                    if component.fomod:
+                        component.visible = True
+
+                if name.count(kw.lower()):
+                    component.visible = True
+
+                # Show plugins of visible mods.
+                if isinstance(component, Plugin):
+                    if component.mod is not None:
+                        if component.mod.name.lower().count(kw.lower()):
+                            component.visible = True
+
+                if component.visible:
+                    break
+
+        # Show mods that contain plugins named like the visible plugins.
+        # This shows all associated mods, not just conflict winners.
+        for plugin in [p for p in self.plugins if p.visible]:
+            # We can't simply plugin.mod.visible = True because plugin.mod
+            # does not care about conflict winners. This also means we can't break.
+            for mod in self.mods:
+                if plugin.name in (i.name for i in mod.plugins):
+                    mod.visible = True
+
+        if len(self.keywords) == 1:
+            kw = self.keywords[0].lower()
+            if kw == "downloads":
+                for component in self.mods + self.plugins:
+                    component.visible = False
+                for component in self.downloads:
+                    component.visible = True
+
+            if kw == "mods":
+                for component in self.plugins + self.downloads:
+                    component.visible = False
+                for component in self.mods:
+                    component.visible = True
+
+            if kw == "plugins":
+                for component in self.mods + self.downloads:
+                    component.visible = False
+                for component in self.plugins:
+                    component.visible = True
+
+    def do_log(self) -> None:
+        """
+        Show debug log history.
+        """
+        _log = ""
+        if self.game.ammo_log.exists():
+            with open(self.game.ammo_log, "r") as f:
+                _log = f.read()
+
+        raise Warning(_log)
+
+    def do_sort(self) -> None:
+        """
+        Arrange plugins by mod order.
+        """
+        plugins = []
+        for mod in self.mods[::-1]:
+            if not mod.enabled:
+                continue
+            for plugin in self.plugins[::-1]:
+                for plugin_file in mod.plugins:
+                    if plugin.name == plugin_file.name and plugin.name not in (
+                        i.name for i in plugins
+                    ):
+                        plugins.insert(0, plugin)
+                        break
+        result = []
+        for plugin in list(plugins):
+            if any([plugin.name.lower().endswith(i) for i in [".esl", ".esm"]]):
+                result.append(plugins.pop(plugins.index(plugin)))
+
+        result.extend(plugins)
+
+        if self.changes is False:
+            self.changes = self.plugins != result
+        self.plugins = result
+
+    def requires_sync(func: Callable) -> Callable:
+        """
+        Decorator which prevents decorated function from executing
+        if self.changes is True.
+        """
+
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.changes:
+                raise Warning(
+                    "Not executed. You must refresh or commit before doing that."
+                )
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    @requires_sync
+    def do_configure(self, index: int) -> None:
+        """
+        Configure a fomod.
+        """
+        # Since there must be a hard refresh after the fomod wizard to load the mod's new
+        # files, deactivate this mod and commit changes. This prevents a scenario where
+        # the user could re-configure a fomod (thereby changing mod.location/self.game.data.name),
+        # and quit ammo without running 'commit', which could leave broken symlinks in their
+        # game.directory.
+
+        try:
+            mod = self.mods[index]
+        except IndexError as e:
+            raise Warning(e)
+
+        if not mod.visible:
+            raise Warning("You can only configure visible mods.")
+        if not mod.fomod:
+            raise Warning("Only fomods can be configured.")
+
+        assert mod.modconf is not None
+
+        self.do_deactivate_mod(index)
+        self.do_commit()
+        self.do_refresh()
+
+        # Clean up previous configuration, if it exists.
+        try:
+            shutil.rmtree(mod.location / "ammo_fomod" / self.game.data.name)
+        except FileNotFoundError:
+            pass
+
+        # We need to instantiate a FomodController and run it against the UI.
+        # This will be a new instance of the UI.
+        fomod_controller = FomodController(mod)
+        ui = UI(fomod_controller)
+        # ui read/execute/print/loop will break from its loop when the user
+        # exits or advances past the last page of the fomod config wizard.
+        ui.repl()
+
+        # If we can rebuild the "files" property of the mod, refreshing the controller
+        # and preventing configuration when there are unsaved changes
+        # will no longer be required.
+        self.do_refresh()
 
     @requires_sync
     def do_rename_download(self, index: int, name: str) -> None:
@@ -1008,255 +1257,6 @@ class ModController(Controller):
             install_download(index, download)
 
         self.do_refresh()
-
-    def do_move_mod(self, index: int, new_index: int) -> None:
-        """
-        Larger numbers win file conflicts.
-        """
-        # Since this operation it not atomic, validation must be performed
-        # before anything is attempted to ensure nothing can become mangled.
-        try:
-            comp = self.mods[index]
-            new_index = int(new_index)
-        except (ValueError, TypeError, IndexError) as e:
-            raise Warning(e)
-
-        if not comp.visible:
-            raise Warning("You can only move visible components.")
-
-        if index == new_index:
-            return
-
-        if new_index > len(self.mods) - 1:
-            # Auto correct astronomical <to index> to max.
-            new_index = len(self.mods) - 1
-
-        log.info(f"moving MOD {comp.name} from {index=} to {new_index=}")
-        self.mods.pop(index)
-        self.mods.insert(new_index, comp)
-        self.stage()
-        self.changes = True
-
-    def do_move_plugin(self, index: int, new_index: int) -> None:
-        """
-        Larger numbers win file conflicts.
-        """
-        # Since this operation it not atomic, validation must be performed
-        # before anything is attempted to ensure nothing can become mangled.
-        try:
-            comp = self.plugins[index]
-            new_index = int(new_index)
-        except (ValueError, TypeError, IndexError) as e:
-            raise Warning(e)
-
-        if not comp.visible:
-            raise Warning("You can only move visible components.")
-
-        if index == new_index:
-            return
-
-        if new_index > len(self.plugins) - 1:
-            # Auto correct astronomical <to index> to max.
-            new_index = len(self.plugins) - 1
-
-        log.info(f"moving PLUGIN {comp.name} from {index=} to {new_index=}")
-        self.plugins.pop(index)
-        self.plugins.insert(new_index, comp)
-        self.stage()
-        self.changes = True
-
-    def do_commit(self) -> None:
-        """
-        Apply pending changes.
-        """
-        log.info("Committing pending changes to storage")
-        self.save_order()
-        stage = self.stage()
-        self.clean_game_dir()
-
-        count = len(stage)
-        skipped_files = []
-        for i, (dest, source) in enumerate(stage.items()):
-            (name, src) = source
-            assert dest.is_absolute()
-            assert src.is_absolute()
-            Path.mkdir(dest.parent, parents=True, exist_ok=True)
-            try:
-                dest.symlink_to(src)
-            except FileExistsError:
-                skipped_files.append(
-                    f"{name} skipped overwriting an unmanaged file: \
-                        {str(dest).split(str(self.game.directory))[-1].lstrip('/')}."
-                )
-            finally:
-                print(f"files processed: {i+1}/{count}", end="\r", flush=True)
-
-        warn = ""
-        for skipped_file in skipped_files:
-            warn += f"{skipped_file}\n"
-
-        # Don't leave empty folders lying around
-        self.remove_empty_dirs()
-        self.changes = False
-        if warn:
-            raise Warning(warn)
-
-    def do_refresh(self) -> None:
-        """
-        Abandon pending changes.
-        """
-        self.__init__(self.downloads_dir, self.game, *self.keywords)
-
-    def do_collisions(self, index: int) -> None:
-        """
-        Show file conflicts for a mod. Mods prefixed with asterisks
-        have file conflicts. Mods prefixed with x install no files.
-        """
-        try:
-            target_mod = self.mods[index]
-        except (TypeError, IndexError) as e:
-            raise Warning(e)
-
-        if not target_mod.conflict:
-            raise Warning("No conflicts.")
-
-        def get_relative_files(mod: Mod):
-            # Iterate through the source files of the mod
-            for src in mod.files:
-                # Get the sanitized full path relative to the game.directory.
-                if mod.fomod:
-                    corrected_name = (
-                        str(src).split(f"{mod.name}/ammo_fomod", 1)[-1].strip("/")
-                    )
-                else:
-                    corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
-
-                dest = mod.install_dir / corrected_name
-                dest = normalize(dest, self.game.directory)
-                dest = str(dest).split(str(self.game.directory), 1)[-1].strip("/")
-
-                yield dest
-
-        enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
-        enabled_mod_names = [i.name for i in enabled_mods]
-        target_mod_files = list(get_relative_files(target_mod))
-        conflicts = {}
-
-        for mod in enabled_mods:
-            if mod.name == target_mod.name:
-                continue
-            for file in get_relative_files(mod):
-                if file in target_mod_files:
-                    if conflicts.get(file, None):
-                        conflicts[file].append(mod.name)
-                    else:
-                        conflicts[file] = [mod.name, target_mod.name]
-
-        result = ""
-        for file, mods in conflicts.items():
-            result += f"{file}\n"
-            sorted_mods = sorted(mods, key=lambda x: enabled_mod_names.index(x))
-            for index, mod in enumerate(sorted_mods):
-                winner = "*" if index == len(sorted_mods) - 1 else " "
-                result += f"  {winner} {mod}\n"
-
-        raise Warning(result)
-
-    def do_find(self, *keyword: str) -> None:
-        """
-        Show only components with any keyword. Execute without args to show all.
-        """
-        self.keywords = [*keyword]
-
-        for component in self.mods + self.plugins + self.downloads:
-            component.visible = True
-            name = component.name.lower()
-
-            for kw in self.keywords:
-                component.visible = False
-
-                # Hack to filter by fomods
-                if kw.lower() == "fomods" and isinstance(component, Mod):
-                    if component.fomod:
-                        component.visible = True
-
-                if name.count(kw.lower()):
-                    component.visible = True
-
-                # Show plugins of visible mods.
-                if isinstance(component, Plugin):
-                    if component.mod is not None:
-                        if component.mod.name.lower().count(kw.lower()):
-                            component.visible = True
-
-                if component.visible:
-                    break
-
-        # Show mods that contain plugins named like the visible plugins.
-        # This shows all associated mods, not just conflict winners.
-        for plugin in [p for p in self.plugins if p.visible]:
-            # We can't simply plugin.mod.visible = True because plugin.mod
-            # does not care about conflict winners. This also means we can't break.
-            for mod in self.mods:
-                if plugin.name in (i.name for i in mod.plugins):
-                    mod.visible = True
-
-        if len(self.keywords) == 1:
-            kw = self.keywords[0].lower()
-            if kw == "downloads":
-                for component in self.mods + self.plugins:
-                    component.visible = False
-                for component in self.downloads:
-                    component.visible = True
-
-            if kw == "mods":
-                for component in self.plugins + self.downloads:
-                    component.visible = False
-                for component in self.mods:
-                    component.visible = True
-
-            if kw == "plugins":
-                for component in self.mods + self.downloads:
-                    component.visible = False
-                for component in self.plugins:
-                    component.visible = True
-
-    def do_log(self) -> None:
-        """
-        Show debug log history.
-        """
-        _log = ""
-        if self.game.ammo_log.exists():
-            with open(self.game.ammo_log, "r") as f:
-                _log = f.read()
-
-        raise Warning(_log)
-
-    def do_sort(self) -> None:
-        """
-        Arrange plugins by mod order.
-        """
-        plugins = []
-        for mod in self.mods[::-1]:
-            if not mod.enabled:
-                continue
-            for plugin in self.plugins[::-1]:
-                for plugin_file in mod.plugins:
-                    if plugin.name == plugin_file.name and plugin.name not in (
-                        i.name for i in plugins
-                    ):
-                        plugins.insert(0, plugin)
-                        break
-        result = []
-        for plugin in list(plugins):
-            if any([plugin.name.lower().endswith(i) for i in [".esl", ".esm"]]):
-                result.append(plugins.pop(plugins.index(plugin)))
-
-        result.extend(plugins)
-
-        if self.changes is False:
-            self.changes = self.plugins != result
-        self.plugins = result
 
     @requires_sync
     def do_tools(self) -> None:
