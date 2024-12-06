@@ -132,7 +132,7 @@ class GameController(Controller):
     def prompt(self) -> str:
         return super().prompt()
 
-    def post_exec(self) -> bool:
+    def postcmd(self) -> bool:
         # When we're done managing a game, just quit.
         return True
 

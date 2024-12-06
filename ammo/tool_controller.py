@@ -81,7 +81,7 @@ class ToolController(Controller):
     def prompt(self):
         return "Tools >_: "
 
-    def post_exec(self) -> bool:
+    def postcmd(self) -> bool:
         if self.do_exit:
             return True
         self.do_refresh()

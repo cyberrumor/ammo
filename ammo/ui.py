@@ -54,7 +54,7 @@ class Controller(ABC):
         return ">_: "
 
     @abstractmethod
-    def post_exec(self) -> bool:
+    def postcmd(self) -> bool:
         """
         This function is executed after every command.
         It returns whether the UI should break from repl.
@@ -491,7 +491,7 @@ class UI:
                 command.func(*prepared_args)
                 if command.instance is not None:
                     controller_instance = command.instance
-                    if controller_instance.post_exec():
+                    if controller_instance.postcmd():
                         break
 
             except Warning as warning:

@@ -24,8 +24,8 @@ class MockController(Controller):
     def prompt(self) -> str:
         return super().prompt()
 
-    def post_exec(self) -> bool:
-        return super().post_exec()
+    def postcmd(self) -> bool:
+        return super().postcmd()
 
     def __str__(self) -> str:
         return super().__str__()

@@ -296,7 +296,7 @@ class ModController(Controller):
         name = self.game.name
         return f"{name} >{changes}: "
 
-    def post_exec(self) -> bool:
+    def postcmd(self) -> bool:
         return False
 
     def autocomplete(self, text: str, state: int) -> Union[str, None]:
