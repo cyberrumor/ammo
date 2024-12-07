@@ -26,8 +26,6 @@ class BethesdaController(ModController):
     """
     ModController is responsible for managing mods. It exposes
     methods to the UI that allow the user to easily manage mods.
-    Private methods here are private simply so the UI doesn't
-    display them.
     """
 
     def __init__(self, downloads_dir: Path, game: Game, *keywords):
