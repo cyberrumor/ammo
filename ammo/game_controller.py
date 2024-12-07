@@ -8,10 +8,8 @@ from dataclasses import (
 )
 from pathlib import Path
 
-from .mod_controller import (
-    Game,
-    ModController,
-)
+from .mod_controller import Game
+from .bethesda_controller import BethesdaController
 from .ui import (
     Controller,
     UI,
@@ -199,6 +197,6 @@ class GameController(Controller):
         )
 
         # Launch the main mod organizer.
-        controller = ModController(self.downloads, game)
+        controller = BethesdaController(self.downloads, game)
         ui = UI(controller)
         ui.repl()

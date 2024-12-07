@@ -3,8 +3,8 @@ import os
 import shutil
 from pathlib import Path
 
-from ammo.mod_controller import (
-    ModController,
+from ammo.bethesda_controller import (
+    BethesdaController,
     Game,
 )
 from ammo.fomod_controller import FomodController
@@ -30,7 +30,7 @@ class AmmoController:
     """
     Context manager for ammo's controller class.
 
-    Builds a ModController instance to run against /tmp/MockGame.
+    Builds a BethesdaController instance to run against /tmp/MockGame.
     Ammo's configuration directory will be set up as AMMO_DIR,
     if it doesn't already exist.
 
@@ -48,7 +48,7 @@ class AmmoController:
         Return an instance of ammo's controller for tests to
         interact with.
         """
-        return ModController(self.downloads_dir, self.game)
+        return BethesdaController(self.downloads_dir, self.game)
 
     def __exit__(self, *args, **kwargs):
         """
