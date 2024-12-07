@@ -146,7 +146,7 @@ class FomodController(Controller):
             except ValueError:
                 pass
         for i in range(len(self.page.selections)):
-            setattr(self, f"do_{i}", lambda self, i=i: self.select(i))
+            setattr(self, f"do_{i}", lambda _, i=i: self.select(i))
             self.__dict__[f"do_{i}"].__doc__ = f"Toggle {self.page.selections[i].name}"
 
     def get_pages(self) -> list[Page]:

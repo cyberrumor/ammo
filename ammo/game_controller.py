@@ -152,7 +152,7 @@ class GameController(Controller):
         one for each selectable option.
         """
         for i, game in enumerate(self.games):
-            setattr(self, f"do_{i}", lambda self, i=i: self.manage_game(i))
+            setattr(self, f"do_{i}", lambda _, i=i: self.manage_game(i))
             full_location = str(game.directory).replace(str(Path.home()), "~", 1)
             self.__dict__[f"do_{i}"].__doc__ = full_location
 
