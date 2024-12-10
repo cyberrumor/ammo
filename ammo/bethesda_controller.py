@@ -9,6 +9,10 @@ from typing import Union
 from enum import (
     EnumMeta,
 )
+from dataclasses import (
+    dataclass,
+    field,
+)
 from .mod_controller import (
     ModController,
     Game,
@@ -20,6 +24,16 @@ from .component import (
 )
 
 log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, kw_only=True)
+class BethesdaGame(Game):
+    data: Path
+    dlc_file: Path
+    plugin_file: Path
+    enabled_formula: Callable[[str], bool] = field(
+        default=lambda line: line.strip().startswith("*")
+    )
 
 
 class BethesdaController(ModController):

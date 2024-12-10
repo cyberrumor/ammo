@@ -8,10 +8,7 @@ import logging
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from dataclasses import (
-    dataclass,
-    field,
-)
+from dataclasses import dataclass
 import typing
 from typing import Union
 from enum import (
@@ -38,19 +35,11 @@ log = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
 class Game:
-    # Generic attributes
     ammo_conf: Path
     ammo_log: Path
     ammo_mods_dir: Path
     name: str
     directory: Path
-    # Bethesda attributes
-    data: Path
-    dlc_file: Path
-    plugin_file: Path
-    enabled_formula: Callable[[str], bool] = field(
-        default=lambda line: line.strip().startswith("*")
-    )
 
 
 class ModController(Controller):

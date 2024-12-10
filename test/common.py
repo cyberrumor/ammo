@@ -5,7 +5,7 @@ from pathlib import Path
 
 from ammo.bethesda_controller import (
     BethesdaController,
-    Game,
+    BethesdaGame,
 )
 from ammo.fomod_controller import FomodController
 from ammo.component import Mod
@@ -14,7 +14,7 @@ from ammo.component import Mod
 # Create a configuration for the mock controller to use.
 AMMO_DIR = Path("/tmp/ammo_test")
 
-GAME = Game(
+GAME = BethesdaGame(
     name="MockGame",
     directory=Path("/tmp/MockGame"),
     data=Path("/tmp/MockGame/Data"),

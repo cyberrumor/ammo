@@ -8,8 +8,10 @@ from dataclasses import (
 )
 from pathlib import Path
 
-from .mod_controller import Game
-from .bethesda_controller import BethesdaController
+from .bethesda_controller import (
+    BethesdaController,
+    BethesdaGame,
+)
 from .ui import (
     Controller,
     UI,
@@ -182,7 +184,7 @@ class GameController(Controller):
                 def enabled_formula(line) -> bool:
                     return line.strip().startswith("*")
 
-        game = Game(
+        game = BethesdaGame(
             # Generic attributes
             ammo_conf=ammo_conf,
             ammo_log=ammo_log,
