@@ -20,6 +20,17 @@ from .ui import (
     UI,
 )
 
+BETHESDA_TITLES = [
+    "Enderal",
+    "Enderal Special Edition",
+    "Fallout 4",
+    "Fallout New Vegas",
+    "Oblivion",
+    "Skyrim",
+    "Skyrim Special Edition",
+    "Starfield",
+]
+
 
 @dataclass(frozen=True, kw_only=True)
 class GameSelection:
@@ -85,8 +96,7 @@ class GameController(Controller):
                         directory=Path(j["directory"]),
                     )
 
-                    if "data" in j:
-                        # If there is a data dir, it's a bethesda game.
+                    if i.stem in BETHESDA_TITLES:
                         game_selection = BethesdaGameSelection(
                             name=i.stem,
                             directory=Path(j["directory"]),
@@ -133,8 +143,7 @@ class GameController(Controller):
                         directory=library / f"common/{game.name}",
                     )
 
-                    if Path(library / f"common/{game.name}/Data").exists():
-                        # If there is a data dir, it's a bethesda game.
+                    if game.name in BETHESDA_TITLES:
                         game_selection = BethesdaGameSelection(
                             name=game.name,
                             directory=library / f"common/{game.name}",
