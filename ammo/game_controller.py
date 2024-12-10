@@ -7,7 +7,10 @@ from dataclasses import (
     field,
 )
 from pathlib import Path
-
+from .mod_controller import (
+    Game,
+    ModController,
+)
 from .bethesda_controller import (
     BethesdaController,
     BethesdaGame,
@@ -68,7 +71,7 @@ class GameController(Controller):
             "Fallout New Vegas": "22380",
         }
         self.downloads = self.args.downloads.resolve(strict=True)
-        self.games: list[BethesdaGameSelection] = []
+        self.games: list[GameSelection | BethesdaGameSelection] = []
 
         # Find games from instances of Steam
         self.libraries: list[Path] = []
@@ -101,15 +104,22 @@ class GameController(Controller):
                     pfx = library / f"compatdata/{self.ids[game.name]}/pfx"
                     app_data = pfx / "drive_c/users/steamuser/AppData/Local"
 
-                    game_selection = BethesdaGameSelection(
+                    game_selection = GameSelection(
                         name=game.name,
                         directory=library / f"common/{game.name}",
-                        data=library / f"common/{game.name}/Data",
-                        dlc_file=app_data
-                        / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
-                        plugin_file=app_data
-                        / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
                     )
+
+                    if Path(library / f"common/{game.name}/Data").exists():
+                        # If there is a data dir, it's a bethesda game.
+                        game_selection = BethesdaGameSelection(
+                            name=game.name,
+                            directory=library / f"common/{game.name}",
+                            data=library / f"common/{game.name}/Data",
+                            dlc_file=app_data
+                            / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
+                            plugin_file=app_data
+                            / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
+                        )
 
                     self.games.append(game_selection)
 
@@ -119,13 +129,22 @@ class GameController(Controller):
                 if i.is_file() and i.suffix == ".json":
                     with open(i, "r") as file:
                         j = json.loads(file.read())
-                    game_selection = BethesdaGameSelection(
+
+                    game_selection = GameSelection(
                         name=i.stem,
                         directory=Path(j["directory"]),
-                        data=Path(j["data"]),
-                        dlc_file=Path(j["dlc_file"]),
-                        plugin_file=Path(j["plugin_file"]),
                     )
+
+                    if "data" in j:
+                        # If there is a data dir, it's a bethesda game.
+                        game_selection = BethesdaGameSelection(
+                            name=i.stem,
+                            directory=Path(j["directory"]),
+                            data=Path(j["data"]),
+                            dlc_file=Path(j["dlc_file"]),
+                            plugin_file=Path(j["plugin_file"]),
+                        )
+
                     if game_selection not in self.games:
                         self.games.append(game_selection)
 
@@ -179,35 +198,48 @@ class GameController(Controller):
         ammo_conf = ammo_conf_dir / "ammo.conf"
         ammo_log = ammo_conf_dir / "ammo.log"
 
-        match game_selection.name:
-            # Some games expect plugins to be disabled if they begin with
-            # something besides the name, like an asterisk. Other games
-            # use asterisk to denote an enabled plugin.
-            case "Skyrim":
+        match game_selection:
+            case BethesdaGameSelection():
+                match game_selection.name:
+                    # Some games expect plugins to be disabled if they begin with
+                    # something besides the name, like an asterisk. Other games
+                    # use asterisk to denote an enabled plugin.
+                    case "Skyrim":
 
-                def enabled_formula(line) -> bool:
-                    return not line.strip().startswith("*")
+                        def enabled_formula(line) -> bool:
+                            return not line.strip().startswith("*")
 
-            case _:
+                    case _:
 
-                def enabled_formula(line) -> bool:
-                    return line.strip().startswith("*")
+                        def enabled_formula(line) -> bool:
+                            return line.strip().startswith("*")
 
-        game = BethesdaGame(
-            # Generic attributes
-            ammo_conf=ammo_conf,
-            ammo_log=ammo_log,
-            ammo_mods_dir=ammo_mods_dir,
-            name=game_selection.name,
-            directory=game_selection.directory,
-            # Bethesda attributes
-            data=game_selection.data,
-            dlc_file=game_selection.dlc_file,
-            plugin_file=game_selection.plugin_file,
-            enabled_formula=enabled_formula,
-        )
+                game = BethesdaGame(
+                    # Generic attributes
+                    ammo_conf=ammo_conf,
+                    ammo_log=ammo_log,
+                    ammo_mods_dir=ammo_mods_dir,
+                    name=game_selection.name,
+                    directory=game_selection.directory,
+                    # Bethesda attributes
+                    data=game_selection.data,
+                    dlc_file=game_selection.dlc_file,
+                    plugin_file=game_selection.plugin_file,
+                    enabled_formula=enabled_formula,
+                )
+                controller_class = BethesdaController
 
-        # Launch the main mod organizer.
-        controller = BethesdaController(self.downloads, game)
+            case GameSelection():
+                game = Game(
+                    ammo_conf=ammo_conf,
+                    ammo_log=ammo_log,
+                    ammo_mods_dir=ammo_mods_dir,
+                    name=game_selection.name,
+                    directory=game_selection.directory,
+                )
+                controller_class = ModController
+
+        # Launch the appropriate mod organizer.
+        controller = controller_class(self.downloads, game)
         ui = UI(controller)
         ui.repl()
