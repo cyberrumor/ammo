@@ -22,6 +22,16 @@ from .ui import (
 class GameSelection:
     name: field(default_factory=str)
     directory: field(default_factory=Path)
+
+    def __post_init__(self):
+        """
+        Validate that all paths are absolute.
+        """
+        assert self.directory.is_absolute()
+
+
+@dataclass(frozen=True, kw_only=True)
+class BethesdaGameSelection(GameSelection):
     data: field(default_factory=Path)
     dlc_file: field(default_factory=Path)
     plugin_file: field(default_factory=Path)
@@ -30,7 +40,6 @@ class GameSelection:
         """
         Validate that all paths are absolute.
         """
-        assert self.directory.is_absolute()
         assert self.data.is_absolute()
         assert self.dlc_file.is_absolute()
         assert self.plugin_file.is_absolute()
@@ -59,7 +68,7 @@ class GameController(Controller):
             "Fallout New Vegas": "22380",
         }
         self.downloads = self.args.downloads.resolve(strict=True)
-        self.games: list[GameSelection] = []
+        self.games: list[BethesdaGameSelection] = []
 
         # Find games from instances of Steam
         self.libraries: list[Path] = []
@@ -92,7 +101,7 @@ class GameController(Controller):
                     pfx = library / f"compatdata/{self.ids[game.name]}/pfx"
                     app_data = pfx / "drive_c/users/steamuser/AppData/Local"
 
-                    game_selection = GameSelection(
+                    game_selection = BethesdaGameSelection(
                         name=game.name,
                         directory=library / f"common/{game.name}",
                         data=library / f"common/{game.name}/Data",
@@ -110,7 +119,7 @@ class GameController(Controller):
                 if i.is_file() and i.suffix == ".json":
                     with open(i, "r") as file:
                         j = json.loads(file.read())
-                    game_selection = GameSelection(
+                    game_selection = BethesdaGameSelection(
                         name=i.stem,
                         directory=Path(j["directory"]),
                         data=Path(j["data"]),
