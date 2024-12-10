@@ -73,6 +73,30 @@ class GameController(Controller):
         self.downloads = self.args.downloads.resolve(strict=True)
         self.games: list[GameSelection | BethesdaGameSelection] = []
 
+        # Find manually configured games
+        if args.conf.exists():
+            for i in args.conf.iterdir():
+                if i.is_file() and i.suffix == ".json":
+                    with open(i, "r") as file:
+                        j = json.loads(file.read())
+
+                    game_selection = GameSelection(
+                        name=i.stem,
+                        directory=Path(j["directory"]),
+                    )
+
+                    if "data" in j:
+                        # If there is a data dir, it's a bethesda game.
+                        game_selection = BethesdaGameSelection(
+                            name=i.stem,
+                            directory=Path(j["directory"]),
+                            data=Path(j["data"]),
+                            dlc_file=Path(j["dlc_file"]),
+                            plugin_file=Path(j["plugin_file"]),
+                        )
+
+                    self.games.append(game_selection)
+
         # Find games from instances of Steam
         self.libraries: list[Path] = []
         self.steam = Path.home() / ".local/share/Steam/steamapps"
@@ -119,30 +143,6 @@ class GameController(Controller):
                             / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
                             plugin_file=app_data
                             / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
-                        )
-
-                    self.games.append(game_selection)
-
-        # Find manually configured games
-        if args.conf.exists():
-            for i in args.conf.iterdir():
-                if i.is_file() and i.suffix == ".json":
-                    with open(i, "r") as file:
-                        j = json.loads(file.read())
-
-                    game_selection = GameSelection(
-                        name=i.stem,
-                        directory=Path(j["directory"]),
-                    )
-
-                    if "data" in j:
-                        # If there is a data dir, it's a bethesda game.
-                        game_selection = BethesdaGameSelection(
-                            name=i.stem,
-                            directory=Path(j["directory"]),
-                            data=Path(j["data"]),
-                            dlc_file=Path(j["dlc_file"]),
-                            plugin_file=Path(j["plugin_file"]),
                         )
 
                     if game_selection not in self.games:
