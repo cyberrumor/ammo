@@ -495,6 +495,8 @@ class BethesdaController(ModController):
                 result.append(plugins.pop(plugins.index(plugin)))
 
         result.extend(plugins)
+        for dlc in [plugin for plugin in self.plugins if plugin.mod is None][::-1]:
+            result.insert(0, dlc)
 
         if self.changes is False:
             self.changes = self.plugins != result

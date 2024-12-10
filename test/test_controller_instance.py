@@ -548,3 +548,79 @@ def test_sort_esm_esl():
         assert controller.plugins[1].name == "plugin.esl"
         assert controller.plugins[2].name == "normal_plugin.esp"
         assert controller.plugins[3].name == "mock_plugin.esp"
+
+
+def test_sort_dlc():
+    """
+    Test that DLC (plugins where plugin.mod is None) gets sorted
+    above other plugins.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "esm")
+        install_mod(controller, "esl")
+
+        # Create a file which will behave as a DLC plugin
+        with open(controller.game.data / "dlc.esm", "w") as f:
+            f.write("")
+
+        # Create a DLCPlugins.txt file so it will get loaded by
+        # a refresh. Another way to get a file to be considered
+        # DLC for the purposes of 'sort' is to set plugin.mod to
+        # None, but we don't have enough .esm mods available to
+        # test with via that method.
+        with open(controller.game.dlc_file, "w") as f:
+            f.write("*dlc.esm")
+
+        controller.do_refresh()
+        assert controller.plugins[0].name == "plugin.esm"
+        assert controller.plugins[1].name == "plugin.esl"
+        # DLC which wasn't in plugins.txt goes to the bottom as disabled.
+        assert controller.plugins[2].name == "dlc.esm"
+
+        controller.do_sort()
+
+        assert controller.plugins[0].name == "dlc.esm"
+        assert controller.plugins[1].name == "plugin.esm"
+        assert controller.plugins[2].name == "plugin.esl"
+
+
+def test_dlc_order():
+    """
+    Test that DLC gets loaded at the bottom of controller.plugins
+    as disabled if it wasn't listed in plugins.txt.
+
+    If it's listed in plugins.txt, it should get loaded in that order
+    as enabled/disabled according to plugins.txt enabled state.
+    """
+    pass
+
+    with AmmoController() as controller:
+        install_mod(controller, "esm")
+        install_mod(controller, "esl")
+
+        # Create a file which will behave as a DLC plugin
+        with open(controller.game.data / "dlc.esm", "w") as f:
+            f.write("")
+
+        # Create a DLCPlugins.txt file so it will get loaded by
+        # a refresh. Another way to get a file to be considered
+        # DLC for the purposes of 'sort' is to set plugin.mod to
+        # None, but we don't have enough .esm mods available to
+        # test with via that method.
+        with open(controller.game.dlc_file, "w") as f:
+            f.write("*dlc.esm")
+
+        controller.do_refresh()
+        assert controller.plugins[0].name == "plugin.esm"
+        assert controller.plugins[1].name == "plugin.esl"
+        # DLC which wasn't in plugins.txt goes to the bottom as disabled.
+        assert controller.plugins[2].name == "dlc.esm"
+
+        # Enable and move the DLC
+        controller.do_activate_plugin(2)
+        controller.do_move_plugin(2, 1)
+        controller.do_commit()
+
+        controller.do_refresh()
+
+        assert controller.plugins[1].name == "dlc.esm"
