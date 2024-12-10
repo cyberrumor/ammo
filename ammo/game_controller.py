@@ -59,6 +59,53 @@ class BethesdaGameSelection(GameSelection):
         assert self.plugin_file.is_absolute()
 
 
+@dataclass(frozen=True, kw_only=True)
+class SteamGame:
+    name: str
+    id: int
+
+
+Enderal = SteamGame(
+    name="Enderal",
+    id=933480,
+)
+
+EnderalSpecialEdition = SteamGame(
+    name="Enderal Special Edition",
+    id=976620,
+)
+
+Fallout4 = SteamGame(
+    name="Fallout 4",
+    id=377160,
+)
+
+FalloutNewVegas = SteamGame(
+    name="Fallout New Vegas",
+    id=22380,
+)
+
+Oblivion = SteamGame(
+    name="Oblivion",
+    id=22330,
+)
+
+Skyrim = SteamGame(
+    name="Skyrim",
+    id=72850,
+)
+
+SkyrimSpecialEdition = SteamGame(
+    name="Skyrim Special Edition",
+    id=489830,
+)
+
+Starfield = SteamGame(
+    name="Starfield",
+    id=1716740,
+)
+
+
 class GameController(Controller):
     """
     GameController is responsible for selecting games.
@@ -71,16 +118,16 @@ class GameController(Controller):
 
     def __init__(self, args):
         self.args = args
-        self.ids = {
-            "Skyrim Special Edition": "489830",
-            "Oblivion": "22330",
-            "Fallout 4": "377160",
-            "Skyrim": "72850",
-            "Enderal": "933480",
-            "Enderal Special Edition": "976620",
-            "Starfield": "1716740",
-            "Fallout New Vegas": "22380",
-        }
+        self.steam_games = [
+            Enderal,
+            EnderalSpecialEdition,
+            Fallout4,
+            FalloutNewVegas,
+            Oblivion,
+            Skyrim,
+            SkyrimSpecialEdition,
+            Starfield,
+        ]
         self.downloads = self.args.downloads.resolve(strict=True)
         self.games: list[GameSelection | BethesdaGameSelection] = []
 
@@ -132,10 +179,16 @@ class GameController(Controller):
             common_path = library / "common"
             if common_path.exists():
                 for game in common_path.iterdir():
-                    if game.name not in self.ids:
+                    steam_games = [
+                        steam_game
+                        for steam_game in self.steam_games
+                        if steam_game.name == game.name
+                    ]
+                    if not steam_games:
                         continue
+                    steam_game = steam_games[0]
 
-                    pfx = library / f"compatdata/{self.ids[game.name]}/pfx"
+                    pfx = library / f"compatdata/{steam_game.id}/pfx"
                     app_data = pfx / "drive_c/users/steamuser/AppData/Local"
 
                     game_selection = GameSelection(
@@ -159,7 +212,7 @@ class GameController(Controller):
 
         if len(self.games) == 0:
             raise FileNotFoundError(
-                f"Supported games {list(self.ids)} not found in {self.libraries}"
+                f"Supported games {[i.name for i in self.steam_games]} not found in {self.libraries}"
             )
         elif len(self.games) == 1:
             self.manage_game(0)
