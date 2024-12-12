@@ -141,8 +141,8 @@ class FomodController(Controller):
         # Remove all attributes that are numbers
         for i in list(self.__dict__.keys()):
             try:
-                int(i)
-                del self.__dict__[f"do_{i}"]
+                int(i.lstrip("do_"))
+                del self.__dict__[i]
             except ValueError:
                 pass
         for i in range(len(self.page.selections)):
