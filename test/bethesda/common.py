@@ -41,7 +41,7 @@ class AmmoController:
     def __init__(self):
         self.game = GAME
         script_path = Path(__file__)
-        self.downloads_dir = script_path.parent / "Downloads"
+        self.downloads_dir = script_path.parent.parent / "Downloads"
 
     def __enter__(self):
         """

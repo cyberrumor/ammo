@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import pytest
 from common import (
     mod_extracts_files,
     mod_installs_files,
