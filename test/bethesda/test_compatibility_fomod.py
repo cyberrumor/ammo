@@ -15,8 +15,8 @@ def test_base_object_swapper():
     XML into a full path is accurate.
     """
     files = [
-        Path("Data/SKSE/Plugins/po3_BaseObjectSwapper.dll"),
-        Path("Data/SKSE/Plugins/po3_BaseObjectSwapper.pdb"),
+        Path("SKSE/Plugins/po3_BaseObjectSwapper.dll"),
+        Path("SKSE/Plugins/po3_BaseObjectSwapper.pdb"),
     ]
 
     fomod_selections_choose_files(
@@ -65,31 +65,29 @@ def test_realistic_ragdolls():
     This verifies auto-selection for "selectExactlyOne"
     """
     files = [
-        Path("Data/realistic_ragdolls_Realistic.esp"),
-        Path("Data/meshes/actors/bear/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/canine/character assets dog/skeleton.nif"),
-        Path("Data/meshes/actors/canine/character assets wolf/skeleton.nif"),
-        Path("Data/meshes/actors/cow/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/deer/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/draugr/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/falmer/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/frostbitespider/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/giant/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/goat/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/hagraven/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/mudcrab/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/sabrecat/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/troll/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/werewolfbeast/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/wolf/character assets/skeleton.nif"),
+        Path("realistic_ragdolls_Realistic.esp"),
+        Path("meshes/actors/bear/character assets/skeleton.nif"),
+        Path("meshes/actors/canine/character assets dog/skeleton.nif"),
+        Path("meshes/actors/canine/character assets wolf/skeleton.nif"),
+        Path("meshes/actors/cow/character assets/skeleton.nif"),
+        Path("meshes/actors/deer/character assets/skeleton.nif"),
+        Path("meshes/actors/draugr/character assets/skeleton.nif"),
+        Path("meshes/actors/falmer/character assets/skeleton.nif"),
+        Path("meshes/actors/frostbitespider/character assets/skeleton.nif"),
+        Path("meshes/actors/giant/character assets/skeleton.nif"),
+        Path("meshes/actors/goat/character assets/skeleton.nif"),
+        Path("meshes/actors/hagraven/character assets/skeleton.nif"),
+        Path("meshes/actors/mudcrab/character assets/skeleton.nif"),
+        Path("meshes/actors/sabrecat/character assets/skeleton.nif"),
+        Path("meshes/actors/troll/character assets/skeleton.nif"),
+        Path("meshes/actors/werewolfbeast/character assets/skeleton.nif"),
+        Path("meshes/actors/wolf/character assets/skeleton.nif"),
+        Path("meshes/actors/character/character assets female/skeleton_female.nif"),
         Path(
-            "Data/meshes/actors/character/character assets female/skeleton_female.nif"
+            "meshes/actors/character/character assets female/skeletonbeast_female.nif"
         ),
-        Path(
-            "Data/meshes/actors/character/character assets female/skeletonbeast_female.nif"
-        ),
-        Path("Data/meshes/actors/character/character assets/skeleton.nif"),
-        Path("Data/meshes/actors/character/character assets/skeletonbeast.nif"),
+        Path("meshes/actors/character/character assets/skeleton.nif"),
+        Path("meshes/actors/character/character assets/skeletonbeast.nif"),
     ]
 
     fomod_selections_choose_files(
@@ -103,7 +101,7 @@ def test_realistic_ragdolls_no_ragdolls():
     This verifies that selections in "selectExactlyOne" change flags only when they are supposed to.
     """
     files = [
-        Path("Data/realistic_ragdolls_Realistic.esp"),
+        Path("realistic_ragdolls_Realistic.esp"),
     ]
 
     fomod_selections_choose_files(
@@ -159,9 +157,9 @@ def test_fomod_relighting_skyrim():
     """
     files = [
         # requiredInstallFiles
-        Path("Data/meshes/Relight/LightOccluder.nif"),
+        Path("meshes/Relight/LightOccluder.nif"),
         # Default options: USSEP yes, both indoors and outdoors
-        Path("Data/RelightingSkyrim_SSE.esp"),
+        Path("RelightingSkyrim_SSE.esp"),
     ]
 
     fomod_selections_choose_files(
@@ -170,7 +168,7 @@ def test_fomod_relighting_skyrim():
     )
 
 
-def test_fomod_relighting_skryim_exteriors_only():
+def test_fomod_relighting_skyrim_exteriors_only():
     """
     Exteriors only does not rely on the USSEP flag, it is the same plugin
     regardless of whether the user selected the USSEP option.
@@ -181,9 +179,9 @@ def test_fomod_relighting_skryim_exteriors_only():
     """
     files = [
         # requiredInstallFiles
-        Path("Data/meshes/Relight/LightOccluder.nif"),
+        Path("meshes/Relight/LightOccluder.nif"),
         # exterior-only plugin
-        Path("Data/RelightingSkyrim_SSE_Exteriors.esp"),
+        Path("RelightingSkyrim_SSE_Exteriors.esp"),
     ]
 
     # With ussep
@@ -227,9 +225,9 @@ def test_fomod_relighting_skyrim_interiors_only():
     """
     files = [
         # requiredInstallFiles
-        Path("Data/meshes/Relight/LightOccluder.nif"),
+        Path("meshes/Relight/LightOccluder.nif"),
         # conditionalFileInstalls
-        Path("Data/RelightingSkyrim_SSE_Interiors.esp"),
+        Path("RelightingSkyrim_SSE_Interiors.esp"),
     ]
 
     # With ussep
@@ -248,7 +246,7 @@ def test_fomod_relighting_skyrim_interiors_only():
         ],
     )
 
-    files[-1] = Path("Data/RelightingSkyrim_SSE_Interiors_nonUSSEP.esp")
+    files[-1] = Path("RelightingSkyrim_SSE_Interiors_nonUSSEP.esp")
     # Without ussep
     fomod_selections_choose_files(
         "mock_relighting_skyrim",

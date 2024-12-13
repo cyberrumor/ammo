@@ -11,7 +11,10 @@ from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
 from ammo.ui import Controller
-from ammo.component import Mod
+from ammo.component import (
+    Mod,
+    BethesdaMod,
+)
 from ammo.lib import normalize
 
 
@@ -55,8 +58,14 @@ class Page:
 
 
 class FomodController(Controller):
-    def __init__(self, mod: Mod):
-        self.mod: Mod = mod
+    def __init__(self, mod: Mod | BethesdaMod):
+        self.mod: Mod | BethesdaMod = mod
+
+        # Clean up previous configuration, if it exists.
+        try:
+            shutil.rmtree(self.mod.location / "ammo_fomod")
+        except FileNotFoundError:
+            pass
 
         # Parse the fomod installer.
         try:
@@ -375,11 +384,11 @@ class FomodController(Controller):
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's game files folder.
         """
-        data = self.mod.location / "ammo_fomod" / self.mod.game_data.name
+        ammo_fomod = self.mod.location / self.mod.fomod_target
 
         # delete the old configuration if it exists.
-        shutil.rmtree(data, ignore_errors=True)
-        Path.mkdir(data, parents=True, exist_ok=True)
+        shutil.rmtree(ammo_fomod, ignore_errors=True)
+        Path.mkdir(ammo_fomod, parents=True, exist_ok=True)
 
         stage = {}
         for node in selected_nodes:
@@ -405,13 +414,12 @@ class FomodController(Controller):
             full_destination = reduce(
                 lambda path, name: path / name,
                 node.get("destination").split("\\"),
-                data,
+                ammo_fomod,
             )
 
             # TODO: this is broken :)
             # Normalize the capitalization of folder names
-
-            full_destination = normalize(full_destination, data.parent)
+            full_destination = normalize(full_destination, ammo_fomod.parent)
 
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that

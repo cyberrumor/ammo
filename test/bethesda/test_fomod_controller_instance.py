@@ -24,7 +24,7 @@ def test_missing_data_fomod():
     """
     files = [
         # Default options: USSEP yes, both indoors and outdoors
-        Path("Data/test.esp"),
+        Path("test.esp"),
     ]
 
     fomod_selections_choose_files(

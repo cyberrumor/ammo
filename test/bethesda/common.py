@@ -8,7 +8,7 @@ from ammo.controller.bethesda import (
     BethesdaGame,
 )
 from ammo.controller.fomod import FomodController
-from ammo.component import Mod
+from ammo.component import BethesdaMod
 
 
 # Create a configuration for the mock controller to use.
@@ -88,7 +88,7 @@ class AmmoController:
 
 
 class FomodContextManager:
-    def __init__(self, mod: Mod):
+    def __init__(self, mod: BethesdaMod):
         self.mod = mod
 
     def __enter__(self):
@@ -201,7 +201,7 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
         mod_index = [i.name for i in controller.mods].index(mod_name)
         mod = controller.mods[mod_index]
         try:
-            shutil.rmtree(mod.location / "ammo_fomod" / "Data")
+            shutil.rmtree(mod.location / mod.fomod_target)
         except FileNotFoundError:
             pass
 
@@ -220,7 +220,7 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
 
         # Check that all the expected files exist.
         for file in files:
-            expected_file = mod.location / "ammo_fomod" / file
+            expected_file = mod.location / mod.fomod_target / file
             if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
                 for parent_dir, folders, actual_files in os.walk(
@@ -233,10 +233,10 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
                 raise FileNotFoundError(expected_file)
 
         # Check that no unexpected files exist.
-        for path, folders, filenames in os.walk(mod.location / "ammo_fomod" / "Data"):
+        for path, folders, filenames in os.walk(mod.location / mod.fomod_target):
             for file in filenames:
                 exists = os.path.join(path, file)
-                local_exists = exists.split(str(mod.location / "ammo_fomod"))[
+                local_exists = exists.split(str(mod.location / mod.fomod_target))[
                     -1
                 ].lstrip("/")
                 assert local_exists in [

@@ -13,14 +13,17 @@ from dataclasses import (
     dataclass,
     field,
 )
+from ammo.component import (
+    BethesdaMod,
+    Download,
+    Plugin,
+)
 from .mod import (
     ModController,
     Game,
 )
-from ammo.component import (
-    Mod,
-    Download,
-    Plugin,
+from ammo.lib import (
+    NO_EXTRACT_DIRS,
 )
 
 log = logging.getLogger(__name__)
@@ -164,6 +167,19 @@ class BethesdaController(ModController):
         self.do_find(*self.keywords)
         self.stage()
 
+    def get_mods(self):
+        # Instance a Mod class for each mod folder in the mod directory.
+        mods = []
+        mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
+        for path in mod_folders:
+            mod = BethesdaMod(
+                location=self.game.ammo_mods_dir / path.name,
+                game_root=self.game.directory,
+                game_data=self.game.data,
+            )
+            mods.append(mod)
+        return mods
+
     def __str__(self) -> str:
         """
         Output a string representing all downloads, mods and plugins.
@@ -265,6 +281,18 @@ class BethesdaController(ModController):
         with open(self.game.ammo_conf, "w") as file:
             for mod in self.mods:
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
+
+    def has_extra_folder(self, path) -> bool:
+        files = list(path.iterdir())
+        return all(
+            [
+                len(files) == 1,
+                files[0].is_dir(),
+                files[0].name.lower() != self.game.data.name.lower(),
+                files[0].name.lower() not in NO_EXTRACT_DIRS,
+                files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
+            ]
+        )
 
     def set_mod_state(self, index: int, desired_state: bool):
         """
@@ -429,7 +457,7 @@ class BethesdaController(ModController):
                 component.visible = False
 
                 # Hack to filter by fomods
-                if kw.lower() == "fomods" and isinstance(component, Mod):
+                if kw.lower() == "fomods" and isinstance(component, BethesdaMod):
                     if component.fomod:
                         component.visible = True
 

@@ -24,7 +24,6 @@ from ammo.component import (
 )
 from ammo.lib import (
     normalize,
-    NO_EXTRACT_DIRS,
 )
 from .tool import ToolController
 from .fomod import FomodController
@@ -62,17 +61,7 @@ class ModController(Controller):
         logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
         log.info("initializing")
 
-        # Instance a Mod class for each mod folder in the mod directory.
-        mods = []
-        mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
-        for path in mod_folders:
-            mod = Mod(
-                location=self.game.ammo_mods_dir / path.name,
-                game_root=self.game.directory,
-                game_data=self.game.data,
-            )
-            mods.append(mod)
-
+        mods = self.get_mods()
         # Read self.game.ammo_conf. If there's mods in it, put them in order.
         if self.game.ammo_conf.exists():
             with open(self.game.ammo_conf, "r") as file:
@@ -107,6 +96,18 @@ class ModController(Controller):
         self.changes = False
         self.do_find(*self.keywords)
         self.stage()
+
+    def get_mods(self):
+        # Instance a Mod class for each mod folder in the mod directory.
+        mods = []
+        mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
+        for path in mod_folders:
+            mod = Mod(
+                location=self.game.ammo_mods_dir / path.name,
+                game_root=self.game.directory,
+            )
+            mods.append(mod)
+        return mods
 
     def __str__(self) -> str:
         """
@@ -319,6 +320,15 @@ class ModController(Controller):
                         pass
 
         self.remove_empty_dirs()
+
+    def has_extra_folder(self, path) -> bool:
+        files = list(path.iterdir())
+        return all(
+            [
+                len(files) == 1,
+                files[0].is_dir(),
+            ]
+        )
 
     def do_activate_mod(self, index: Union[int, str]) -> None:
         """
@@ -562,7 +572,7 @@ class ModController(Controller):
         """
         # Since there must be a hard refresh after the fomod wizard to load the mod's new
         # files, deactivate this mod and commit changes. This prevents a scenario where
-        # the user could re-configure a fomod (thereby changing mod.location/self.game.data.name),
+        # the user could re-configure a fomod (thereby changing mod.location/ammo_conf),
         # and quit ammo without running 'commit', which could leave broken symlinks in their
         # game.directory.
 
@@ -581,12 +591,6 @@ class ModController(Controller):
         self.do_deactivate_mod(index)
         self.do_commit()
         self.do_refresh()
-
-        # Clean up previous configuration, if it exists.
-        try:
-            shutil.rmtree(mod.location / "ammo_fomod" / self.game.data.name)
-        except FileNotFoundError:
-            pass
 
         # We need to instantiate a FomodController and run it against the UI.
         # This will be a new instance of the UI.
@@ -718,7 +722,7 @@ class ModController(Controller):
                 self.set_mod_state(self.mods.index(target_mod), False)
                 self.mods.remove(target_mod)
                 try:
-                    log.info(f"Deleting Component: {target_mod.location}")
+                    log.info(f"Deleting MOD: {target_mod.location}")
                     shutil.rmtree(target_mod.location)
                 except FileNotFoundError:
                     pass
@@ -791,18 +795,6 @@ class ModController(Controller):
             if index != "all":
                 raise Warning(e)
 
-        def has_extra_folder(path) -> bool:
-            files = list(path.iterdir())
-            return all(
-                [
-                    len(files) == 1,
-                    files[0].is_dir(),
-                    files[0].name.lower() != self.game.data.name.lower(),
-                    files[0].name.lower() not in NO_EXTRACT_DIRS,
-                    files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
-                ]
-            )
-
         def install_download(index, download) -> None:
             extract_to = "".join(
                 [
@@ -839,7 +831,7 @@ class ModController(Controller):
 
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
-            if has_extra_folder(extract_to):
+            if self.has_extra_folder(extract_to):
                 # It is reasonable to conclude an extra directory can be eliminated.
                 # This is needed for mods like skse that have a version directory
                 # between the mod's base folder and the self.game.data.name folder.
@@ -852,7 +844,6 @@ class ModController(Controller):
                 Mod(
                     location=extract_to,
                     game_root=self.game.directory,
-                    game_data=self.game.data,
                 )
             )
 
