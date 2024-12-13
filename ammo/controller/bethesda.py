@@ -13,11 +13,11 @@ from dataclasses import (
     dataclass,
     field,
 )
-from .mod_controller import (
+from .mod import (
     ModController,
     Game,
 )
-from .component import (
+from ammo.component import (
     Mod,
     Download,
     Plugin,

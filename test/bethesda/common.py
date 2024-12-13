@@ -3,11 +3,11 @@ import os
 import shutil
 from pathlib import Path
 
-from ammo.bethesda_controller import (
+from ammo.controller.bethesda import (
     BethesdaController,
     BethesdaGame,
 )
-from ammo.fomod_controller import FomodController
+from ammo.controller.fomod import FomodController
 from ammo.component import Mod
 
 

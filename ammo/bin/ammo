@@ -2,8 +2,8 @@
 import argparse
 from pathlib import Path
 
-from ammo.game_controller import GameController
 from ammo.ui import UI
+from ammo.controller.game import GameController
 
 parser = argparse.ArgumentParser(description="Manage mods for Bethesda games.")
 

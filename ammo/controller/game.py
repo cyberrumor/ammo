@@ -7,15 +7,15 @@ from dataclasses import (
     field,
 )
 from pathlib import Path
-from .mod_controller import (
+from .mod import (
     Game,
     ModController,
 )
-from .bethesda_controller import (
+from .bethesda import (
     BethesdaController,
     BethesdaGame,
 )
-from .ui import (
+from ammo.ui import (
     Controller,
     UI,
 )

@@ -6,6 +6,6 @@ setup(
     description="A simple terminal based mod organizer for Linux.",
     author="cyberrumor",
     url="https://github.com/cyberrumor/ammo",
-    packages=["ammo"],
-    scripts=["bin/ammo"],
+    packages=["ammo", "ammo/controller"],
+    scripts=["ammo/bin/ammo"],
 )

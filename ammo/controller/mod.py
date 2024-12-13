@@ -14,21 +14,20 @@ from typing import Union
 from enum import (
     EnumMeta,
 )
-from .ui import (
+from ammo.ui import (
     UI,
     Controller,
 )
-from .tool_controller import ToolController
-from .fomod_controller import FomodController
-from .component import (
+from ammo.component import (
     Mod,
     Download,
 )
-from .lib import (
+from ammo.lib import (
     normalize,
     NO_EXTRACT_DIRS,
 )
-
+from .tool import ToolController
+from .fomod import FomodController
 
 log = logging.getLogger(__name__)
 

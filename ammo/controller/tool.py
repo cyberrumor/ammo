@@ -10,9 +10,9 @@ from typing import Union
 from enum import (
     EnumMeta,
 )
-from .ui import Controller
-from .component import Download
-from .lib import NO_EXTRACT_DIRS
+from ammo.ui import Controller
+from ammo.component import Download
+from ammo.lib import NO_EXTRACT_DIRS
 
 
 class Tool:

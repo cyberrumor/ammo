@@ -10,9 +10,9 @@ from dataclasses import (
 from pathlib import Path
 from xml.etree import ElementTree
 from functools import reduce
-from .ui import Controller
-from .component import Mod
-from .lib import normalize
+from ammo.ui import Controller
+from ammo.component import Mod
+from ammo.lib import normalize
 
 
 @dataclass
