@@ -114,6 +114,11 @@ Starfield = SteamGame(
     id=1716740,
 )
 
+TombRaider_I_III_Remastered = SteamGame(
+    name="Tomb Raider I-III Remastered",
+    id=2478970,
+)
+
 
 class GameController(Controller):
     """
@@ -137,6 +142,7 @@ class GameController(Controller):
             Skyrim,
             SkyrimSpecialEdition,
             Starfield,
+            TombRaider_I_III_Remastered,
         ]
         self.downloads = self.args.downloads.resolve(strict=True)
         self.games: list[GameSelection | BethesdaGameSelection] = []
