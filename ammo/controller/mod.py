@@ -322,13 +322,15 @@ class ModController(Controller):
         self.remove_empty_dirs()
 
     def has_extra_folder(self, path) -> bool:
-        files = list(path.iterdir())
-        return all(
-            [
-                len(files) == 1,
-                files[0].is_dir(),
-            ]
-        )
+        """
+        The generic controller.mod must assume that mods
+        are packaged such that they can directly be extracted
+        to the game directory.
+
+        Game-specific subclasses may wish to override this in order
+        to automatically correct common packaging mistakes.
+        """
+        return False
 
     def do_activate_mod(self, index: Union[int, str]) -> None:
         """
