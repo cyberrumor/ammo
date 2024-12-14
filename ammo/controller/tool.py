@@ -295,7 +295,7 @@ class ToolController(Controller):
 
             # Add the freshly install tool to self.tools so that an error doesn't prevent
             # any successfully installed tools from appearing during 'install all'.
-            self.tools.append(extract_to)
+            self.tools.append(Tool(extract_to))
 
         if index == "all":
             errors = []
