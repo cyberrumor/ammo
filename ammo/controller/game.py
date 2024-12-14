@@ -31,6 +31,10 @@ BETHESDA_TITLES = [
     "Starfield",
 ]
 
+SIMS_TITLES = [
+    "The Sims 4",
+]
+
 
 @dataclass(frozen=True, kw_only=True)
 class GameSelection:
@@ -90,6 +94,11 @@ Oblivion = SteamGame(
     id=22330,
 )
 
+Sims4 = SteamGame(
+    name="The Sims 4",
+    id=1222670,
+)
+
 Skyrim = SteamGame(
     name="Skyrim",
     id=72850,
@@ -124,6 +133,7 @@ class GameController(Controller):
             Fallout4,
             FalloutNewVegas,
             Oblivion,
+            Sims4,
             Skyrim,
             SkyrimSpecialEdition,
             Starfield,
@@ -195,6 +205,16 @@ class GameController(Controller):
                         name=game.name,
                         directory=library / f"common/{game.name}",
                     )
+
+                    if game.name in SIMS_TITLES:
+                        # Sims games have a special directory for mod installation.
+                        # Make ammo install mods into that directory instead of the
+                        # game directory.
+                        game_selection = GameSelection(
+                            name=game.name,
+                            directory=pfx
+                            / f"drive_c/users/steamuser/Documents/Electronic Arts/{game.name}/Mods",
+                        )
 
                     if game.name in BETHESDA_TITLES:
                         game_selection = BethesdaGameSelection(
