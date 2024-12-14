@@ -8,13 +8,10 @@ from pathlib import Path
 import typing
 from typing import Union
 from ammo.ui import Controller
-from ammo.component import Download
-
-
-class Tool:
-    def __init__(self, path: Path):
-        self.visible = True
-        self.path = path
+from ammo.component import (
+    Download,
+    Tool,
+)
 
 
 class ToolController(Controller):

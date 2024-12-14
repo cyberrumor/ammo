@@ -165,3 +165,9 @@ class Download:
 
     def __post_init__(self) -> None:
         self.name = self.location.name
+
+
+@dataclass(slots=True)
+class Tool:
+    path: Path
+    visible: bool = True
