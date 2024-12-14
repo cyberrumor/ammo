@@ -618,7 +618,7 @@ class ModController(Controller):
             )
 
         forbidden_names = []
-        for i in self.game.data.parts:
+        for i in self.game.directory.parts:
             forbidden_names.append(i.lower())
         if name.lower() in forbidden_names:
             raise Warning(
@@ -662,7 +662,7 @@ class ModController(Controller):
             )
 
         forbidden_names = []
-        for i in self.game.data.parts:
+        for i in self.game.directory.parts:
             forbidden_names.append(i.lower())
         if name.lower() in forbidden_names:
             raise Warning(
