@@ -22,11 +22,28 @@ from .mod import (
     ModController,
     Game,
 )
-from ammo.lib import (
-    NO_EXTRACT_DIRS,
-)
 
 log = logging.getLogger(__name__)
+
+NO_EXTRACT_DIRS = [
+    "skse",
+    "netscriptframework",
+    "bashtags",
+    "docs",
+    "meshes",
+    "textures",
+    "grass",
+    "animations",
+    "interface",
+    "strings",
+    "misc",
+    "shaders",
+    "sounds",
+    "voices",
+    "edit scripts",
+    "scripts",
+    "seq",
+]
 
 
 @dataclass(frozen=True, kw_only=True)

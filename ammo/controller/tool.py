@@ -7,12 +7,8 @@ import readline
 from pathlib import Path
 import typing
 from typing import Union
-from enum import (
-    EnumMeta,
-)
 from ammo.ui import Controller
 from ammo.component import Download
-from ammo.lib import NO_EXTRACT_DIRS
 
 
 class Tool:
@@ -127,6 +123,10 @@ class ToolController(Controller):
                 completions.append("all")
 
         return completions[state] + " "
+
+    def has_extra_folder(self, path) -> bool:
+        # Just extract the archive, don't remove extra folders.
+        return False
 
     def do_rename_download(self, index: int, name: str) -> None:
         """
@@ -260,18 +260,6 @@ class ToolController(Controller):
             if index != "all":
                 raise Warning(f"Expected int, got '{index}'")
 
-        def has_extra_folder(path) -> bool:
-            files = list(path.iterdir())
-            return all(
-                [
-                    len(files) == 1,
-                    files[0].is_dir(),
-                    files[0].name.lower() != self.tools_dir.name.lower(),
-                    files[0].name.lower() not in NO_EXTRACT_DIRS,
-                    files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
-                ]
-            )
-
         def install_download(index, download) -> None:
             extract_to = "".join(
                 [
@@ -298,7 +286,7 @@ class ToolController(Controller):
 
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
-            if has_extra_folder(extract_to):
+            if self.has_extra_folder(extract_to):
                 # It is reasonable to conclude an extra directory can be eliminated.
                 # This is needed for tools like skse that have a version directory
                 # between the tool's base folder and the self.tools_dir.name folder.

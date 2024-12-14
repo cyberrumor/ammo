@@ -423,7 +423,7 @@ class FomodController(Controller):
 
             # TODO: this is broken :)
             # Normalize the capitalization of folder names
-            full_destination = normalize(full_destination, ammo_fomod.parent)
+            full_destination = normalize(self.mod, full_destination, ammo_fomod.parent)
 
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that

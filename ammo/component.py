@@ -22,11 +22,13 @@ class Mod:
     modconf: Union[None, Path] = field(init=False, default=None)
     fomod: bool = field(init=False, default=False)
     fomod_target: Path = field(init=False, default=False)
+    replacements: dict[str, str] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         self.name = self.location.name
         self.install_dir = self.game_root
         self.fomod_target = Path("ammo_fomod")
+        self.replacements = {}
 
         # Explicitly set self.files to an empty list in case we're rereshing
         # files via manually calling __post_init__.
@@ -71,6 +73,22 @@ class BethesdaMod(Mod):
         self.name = self.location.name
         self.install_dir = self.game_data
         self.fomod_target = Path("ammo_fomod") / self.game_data.name
+
+        self.replacements = {
+            # Order matters
+            "data files": "Data Files",
+            "data": "Data",
+            # Order matters
+            "edit scripts": "Edit Scripts",
+            "scripts": "Scripts",
+            "dyndolod": "DynDOLOD",
+            "plugins": "Plugins",
+            "netscriptframework": "NetScriptFramework",
+            "skse": "SKSE",
+            "docs": "Docs",
+            "source": "Source",
+        }
+
         # Explicitly set self.files to an empty list in case we're rereshing
         # files via manually calling __post_init__.
         self.files = []

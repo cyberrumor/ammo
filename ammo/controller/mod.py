@@ -274,7 +274,7 @@ class ModController(Controller):
 
                 # Add the sanitized full path to the stage, resolving
                 # conflicts. Record whether a mod has conflicting files.
-                dest = normalize(dest, self.game.directory)
+                dest = normalize(mod, dest, self.game.directory)
                 if dest in result:
                     conflicting_mod = [
                         i for i in enabled_mods[:index] if i.name == result[dest][0]
@@ -472,7 +472,7 @@ class ModController(Controller):
                     corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
 
                 dest = mod.install_dir / corrected_name
-                dest = normalize(dest, self.game.directory)
+                dest = normalize(mod, dest, self.game.directory)
                 dest = str(dest).split(str(self.game.directory), 1)[-1].strip("/")
 
                 yield dest
