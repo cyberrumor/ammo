@@ -166,7 +166,20 @@ class GameController(Controller):
 
         # Find games from instances of Steam
         self.libraries: list[Path] = []
-        self.steam = Path.home() / ".local/share/Steam/steamapps"
+        # ~/.steam/steam is a symlink usually pointing to ~/.local/share/Steam,
+        # but the location it points to might be different for unknown reasons.
+        # Trust the symlink location to point to the correct steam install location.
+        if all(
+            (
+                (steam := Path.home() / ".steam" / "steam").exists(),
+                steam.is_symlink(),
+                steam.readlink().exists(),
+            )
+        ):
+            self.steam = (Path.home() / ".steam" / "steam").resolve() / "steamapps"
+        else:
+            # The symlink at ~/.steam/steam was broken. Fallback to a sane default.
+            self.steam = Path.home() / ".local/share/Steam/steamapps"
         self.flatpak = (
             Path.home()
             / ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"
