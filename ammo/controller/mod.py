@@ -840,38 +840,35 @@ class ModController(Controller):
                 for file in next(extract_to.iterdir()).iterdir():
                     file.rename(extract_to / file.name)
 
-            # Add the freshly install mod to self.mods so that an error doesn't prevent
+        try:
+            if index == "all":
+                errors = []
+                for i, download in enumerate(self.downloads):
+                    if download.visible:
+                        try:
+                            install_download(i, download)
+                        except Warning as e:
+                            errors.append(str(e))
+                if errors:
+                    raise Warning("\n".join(errors))
+            else:
+                index = int(index)
+                try:
+                    download = self.downloads[index]
+                except IndexError as e:
+                    raise Warning(e)
+
+                if not download.visible:
+                    raise Warning("You can only install visible downloads.")
+
+                install_download(index, download)
+
+        finally:
+            # Add freshly installed mods to self.mods so that an error doesn't prevent
             # any successfully installed mods from appearing during 'install all'.
-            self.mods.append(
-                Mod(
-                    location=extract_to,
-                    game_root=self.game.directory,
-                )
-            )
-
-        if index == "all":
-            errors = []
-            for i, download in enumerate(self.downloads):
-                if download.visible:
-                    try:
-                        install_download(i, download)
-                    except Warning as e:
-                        errors.append(str(e))
-            if errors:
-                raise Warning("\n".join(errors))
-        else:
-            index = int(index)
-            try:
-                download = self.downloads[index]
-            except IndexError as e:
-                raise Warning(e)
-
-            if not download.visible:
-                raise Warning("You can only install visible downloads.")
-
-            install_download(index, download)
-
-        self.do_refresh()
+            # This is better than adding to self.mods during install_download because
+            # subclasses of ModController might use a different class than component.Mod.
+            self.do_refresh()
 
     @requires_sync
     def do_tools(self) -> None:
