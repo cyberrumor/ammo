@@ -169,17 +169,9 @@ class GameController(Controller):
         # ~/.steam/steam is a symlink usually pointing to ~/.local/share/Steam,
         # but the location it points to might be different for unknown reasons.
         # Trust the symlink location to point to the correct steam install location.
-        if all(
-            (
-                (steam := Path.home() / ".steam" / "steam").exists(),
-                steam.is_symlink(),
-                steam.readlink().exists(),
-            )
-        ):
-            self.steam = (Path.home() / ".steam" / "steam").resolve() / "steamapps"
-        else:
-            # The symlink at ~/.steam/steam was broken. Fallback to a sane default.
-            self.steam = Path.home() / ".local/share/Steam/steamapps"
+        # It might not be a symlink at all, steam might just be installed here.
+        # Permit the absence of it too, in case users only use flatpak.
+        self.steam = (Path.home() / ".steam" / "steam").resolve() / "steamapps"
         self.flatpak = (
             Path.home()
             / ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"
