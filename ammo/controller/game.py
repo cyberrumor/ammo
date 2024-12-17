@@ -241,6 +241,14 @@ class GameController(Controller):
             )
         elif len(self.games) == 1:
             self.manage_game(0)
+        elif args.title:
+            if args.title in [i.name for i in self.games]:
+                index = [i.name for i in self.games].index(args.title)
+                self.manage_game(index)
+            else:
+                raise ValueError(
+                    f"Could not find {args.title=} in {[i.name for i in self.games]}"
+                )
         else:
             self.populate_index_commands()
 
