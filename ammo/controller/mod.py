@@ -688,7 +688,8 @@ class ModController(Controller):
             self.clean_game_dir()
 
         # Move the folder, update the mod.
-        log.info(f"Renaming MOD {mod.location} to {new_location}")
+        log.info(f"Renaming MOD {mod.name} to {name}")
+        
         mod.location.rename(new_location)
         mod.location = new_location
         mod.name = name
@@ -726,7 +727,7 @@ class ModController(Controller):
                 self.set_mod_state(self.mods.index(target_mod), False)
                 self.mods.remove(target_mod)
                 try:
-                    log.info(f"Deleting MOD: {target_mod.location}")
+                    log.info(f"Deleting MOD: {target_mod.name}")
                     shutil.rmtree(target_mod.location)
                 except FileNotFoundError:
                     pass
@@ -748,7 +749,7 @@ class ModController(Controller):
             self.set_mod_state(self.mods.index(target_mod), False)
             self.mods.pop(index)
             try:
-                log.info(f"Deleting MOD: {target_mod.location}")
+                log.info(f"Deleting MOD: {target_mod.name}")
                 shutil.rmtree(target_mod.location)
             except FileNotFoundError:
                 pass
