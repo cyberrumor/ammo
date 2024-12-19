@@ -801,6 +801,7 @@ class ModController(Controller):
                 raise Warning(e)
 
         def install_download(index, download) -> None:
+            log.info(f"Installing archive: {download.name}")
             extract_to = "".join(
                 [
                     i
