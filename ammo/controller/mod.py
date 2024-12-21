@@ -30,6 +30,12 @@ from .fomod import FomodController
 
 log = logging.getLogger(__name__)
 
+# Filenames which won't contribute to collision detection.
+IGNORE_COLLISIONS = [
+    "LICENSE",
+    "README.md",
+]
+
 
 @dataclass(frozen=True, kw_only=True)
 class Game:
@@ -262,6 +268,8 @@ class ModController(Controller):
         for index, mod in enumerate(enabled_mods):
             # Iterate through the source files of the mod
             for src in mod.files:
+                if src.name in IGNORE_COLLISIONS:
+                    continue
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
                     corrected_name = (
@@ -463,6 +471,8 @@ class ModController(Controller):
         def get_relative_files(mod: Mod):
             # Iterate through the source files of the mod
             for src in mod.files:
+                if src.name in IGNORE_COLLISIONS:
+                    continue
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
                     corrected_name = (
@@ -549,7 +559,7 @@ class ModController(Controller):
         if self.game.ammo_log.exists():
             with open(self.game.ammo_log, "r") as f:
                 lines = f.readlines()
-                _log = ''.join(lines[-min(len(lines), n):])
+                _log = "".join(lines[-min(len(lines), n) :])
 
         raise Warning(_log)
 
@@ -689,7 +699,7 @@ class ModController(Controller):
 
         # Move the folder, update the mod.
         log.info(f"Renaming MOD {mod.name} to {name}")
-        
+
         mod.location.rename(new_location)
         mod.location = new_location
         mod.name = name
