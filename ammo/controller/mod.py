@@ -545,9 +545,11 @@ class ModController(Controller):
         Show debug log history.
         """
         _log = ""
+        n = 30
         if self.game.ammo_log.exists():
             with open(self.game.ammo_log, "r") as f:
-                _log = f.read()
+                lines = f.readlines()
+                _log = ''.join(lines[-min(len(lines), n):])
 
         raise Warning(_log)
 
@@ -686,7 +688,8 @@ class ModController(Controller):
             self.clean_game_dir()
 
         # Move the folder, update the mod.
-        log.info(f"Renaming MOD {mod.location} to {new_location}")
+        log.info(f"Renaming MOD {mod.name} to {name}")
+        
         mod.location.rename(new_location)
         mod.location = new_location
         mod.name = name
@@ -724,7 +727,7 @@ class ModController(Controller):
                 self.set_mod_state(self.mods.index(target_mod), False)
                 self.mods.remove(target_mod)
                 try:
-                    log.info(f"Deleting MOD: {target_mod.location}")
+                    log.info(f"Deleting MOD: {target_mod.name}")
                     shutil.rmtree(target_mod.location)
                 except FileNotFoundError:
                     pass
@@ -746,7 +749,7 @@ class ModController(Controller):
             self.set_mod_state(self.mods.index(target_mod), False)
             self.mods.pop(index)
             try:
-                log.info(f"Deleting MOD: {target_mod.location}")
+                log.info(f"Deleting MOD: {target_mod.name}")
                 shutil.rmtree(target_mod.location)
             except FileNotFoundError:
                 pass
@@ -798,6 +801,7 @@ class ModController(Controller):
                 raise Warning(e)
 
         def install_download(index, download) -> None:
+            log.info(f"Installing archive: {download.name}")
             extract_to = "".join(
                 [
                     i
