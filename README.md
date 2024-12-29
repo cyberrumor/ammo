@@ -24,6 +24,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 - delete mods/plugins/downloads
 - autosort plugins by mod order
 - supports FOMOD configuration
+- file conflict detection
 
 ## Dependencies
 
