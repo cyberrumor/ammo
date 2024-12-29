@@ -31,10 +31,11 @@ from .fomod import FomodController
 log = logging.getLogger(__name__)
 
 # Filenames which won't contribute to collision detection.
-IGNORE_COLLISIONS = [
+IGNORE_COLLISIONS = {
     "LICENSE",
     "README.md",
-]
+    ".git",
+}
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -473,6 +474,9 @@ class ModController(Controller):
             for src in mod.files:
                 if src.name in IGNORE_COLLISIONS:
                     continue
+                if set(src.parts).intersection(IGNORE_COLLISIONS):
+                    continue
+
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
                     corrected_name = (
