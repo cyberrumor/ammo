@@ -271,6 +271,8 @@ class ModController(Controller):
             for src in mod.files:
                 if src.name in IGNORE_COLLISIONS:
                     continue
+                if set(src.parts).intersection(IGNORE_COLLISIONS):
+                    continue
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
                     corrected_name = (
