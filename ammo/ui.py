@@ -22,6 +22,8 @@ from abc import (
 from dataclasses import dataclass
 from itertools import product
 
+from ammo.lib import ignored
+
 
 SEPARATOR_ROW = "."
 SEPARATOR_COL = ":"
@@ -403,10 +405,8 @@ class UI:
         # If we have a union type, return first successful cast.
         if hasattr(target_type, "__args__"):
             for t in target_type.__args__:
-                try:
+                with ignored(KeyError, ValueError):
                     return _cast(arg, t)
-                except (KeyError, ValueError):
-                    pass
             raise ValueError(f"Could not cast {arg} to any {target_type}")
 
         # Not a union, cast directly.

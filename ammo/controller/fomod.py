@@ -15,7 +15,10 @@ from ammo.component import (
     Mod,
     BethesdaMod,
 )
-from ammo.lib import normalize
+from ammo.lib import (
+    normalize,
+    ignored,
+)
 
 
 @dataclass
@@ -62,10 +65,8 @@ class FomodController(Controller):
         self.mod: Mod | BethesdaMod = mod
 
         # Clean up previous configuration, if it exists.
-        try:
+        with ignored(FileNotFoundError):
             shutil.rmtree(self.mod.location / "ammo_fomod")
-        except FileNotFoundError:
-            pass
 
         # Parse the fomod installer.
         try:
@@ -149,11 +150,9 @@ class FomodController(Controller):
         """
         # Remove all attributes that are numbers
         for i in list(self.__dict__.keys()):
-            try:
+            with ignored(ValueError):
                 int(i.lstrip("do_"))
                 del self.__dict__[i]
-            except ValueError:
-                pass
         for i in range(len(self.page.selections)):
 
             def func(self, i=i):
@@ -378,9 +377,9 @@ class FomodController(Controller):
             else:
                 selected_nodes.append(xml_file)
 
-        assert (
-            len(selected_nodes) > 0
-        ), "The selected options failed to map to installable components."
+        assert len(selected_nodes) > 0, (
+            "The selected options failed to map to installable components."
+        )
         return selected_nodes
 
     def install_files(self, selected_nodes: list) -> None:
@@ -448,7 +447,9 @@ class FomodController(Controller):
         # install the new files
         for k, v in stage.items():
             Path.mkdir(k.parent, parents=True, exist_ok=True)
-            assert v.exists(), f"expected {v} but it did not exist.\nWe were going to copy to {k}\n\nIssue with fomod configurator."
+            assert v.exists(), (
+                f"expected {v} but it did not exist.\nWe were going to copy to {k}\n\nIssue with fomod configurator."
+            )
             shutil.copy(v, k)
 
         self.mod.install_dir = self.mod.game_root

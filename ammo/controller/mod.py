@@ -24,6 +24,7 @@ from ammo.component import (
 )
 from ammo.lib import (
     normalize,
+    ignored,
 )
 from .tool import ToolController
 from .fomod import FomodController
@@ -311,10 +312,8 @@ class ModController(Controller):
         for dirpath, dirnames, _ in list(os.walk(self.game.directory, topdown=False)):
             for dirname in dirnames:
                 d = Path(dirpath) / dirname
-                try:
+                with ignored(OSError):
                     d.resolve().rmdir()
-                except OSError:
-                    pass
 
     def clean_game_dir(self):
         """
@@ -325,10 +324,8 @@ class ModController(Controller):
             for file in filenames:
                 full_path = d / file
                 if full_path.is_symlink():
-                    try:
+                    with ignored(FileNotFoundError):
                         full_path.unlink()
-                    except FileNotFoundError:
-                        pass
 
         self.remove_empty_dirs()
 
@@ -440,7 +437,7 @@ class ModController(Controller):
                         {str(dest).split(str(self.game.directory))[-1].lstrip('/')}."
                 )
             finally:
-                print(f"files processed: {i+1}/{count}", end="\r", flush=True)
+                print(f"files processed: {i + 1}/{count}", end="\r", flush=True)
 
         warn = ""
         for skipped_file in skipped_files:
@@ -742,11 +739,9 @@ class ModController(Controller):
                 # Then we don't have to override this in children which use plugins.
                 self.set_mod_state(self.mods.index(target_mod), False)
                 self.mods.remove(target_mod)
-                try:
+                with ignored(FileNotFoundError):
                     log.info(f"Deleting MOD: {target_mod.name}")
                     shutil.rmtree(target_mod.location)
-                except FileNotFoundError:
-                    pass
                 deleted_mods += f"{target_mod.name}\n"
             self.do_commit()
         else:
@@ -764,11 +759,9 @@ class ModController(Controller):
             # Remove the mod from the controller then delete it.
             self.set_mod_state(self.mods.index(target_mod), False)
             self.mods.pop(index)
-            try:
+            with ignored(FileNotFoundError):
                 log.info(f"Deleting MOD: {target_mod.name}")
                 shutil.rmtree(target_mod.location)
-            except FileNotFoundError:
-                pass
 
             if originally_active:
                 self.do_commit()

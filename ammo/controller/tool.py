@@ -8,6 +8,7 @@ from pathlib import Path
 import typing
 from typing import Union
 from ammo.ui import Controller
+from ammo.lib import ignored
 from ammo.component import (
     Download,
     Tool,
@@ -208,10 +209,8 @@ class ToolController(Controller):
             visible_tools = [i for i in self.tools if i.visible]
             for tool in visible_tools:
                 self.tools.pop(self.tools.index(tool))
-                try:
+                with ignored(FileNotFoundError):
                     shutil.rmtree(tool.path)
-                except FileNotFoundError:
-                    pass
                 deleted_tools += f"{tool.path.name}\n"
         else:
             try:
@@ -221,10 +220,8 @@ class ToolController(Controller):
                 # Demote IndexErrors
                 raise Warning(e)
 
-            try:
+            with ignored(FileNotFoundError):
                 shutil.rmtree(tool.path)
-            except FileNotFoundError:
-                pass
 
     def do_delete_download(self, index: Union[int, str]) -> None:
         """
@@ -242,10 +239,8 @@ class ToolController(Controller):
             except IndexError as e:
                 # Demote IndexErrors
                 raise Warning(e)
-            try:
+            with ignored(FileNotFoundError):
                 download.location.unlink()
-            except FileNotFoundError:
-                pass
 
     def do_install(self, index: Union[int, str]) -> None:
         """

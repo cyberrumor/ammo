@@ -1,9 +1,18 @@
 #!/usr/bin/python3
 from pathlib import Path
+from contextlib import contextmanager
 from .component import (
     Mod,
     BethesdaMod,
 )
+
+
+@contextmanager
+def ignored(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
 
 
 def normalize(mod: Mod | BethesdaMod, destination: Path, dest_prefix: Path) -> Path:

@@ -18,6 +18,7 @@ from ammo.component import (
     Download,
     Plugin,
 )
+from ammo.lib import ignored
 from .mod import (
     ModController,
     Game,
@@ -595,11 +596,9 @@ class BethesdaController(ModController):
                     self.do_commit()
                 self.plugins.remove(plugin)
                 for file in get_plugin_files(plugin):
-                    try:
+                    with ignored(FileNotFoundError):
                         log.info(f"Deleting PLUGIN: {file}")
                         file.unlink()
-                    except FileNotFoundError:
-                        pass
                 deleted_plugins += f"{plugin.name}\n"
             self.do_refresh()
             self.do_commit()
@@ -613,11 +612,9 @@ class BethesdaController(ModController):
 
             self.plugins.remove(plugin)
             for file in get_plugin_files(plugin):
-                try:
+                with ignored(FileNotFoundError):
                     log.info(f"Deleting PLUGIN: {file}")
                     file.unlink()
-                except FileNotFoundError:
-                    pass
 
             self.do_refresh()
             self.do_commit()
