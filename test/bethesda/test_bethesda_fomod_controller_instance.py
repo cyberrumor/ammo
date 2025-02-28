@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from common import (
+from bethesda_common import (
     fomod_selections_choose_files,
 )
 import pytest
