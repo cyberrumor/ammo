@@ -28,6 +28,7 @@ BETHESDA_TITLES = [
     "Oblivion",
     "Skyrim",
     "Skyrim Special Edition",
+    "Skyrim VR",
     "Starfield",
 ]
 
@@ -109,6 +110,11 @@ SkyrimSpecialEdition = SteamGame(
     id=489830,
 )
 
+SkyrimVR = SteamGame(
+    name="SkyrimVR",
+    id=611670,
+)
+
 Starfield = SteamGame(
     name="Starfield",
     id=1716740,
@@ -136,6 +142,7 @@ class GameController(Controller):
             Sims4,
             Skyrim,
             SkyrimSpecialEdition,
+            SkyrimVR,
             Starfield,
         ]
         self.downloads = self.args.downloads.resolve(strict=True)
