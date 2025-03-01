@@ -19,7 +19,7 @@ def test_duplicate_plugin():
     """
     with AmmoController() as controller:
         # Install both mods
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             extract_mod(controller, mod)
 
             mod_index = [i.name for i in controller.mods].index(mod)
@@ -45,7 +45,7 @@ def test_conflict_resolution():
     ]
     with AmmoController() as controller:
         # Install both mods
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             extract_mod(controller, mod)
 
             mod_index = [i.name for i in controller.mods].index(mod)
@@ -72,7 +72,7 @@ def test_conflict_resolution():
                 actual_stat = os.stat(expected_mod_file)
                 assert expected_stat.st_ino == actual_stat.st_ino
 
-        # Assert that the symlinks point to "conflict_2".
+        # Assert that the symlinks point to "mock_conflict_2".
         # Since it was installed last, it will be last
         # in both mods/plugins load order.
         for file in files:
@@ -85,7 +85,7 @@ def test_conflict_resolution():
         controller.do_move_mod(1, 0)
         controller.do_commit()
 
-        # Assert that the symlinks point to "conflict_1" now.
+        # Assert that the symlinks point to "mock_conflict_1" now.
         for file in files:
             expected_game_file = controller.game.directory / file
             expected_mod_file = controller.mods[1].location / file
@@ -104,7 +104,7 @@ def test_conflicting_plugins_disable():
     """
     with AmmoController() as controller:
         # Install both mods
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             extract_mod(controller, mod)
 
             mod_index = [i.name for i in controller.mods].index(mod)
@@ -154,7 +154,7 @@ def test_conflicting_plugins_delete():
     """
     with AmmoController() as controller:
         # Install both mods
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             extract_mod(controller, mod)
             mod_index = [i.name for i in controller.mods].index(mod)
             controller.do_activate_mod(mod_index)
@@ -172,7 +172,7 @@ def test_conflicting_plugins_delete_plugin():
     by both mods. Expect the plugin to be deleted from both mods.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             extract_mod(controller, mod)
             mod_index = [i.name for i in controller.mods].index(mod)
             controller.do_activate_mod(mod_index)
@@ -232,18 +232,18 @@ def test_conflicting_mods_have_conflict_flag_after_install():
     after install.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_1")
+                [i.name for i in controller.mods].index("mock_conflict_1")
             ].conflict
             is True
         )
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_2")
+                [i.name for i in controller.mods].index("mock_conflict_2")
             ].conflict
             is True
         )
@@ -261,20 +261,20 @@ def test_conflicting_mods_have_conflict_flag_after_move():
     after move.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
         controller.do_move_mod(2, 0)
 
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_1")
+                [i.name for i in controller.mods].index("mock_conflict_1")
             ].conflict
             is True
         )
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_2")
+                [i.name for i in controller.mods].index("mock_conflict_2")
             ].conflict
             is True
         )
@@ -292,7 +292,7 @@ def test_conflicting_mods_have_conflict_flag_after_actviate():
     after activate.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
             extract_mod(controller, mod)
 
         controller.do_activate_mod(0)
@@ -301,13 +301,13 @@ def test_conflicting_mods_have_conflict_flag_after_actviate():
 
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_1")
+                [i.name for i in controller.mods].index("mock_conflict_1")
             ].conflict
             is True
         )
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_2")
+                [i.name for i in controller.mods].index("mock_conflict_2")
             ].conflict
             is True
         )
@@ -325,20 +325,20 @@ def test_conflicting_mods_have_conflict_flag_after_deactivate():
     after deactivate.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
         controller.do_deactivate_mod(2)
 
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_1")
+                [i.name for i in controller.mods].index("mock_conflict_1")
             ].conflict
             is True
         )
         assert (
             controller.mods[
-                [i.name for i in controller.mods].index("conflict_2")
+                [i.name for i in controller.mods].index("mock_conflict_2")
             ].conflict
             is True
         )
@@ -355,7 +355,7 @@ def test_conflicting_mods_only_conflict_when_activated():
     Test that only activated mods are considered when determining conflicts.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             extract_mod(controller, mod)
 
         assert controller.mods[0].conflict is False
@@ -375,7 +375,7 @@ def test_conflicting_mods_conflict_after_rename():
     Test that conflicting mods still conflict after rename
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2"]:
             install_mod(controller, mod)
 
         controller.do_rename_mod(0, "new_name")
@@ -391,33 +391,33 @@ def test_collisions():
     conflict winning mod with an "*".
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        conflict_1 = [i.name for i in controller.mods].index("conflict_1")
-        conflict_2 = [i.name for i in controller.mods].index("conflict_2")
+        mock_conflict_1 = [i.name for i in controller.mods].index("mock_conflict_1")
+        mock_conflict_2 = [i.name for i in controller.mods].index("mock_conflict_2")
         normal_mod = [i.name for i in controller.mods].index("normal_mod")
 
         expected = textwrap.dedent(
             """\
             file.dll
-                conflict_1
-              * conflict_2
+                mock_conflict_1
+              * mock_conflict_2
             Data/mock_plugin.esp
-                conflict_1
-              * conflict_2
+                mock_conflict_1
+              * mock_conflict_2
             Data/textures/mock_texture.nif
-                conflict_1
-              * conflict_2
+                mock_conflict_1
+              * mock_conflict_2
         """
         )
 
         with pytest.raises(Warning) as warning:
-            controller.do_collisions(conflict_1)
+            controller.do_collisions(mock_conflict_1)
         assert warning.value.args == (expected,)
 
         with pytest.raises(Warning) as warning:
-            controller.do_collisions(conflict_2)
+            controller.do_collisions(mock_conflict_2)
         assert warning.value.args == (expected,)
 
         with pytest.raises(Warning) as warning:
@@ -430,27 +430,27 @@ def test_obsolete_init():
     Test that mods are properly marked as obsolete on move/enable/disable.
     """
     with AmmoController() as controller:
-        for mod in ["conflict_1", "conflict_2", "normal_mod"]:
+        for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
             install_mod(controller, mod)
 
-        conflict_1 = [i.name for i in controller.mods].index("conflict_1")
-        conflict_2 = [i.name for i in controller.mods].index("conflict_2")
+        mock_conflict_1 = [i.name for i in controller.mods].index("mock_conflict_1")
+        mock_conflict_2 = [i.name for i in controller.mods].index("mock_conflict_2")
         normal_mod = [i.name for i in controller.mods].index("normal_mod")
 
-        assert controller.mods[conflict_1].obsolete is True
-        assert controller.mods[conflict_2].obsolete is False
+        assert controller.mods[mock_conflict_1].obsolete is True
+        assert controller.mods[mock_conflict_2].obsolete is False
         assert controller.mods[normal_mod].obsolete is False
 
         # perform a move
-        controller.do_move_mod(conflict_1, conflict_2)
+        controller.do_move_mod(mock_conflict_1, mock_conflict_2)
         # fix indices
-        conflict_1, conflict_2 = conflict_2, conflict_1
+        mock_conflict_1, mock_conflict_2 = mock_conflict_2, mock_conflict_1
 
-        assert controller.mods[conflict_2].obsolete is True
-        assert controller.mods[conflict_1].obsolete is False
+        assert controller.mods[mock_conflict_2].obsolete is True
+        assert controller.mods[mock_conflict_1].obsolete is False
         assert controller.mods[normal_mod].obsolete is False
 
         # Perform a deactivate
-        controller.do_deactivate_mod(conflict_1)
-        assert controller.mods[conflict_2].obsolete is False
+        controller.do_deactivate_mod(mock_conflict_1)
+        assert controller.mods[mock_conflict_2].obsolete is False
         assert controller.mods[normal_mod].obsolete is False

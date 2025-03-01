@@ -104,20 +104,20 @@ def test_controller_move():
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        install_mod(controller, "conflict_1")
-        install_mod(controller, "conflict_2")
+        install_mod(controller, "mock_conflict_1")
+        install_mod(controller, "mock_conflict_2")
         install_mod(controller, "multiple_plugins")
 
         assert controller.mods[0].name == "normal_mod"
-        assert controller.mods[1].name == "conflict_1"
-        assert controller.mods[2].name == "conflict_2"
+        assert controller.mods[1].name == "mock_conflict_1"
+        assert controller.mods[2].name == "mock_conflict_2"
         assert controller.mods[3].name == "multiple_plugins"
 
         controller.do_move_mod(1, 3)
         assert controller.mods[0].name == "normal_mod"
-        assert controller.mods[1].name == "conflict_2"
+        assert controller.mods[1].name == "mock_conflict_2"
         assert controller.mods[2].name == "multiple_plugins"
-        assert controller.mods[3].name == "conflict_1"
+        assert controller.mods[3].name == "mock_conflict_1"
 
 
 def test_controller_enabled_mod_is_missing_plugin():
@@ -126,7 +126,7 @@ def test_controller_enabled_mod_is_missing_plugin():
     the plugin appears as disabled if the plugin's symlink is missing.
     """
     with AmmoController() as first_launch:
-        index = install_mod(first_launch, "conflict_1")
+        index = install_mod(first_launch, "mock_conflict_1")
 
         mod = first_launch.mods[index]
         assert mod.enabled is True
@@ -152,7 +152,7 @@ def test_controller_enabled_plugin_is_broken_symlink():
     """
     with pytest.raises(AssertionError):
         with AmmoController() as first_launch:
-            index = install_mod(first_launch, "conflict_1")
+            index = install_mod(first_launch, "mock_conflict_1")
             mod = first_launch.mods[index]
             plugin = first_launch.plugins[0]
 
@@ -173,11 +173,11 @@ def test_controller_disabled_broken_mod_enabled_plugin():
     mod or the  mod is overwritten.
     """
     with AmmoController() as first_launch:
-        install_mod(first_launch, "conflict_1")
-        index = install_mod(first_launch, "conflict_2")
+        install_mod(first_launch, "mock_conflict_1")
+        index = install_mod(first_launch, "mock_conflict_2")
 
         with open(first_launch.game.ammo_conf, "w") as file:
-            # conflict_2 is the conflict winner, but it is set disabled.
+            # mock_conflict_2 is the conflict winner, but it is set disabled.
             for enabled, mod in zip(["*", ""], first_launch.mods):
                 file.write(f"{enabled}{mod.name}\n")
 
@@ -186,15 +186,15 @@ def test_controller_disabled_broken_mod_enabled_plugin():
         file.unlink()
 
         with AmmoController() as controller:
-            conflict_1 = controller.mods[
-                [i.name for i in controller.mods].index("conflict_1")
+            mock_conflict_1 = controller.mods[
+                [i.name for i in controller.mods].index("mock_conflict_1")
             ]
 
-            conflict_2 = controller.mods[
-                [i.name for i in controller.mods].index("conflict_2")
+            mock_conflict_2 = controller.mods[
+                [i.name for i in controller.mods].index("mock_conflict_2")
             ]
-            assert conflict_1.enabled is True
-            assert conflict_2.enabled is False
+            assert mock_conflict_1.enabled is True
+            assert mock_conflict_2.enabled is False
             plugin = controller.plugins[0]
             assert plugin.enabled is True
 
@@ -498,8 +498,8 @@ def test_no_delete_all_if_mod_active():
     all mods is only allowed if all visible mods are inactive.
     """
     with AmmoController() as controller:
-        install_mod(controller, "conflict_1")
-        extract_mod(controller, "conflict_2")
+        install_mod(controller, "mock_conflict_1")
+        extract_mod(controller, "mock_conflict_2")
 
         expected = "You must deactivate all visible components of that type before deleting them with all."
 
@@ -515,7 +515,7 @@ def test_no_delete_all_if_plugin_active():
     prompt the user to deactivate it before allowing this operation.
     """
     with AmmoController() as controller:
-        install_mod(controller, "conflict_1")
+        install_mod(controller, "mock_conflict_1")
         install_mod(controller, "normal_mod")
         controller.do_activate_plugin(1)
 
@@ -535,7 +535,7 @@ def test_sort_esm_esl():
         install_mod(controller, "normal_mod")
         install_mod(controller, "esm")
         install_mod(controller, "esl")
-        install_mod(controller, "conflict_1")
+        install_mod(controller, "mock_conflict_1")
 
         assert controller.plugins[0].name == "normal_plugin.esp"
         assert controller.plugins[1].name == "plugin.esm"

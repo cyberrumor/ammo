@@ -137,21 +137,21 @@ def test_rename_mod_name_exists():
     causes a warning to be raised and no rename to take place.
     """
     with AmmoController() as controller:
-        extract_mod(controller, "conflict_1")
-        extract_mod(controller, "conflict_2")
-        index_1 = [i.name for i in controller.mods].index("conflict_1")
-        index_2 = [i.name for i in controller.mods].index("conflict_2")
+        extract_mod(controller, "mock_conflict_1")
+        extract_mod(controller, "mock_conflict_2")
+        index_1 = [i.name for i in controller.mods].index("mock_conflict_1")
+        index_2 = [i.name for i in controller.mods].index("mock_conflict_2")
 
         with pytest.raises(Warning):
-            controller.do_rename_mod(index_1, "conflict_2")
+            controller.do_rename_mod(index_1, "mock_conflict_2")
 
         assert controller.mods[index_1].location.exists()
-        assert controller.mods[index_1].location.stem == "conflict_1"
-        assert controller.mods[index_1].name == "conflict_1"
+        assert controller.mods[index_1].location.stem == "mock_conflict_1"
+        assert controller.mods[index_1].name == "mock_conflict_1"
 
         assert controller.mods[index_2].location.exists()
-        assert controller.mods[index_2].location.stem == "conflict_2"
-        assert controller.mods[index_2].name == "conflict_2"
+        assert controller.mods[index_2].location.stem == "mock_conflict_2"
+        assert controller.mods[index_2].name == "mock_conflict_2"
 
 
 def test_rename_download_moves_file():

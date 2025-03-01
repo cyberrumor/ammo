@@ -208,8 +208,8 @@ def test_invisible_move_mod():
     Don't allow moving hidden mods.
     """
     with AmmoController() as controller:
-        install_mod(controller, "conflict_1")
-        install_mod(controller, "conflict_2")
+        install_mod(controller, "mock_conflict_1")
+        install_mod(controller, "mock_conflict_2")
 
         controller.do_find("nothing")
 
