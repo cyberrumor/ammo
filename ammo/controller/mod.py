@@ -65,6 +65,7 @@ class ModController(Controller):
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         Path.mkdir(self.game.ammo_log.parent, parents=True, exist_ok=True)
+        Path.mkdir(self.game.directory, parents=True, exist_ok=True)
 
         logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
         log.info("initializing")
