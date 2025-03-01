@@ -66,7 +66,13 @@ class FomodController(Controller):
 
         # Clean up previous configuration, if it exists.
         with ignored(FileNotFoundError):
-            shutil.rmtree(self.mod.location / "ammo_fomod")
+            # We can't use self.mod.location in a lot of places because
+            # we can't be sure that generic mods have an extra directory
+            # between the extracted files and the actual mod contents.
+            # If we found ModuleConfig.xml and assigned it to modconf,
+            # then we can treat the mod as relative to the modconf.
+            # This makes the presence of an extra directory not matter.
+            shutil.rmtree(self.mod.modconf.parent.parent / "ammo_fomod")
 
         # Parse the fomod installer.
         try:
@@ -387,7 +393,7 @@ class FomodController(Controller):
         Copy the chosen files 'selected_nodes' from given mod at 'index'
         to that mod's game files folder.
         """
-        ammo_fomod = self.mod.location / self.mod.fomod_target
+        ammo_fomod = self.mod.modconf.parent.parent / self.mod.fomod_target
 
         # delete the old configuration if it exists.
         shutil.rmtree(ammo_fomod, ignore_errors=True)
@@ -403,7 +409,7 @@ class FomodController(Controller):
             # ModuleConfig.xml when the actual file itself might be
             # "00 Core/meshes".
             s = node.get("source")
-            full_source = self.mod.location
+            full_source = self.mod.modconf.parent.parent
             for i in s.split("\\"):
                 folder = i
                 for file in os.listdir(full_source):

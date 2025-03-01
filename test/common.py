@@ -112,10 +112,15 @@ def mod_extracts_files(mod_name, files):
         assert (controller.game.ammo_mods_dir / mod_name).exists()
 
         for file in files:
-            expected_file = controller.mods[0].location / file
+            if controller.mods[0].modconf:
+                location = controller.mods[0].modconf.parent.parent
+            else:
+                location = controller.mods[0].location
+            expected_file = location / file
 
             if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
+                print(f"in {controller.game.ammo_mods_dir}:")
                 for parent_dir, folders, actual_files in os.walk(
                     controller.game.ammo_mods_dir
                 ):
@@ -136,6 +141,7 @@ def expect_files(directory, files) -> None:
         expected_file = directory / file
         if not expected_file.exists():
             # print the files that _do_ exist to show where things ended up
+            print(f"in {directory}:")
             for parent_dir, folders, actual_files in os.walk(directory):
                 print(f"{parent_dir} folders: {folders}")
                 print(f"{parent_dir} files: {actual_files}")
@@ -193,8 +199,9 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
 
         mod_index = [i.name for i in controller.mods].index(mod_name)
         mod = controller.mods[mod_index]
+
         try:
-            shutil.rmtree(mod.location / mod.fomod_target)
+            shutil.rmtree(mod.modconf.parent.parent / mod.fomod_target)
         except FileNotFoundError:
             pass
 
@@ -213,11 +220,12 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
 
         # Check that all the expected files exist.
         for file in files:
-            expected_file = mod.location / mod.fomod_target / file
+            expected_file = mod.modconf.parent.parent / mod.fomod_target / file
             if not expected_file.exists():
                 # print the files that _do_ exist to show where things ended up
+                print(f"in {mod.modconf.parent.parent / 'ammo_fomod'}:")
                 for parent_dir, folders, actual_files in os.walk(
-                    mod.location / "ammo_fomod"
+                    mod.modconf.parent.parent / "ammo_fomod"
                 ):
                     print(f"{parent_dir} folders: {folders}")
                     print(f"{parent_dir} files: {actual_files}")
@@ -226,12 +234,14 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
                 raise FileNotFoundError(expected_file)
 
         # Check that no unexpected files exist.
-        for path, folders, filenames in os.walk(mod.location / mod.fomod_target):
+        for path, folders, filenames in os.walk(
+            mod.modconf.parent.parent / mod.fomod_target
+        ):
             for file in filenames:
                 exists = os.path.join(path, file)
-                local_exists = exists.split(str(mod.location / mod.fomod_target))[
-                    -1
-                ].lstrip("/")
+                local_exists = exists.split(
+                    str(mod.modconf.parent.parent / mod.fomod_target)
+                )[-1].lstrip("/")
                 assert local_exists in [str(i) for i in files], (
                     f"Got an extra file: {local_exists}\nExpected only: {files}"
                 )

@@ -24,6 +24,20 @@ class Mod:
     fomod_target: Path = field(init=False, default=False)
     replacements: dict[str, str] = field(init=False, default_factory=dict)
 
+    def find_module_conf(self, location) -> Path | None:
+        """
+        Recursively scan for a ModuleConfig.xml file
+        and return the absolute path to it.
+        """
+        if location.is_file() and location.name.lower() == "moduleconfig.xml":
+            return location.resolve()
+
+        if location.is_dir():
+            for file in location.iterdir():
+                result = self.find_module_conf(file)
+                if result is not None:
+                    return result
+
     def __post_init__(self) -> None:
         self.name = self.location.name
         self.install_dir = self.game_root
@@ -34,23 +48,20 @@ class Mod:
         # files via manually calling __post_init__.
         self.files = []
         # Scan the surface level of the mod to determine whether this is a fomod.
-        for file in self.location.iterdir():
-            if file.is_dir() and file.name.lower() == "fomod":
-                # Assign ModuleConfig.xml. Only check surface of fomod folder.
-                for f in file.iterdir():
-                    if f.name.lower() == "moduleconfig.xml" and f.is_file():
-                        self.modconf = f
-                        self.fomod = True
-                        self.install_dir = self.game_root
-                        break
-            if self.fomod:
-                break
+        self.modconf = self.find_module_conf(self.location)
+
+        if self.modconf is not None:
+            self.fomod = True
 
         # Determine which folder to populate self.files from. For fomods, only
         # care about files inside of an ammo_fomod folder.
         location = self.location
         if self.fomod:
-            location /= "ammo_fomod"
+            # ModuleConfig.xml uses locations relative to the directory
+            # that contains fomod/ModuleConfig.xml. Set self.location to
+            # this directory so locations referenced in ModuleConfig.xml
+            # resolve correctly.
+            location = self.modconf.parent.parent / "ammo_fomod"
 
         if not location.exists():
             # No files to populate
