@@ -28,7 +28,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 ## Dependencies
 
-- Python 3.11 or later
+- Python 3.12 or later
 - Steam from [Flatpak](https://flathub.org/apps/com.valvesoftware.Steam) or official repos.
 - [p7z](https://github.com/p7zip-project/p7zip) from official repos.
 - [pipx](https://github.com/pypa/pipx) from official repos.
