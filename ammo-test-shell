@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import sys
+import argparse
+
+import ammo
+
+from test.common import AmmoController
+from test.bethesda.bethesda_common import AmmoController as BethesdaController
+
+
+def parse_args(sys_argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="ammo-test-shell")
+    parser.add_argument(
+        "--beth",
+        action="store_true",
+        help="run with BethesdaController instead of ModController",
+    )
+    args = parser.parse_args(sys_argv)
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_args(sys.argv[1:])
+
+    if args.beth:
+        controller_class = BethesdaController
+    else:
+        controller_class = AmmoController
+
+    with controller_class() as controller:
+        ui = ammo.ui.UI(controller)
+        ui.repl()
