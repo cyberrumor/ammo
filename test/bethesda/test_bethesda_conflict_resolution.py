@@ -114,9 +114,9 @@ def test_conflicting_plugins_disable():
 
         # plugin is disabled, changes were not / are not committed
         controller.do_deactivate_mod(1)
-        assert (
-            len(controller.plugins) == 1
-        ), "Deactivating a mod hid a plugin provided by another mod"
+        assert len(controller.plugins) == 1, (
+            "Deactivating a mod hid a plugin provided by another mod"
+        )
 
         # plugin is enabled, changes were / are committed
         controller.do_activate_mod(1)
@@ -124,9 +124,9 @@ def test_conflicting_plugins_disable():
         controller.do_commit()
         controller.do_deactivate_mod(1)
         controller.do_commit()
-        assert (
-            len(controller.plugins) == 1
-        ), "Deactivating a mod hid a plugin provided by another mod"
+        assert len(controller.plugins) == 1, (
+            "Deactivating a mod hid a plugin provided by another mod"
+        )
 
         # ensure the plugin points at mod 0.
         if (plugin := controller.game.data / "mock_plugin.esp").is_symlink():
@@ -140,9 +140,9 @@ def test_conflicting_plugins_disable():
             expected_stat = os.stat(
                 controller.mods[0].location / "Data/mock_plugin.esp"
             )
-            assert (
-                plugin_stat.st_ino == expected_stat.st_ino
-            ), f"Expected inode and actual inode differ! {plugin}"
+            assert plugin_stat.st_ino == expected_stat.st_ino, (
+                f"Expected inode and actual inode differ! {plugin}"
+            )
 
 
 def test_conflicting_plugins_delete():
@@ -161,9 +161,9 @@ def test_conflicting_plugins_delete():
             controller.do_commit()
 
         controller.do_delete_mod(1)
-        assert (
-            len(controller.plugins) == 1
-        ), "Deleting a mod hid a plugin provided by another mod"
+        assert len(controller.plugins) == 1, (
+            "Deleting a mod hid a plugin provided by another mod"
+        )
 
 
 def test_conflicting_plugins_delete_plugin():
@@ -180,16 +180,16 @@ def test_conflicting_plugins_delete_plugin():
 
         controller.do_delete_plugin(0)
 
-        assert (
-            len(controller.plugins) == 0
-        ), "A plugin provided by multiple enabled mods wasn't deleted."
+        assert len(controller.plugins) == 0, (
+            "A plugin provided by multiple enabled mods wasn't deleted."
+        )
 
         controller.do_deactivate_mod("all")
         controller.do_activate_mod("all")
 
-        assert (
-            len(controller.plugins) == 0
-        ), "A plugin provided by multiple mods came back from the grave!"
+        assert len(controller.plugins) == 0, (
+            "A plugin provided by multiple mods came back from the grave!"
+        )
 
 
 def test_conflicting_plugins_mult_delete_plugin():

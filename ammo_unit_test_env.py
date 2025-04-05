@@ -4,5 +4,5 @@ import ammo
 from test.common import AmmoController
 
 with AmmoController() as controller:
-    ui = ammo.ui.UI(controller, clear_screen=False)
+    ui = ammo.ui.UI(controller)
     ui.repl()

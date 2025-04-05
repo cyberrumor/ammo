@@ -492,6 +492,9 @@ class UI:
                 if command.instance is not None:
                     controller_instance = command.instance
                     if controller_instance.postcmd():
+                        if hasattr(self.controller, "return_value"):
+                            return self.controller.return_value
+
                         break
 
             except Warning as warning:

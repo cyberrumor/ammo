@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
+from unittest.mock import patch
+
 import pytest
+
+from ammo.controller.mod import ModController
 
 from common import (
     AmmoController,
@@ -9,7 +13,7 @@ from common import (
 )
 
 
-def test_rename_mod_moves_folder():
+def test_rename_mod_moves_folder(mock_has_extra_folder):
     """
     Test that renaming a mod removes ammo_mod_dir / old_location
     and creates ammo_mod_dir / new_location.
@@ -39,30 +43,36 @@ def test_rename_mod_fomod():
     Test that renaming a fomod also moves fomod specific data
     like where the ModuleConfig.txt is located.
     """
-    with AmmoController() as controller:
-        original_index = extract_mod(controller, "mock_base_object_swapper")
-        # Verify original ModuleConfig.xml exists
-        original_mod = controller.mods[original_index]
-        original_modconf = original_mod.modconf
-        assert original_modconf.exists() is True
+    has_extra_folder = True
+    with patch.object(
+        ModController, "has_extra_folder", return_value=has_extra_folder
+    ) as mock_has_extra_folder:
+        with AmmoController() as controller:
+            original_index = extract_mod(controller, "mock_base_object_swapper")
+            # Verify original ModuleConfig.xml exists
+            original_mod = controller.mods[original_index]
+            original_modconf = original_mod.modconf
+            assert original_modconf.exists() is True
 
-        # Rename.
-        controller.do_rename_mod(original_index, "bos")
+            # Rename.
+            controller.do_rename_mod(original_index, "bos")
 
-        # Verify the original modconf doesn't exist
-        assert original_modconf.exists() is False
+            # Verify the original modconf doesn't exist
+            assert original_modconf.exists() is False
 
-        # Verify that the new modconf isn't the old modconf
-        new_index = [i.name for i in controller.mods].index("bos")
-        new_mod = controller.mods[new_index]
-        new_modconf = new_mod.modconf
-        assert original_modconf != new_modconf
+            # Verify that the new modconf isn't the old modconf
+            new_index = [i.name for i in controller.mods].index("bos")
+            new_mod = controller.mods[new_index]
+            new_modconf = new_mod.modconf
+            assert original_modconf != new_modconf
 
-        # Verify new modconf exists
-        assert new_modconf.exists() is True
+            # Verify new modconf exists
+            assert new_modconf.exists() is True
+
+    mock_has_extra_folder.assert_called_once()
 
 
-def test_rename_mod_preserves_enabled_state():
+def test_rename_mod_preserves_enabled_state(mock_has_extra_folder):
     """
     Test that renaming an enabled mod keeps mod enabled.
     """
@@ -73,12 +83,12 @@ def test_rename_mod_preserves_enabled_state():
         # Rename.
         controller.do_rename_mod(index, "normal_mod_renamed")
 
-        assert (
-            controller.mods[index].enabled is True
-        ), "An enabled mod was disabled when renamed."
+        assert controller.mods[index].enabled is True, (
+            "An enabled mod was disabled when renamed."
+        )
 
 
-def test_rename_mod_preserves_disabled_state():
+def test_rename_mod_preserves_disabled_state(mock_has_extra_folder):
     """
     Test that renaming a disabled mod  keeps mod disabled.
     """
@@ -89,12 +99,12 @@ def test_rename_mod_preserves_disabled_state():
         # Rename.
         controller.do_rename_mod(index, "normal_mod_renamed")
 
-        assert (
-            controller.mods[index].enabled is False
-        ), "A disabled mod was enabled when renamed."
+        assert controller.mods[index].enabled is False, (
+            "A disabled mod was enabled when renamed."
+        )
 
 
-def test_rename_mod_preserves_index():
+def test_rename_mod_preserves_index(mock_has_extra_folder):
     """
     Test that renaming a mod preserves that mod's position in the load order.
     """
@@ -109,7 +119,7 @@ def test_rename_mod_preserves_index():
         assert new_index == original_index, "A renamed mod didn't preserve load order!"
 
 
-def test_rename_mod_name_exists():
+def test_rename_mod_name_exists(mock_has_extra_folder):
     """
     Test that renaming a mod to the name of an existing mod
     causes a warning to be raised and no rename to take place.

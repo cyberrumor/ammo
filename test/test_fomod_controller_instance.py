@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from bethesda_common import (
+
+import pytest
+
+from common import (
     fomod_selections_choose_files,
 )
-import pytest
 
 
 def test_missing_data_fomod():
@@ -27,12 +29,14 @@ def test_missing_data_fomod():
         Path("test.esp"),
     ]
 
+    has_extra_folder = True
     fomod_selections_choose_files(
         # option 3 is the only one that maps to a file,
         # but it still has self terminating tags.
         # Expect this to work.
         "missing_data",
         files,
+        has_extra_folder,
         [
             {
                 "page": 0,

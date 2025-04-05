@@ -7,7 +7,7 @@ from common import (
 )
 
 
-def test_find_no_args_shows_all():
+def test_find_no_args_shows_all(mock_has_extra_folder):
     """
     Test that using the find command without arguments
     will cause all components to become visible.
@@ -24,7 +24,7 @@ def test_find_no_args_shows_all():
             assert i.visible is True
 
 
-def test_find_install_all():
+def test_find_install_all(mock_has_extra_folder):
     """
     Test that narrowing visible downloads with the 'find'
     command then opting to install 'all' only installs
@@ -38,7 +38,7 @@ def test_find_install_all():
         )
 
 
-def test_find_activate_all_mods():
+def test_find_activate_all_mods(mock_has_extra_folder):
     """
     Test that narrowing visible mods with the 'find'
     command then opting to activate 'all' only activates
@@ -60,7 +60,7 @@ def test_find_activate_all_mods():
         )
 
 
-def test_find_deactivate_all_mods():
+def test_find_deactivate_all_mods(mock_has_extra_folder):
     """
     Test that narrowing visible mods with the 'find'
     command then opting to deactivate 'all' only deactivates
@@ -79,7 +79,7 @@ def test_find_deactivate_all_mods():
         )
 
 
-def test_find_delete_all_mods():
+def test_find_delete_all_mods(mock_has_extra_folder):
     """
     Test that narrowing visible mods with 'find'
     then deleting all will only delete visible mods.
@@ -95,7 +95,7 @@ def test_find_delete_all_mods():
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 
 
-def test_find_filter_persists_after_refresh():
+def test_find_filter_persists_after_refresh(mock_has_extra_folder):
     """
     Test that installing a mod doesn't remove the filter.
     """
@@ -109,7 +109,7 @@ def test_find_filter_persists_after_refresh():
         )
 
 
-def test_find_fomods():
+def test_find_fomods(mock_has_extra_folder):
     """
     Test that "find fomod" or "find fomods" will match all fomods.
     """

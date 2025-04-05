@@ -5,6 +5,7 @@ import subprocess
 import sys
 import readline
 import logging
+import textwrap
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
@@ -28,6 +29,7 @@ from ammo.lib import (
 )
 from .tool import ToolController
 from .fomod import FomodController
+from .bool_prompt import BoolPromptController
 
 log = logging.getLogger(__name__)
 
@@ -332,20 +334,48 @@ class ModController(Controller):
 
     def has_extra_folder(self, path: Path) -> bool:
         """
-        The generic controller.mod must assume that mods
-        are packaged such that they can directly be extracted
-        to the game directory.
+        The only assumption that the generic mod.controller can reasonable make
+        about whether extracted mods have an extra folder between the extraction
+        dir and the actual contents that should be installed into the game dir
+        is that there's no extra dir if the extraction dir contains a different
+        number of directories than 1.
 
-        Game-specific subclasses may wish to override this in order
-        to automatically correct common packaging mistakes.
+        Every other scenario needs to prompt the user.
+
+        Game-specific subclasses may wish to override this in order to
+        automatically correct common packaging mistakes, skipping the prompt.
         """
-        files = list(path.iterdir())
-        return all(
-            [
-                len(files) == 1,
-                files[0].name == path.name,
-            ]
+        folders = [i for i in path.iterdir() if i.is_dir()]
+        if len(folders) != 1:
+            # If there's more than one folder, we can't tell which folder we
+            # should elevate files out of. If there's no folders, there's no
+            # depth to elevate files out of.
+            return False
+
+        subdir_contents = [i.name for i in folders[0].iterdir()]
+        display_subdir_contents = subdir_contents[0 : min(3, len(subdir_contents))]
+        question = textwrap.dedent(
+            f"""
+            This mod contains a single directory.
+
+            Mod files will be installed into the game directory like this:
+
+            {self.game.directory}/
+            └──{folders[0].name}/
+                └──{"\n                └──".join(display_subdir_contents)}
+
+            If files are elevated above '{folders[0].name}/',
+            they will be installed into the game directory like this instead:
+
+            {self.game.directory}/
+            └──{"\n            └──".join(display_subdir_contents)}
+
+            Elevate files above '{folders[0].name}/'?
+            """
         )
+        prompt_controller = BoolPromptController(question)
+        ui = UI(prompt_controller)
+        return ui.repl()
 
     def do_activate_mod(self, index: Union[int, str]) -> None:
         """
@@ -854,9 +884,14 @@ class ModController(Controller):
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
             if self.has_extra_folder(extract_to):
-                # It is reasonable to conclude an extra directory can be eliminated.
-                # This is needed for mods like skse that have a version directory
-                # between the mod's base folder and the self.game.data.name folder.
+                # This is needed for mods that have a nested folder inside
+                # the extracted archive that shares a name with the mod, like
+                # my_extracted_mod/my_extracted_mod/<files>,
+                # or for mods which have a version directory under the extracted
+                # dir, like
+                # my_extracted_mod/v1.0/<files>.
+                # This code turns both of those examples into:
+                # my_extracted_mod/<files>
                 for file in next(extract_to.iterdir()).iterdir():
                     file.rename(extract_to / file.name)
 

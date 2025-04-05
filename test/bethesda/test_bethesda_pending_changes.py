@@ -134,9 +134,9 @@ def test_pending_change_move():
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
         controller.do_move_mod(0, 1)
-        assert (
-            controller.changes is True
-        ), "move command did not create a pending change"
+        assert controller.changes is True, (
+            "move command did not create a pending change"
+        )
 
 
 def test_pending_change_move_nowhere():
@@ -148,9 +148,9 @@ def test_pending_change_move_nowhere():
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
         controller.do_move_mod(0, 0)
-        assert (
-            controller.changes is False
-        ), "move command created a pending change when it shouldn't have."
+        assert controller.changes is False, (
+            "move command created a pending change when it shouldn't have."
+        )
 
 
 def test_pending_change_activate():
@@ -161,16 +161,16 @@ def test_pending_change_activate():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         controller.do_activate_mod(0)
-        assert (
-            controller.changes is False
-        ), "activate command created a pending change when it shouldn't have."
+        assert controller.changes is False, (
+            "activate command created a pending change when it shouldn't have."
+        )
 
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
         controller.do_activate_mod(0)
-        assert (
-            controller.changes is True
-        ), "activate command failed to create a pending change."
+        assert controller.changes is True, (
+            "activate command failed to create a pending change."
+        )
 
 
 def test_pending_change_deactivate():
@@ -181,16 +181,16 @@ def test_pending_change_deactivate():
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
         controller.do_deactivate_mod(0)
-        assert (
-            controller.changes is False
-        ), "deactivate command created a pending change when it shouldn't have."
+        assert controller.changes is False, (
+            "deactivate command created a pending change when it shouldn't have."
+        )
 
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         controller.do_deactivate_mod(0)
-        assert (
-            controller.changes is True
-        ), "deactivate command failed to create a pending change."
+        assert controller.changes is True, (
+            "deactivate command failed to create a pending change."
+        )
 
 
 def test_pending_change_refresh():
@@ -200,9 +200,9 @@ def test_pending_change_refresh():
     with AmmoController() as controller:
         controller.changes = True
         controller.do_refresh()
-        assert (
-            controller.changes is False
-        ), "refresh command failed to clear pending changes."
+        assert controller.changes is False, (
+            "refresh command failed to clear pending changes."
+        )
 
 
 def test_pending_change_commit():
@@ -212,9 +212,9 @@ def test_pending_change_commit():
     with AmmoController() as controller:
         controller.changes = False
         controller.do_commit()
-        assert (
-            controller.changes is False
-        ), "commit command failed to clear pending changes."
+        assert controller.changes is False, (
+            "commit command failed to clear pending changes."
+        )
 
 
 def test_pending_change_install():
@@ -233,9 +233,9 @@ def test_pending_change_delete_mod():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         controller.do_delete_mod(0)
-        assert (
-            controller.changes is False
-        ), "Delete mod command created a pending change."
+        assert controller.changes is False, (
+            "Delete mod command created a pending change."
+        )
 
 
 def test_pending_change_delete_download():
@@ -254,9 +254,9 @@ def test_pending_change_delete_download():
 
         try:
             controller.do_delete_download(download_index)
-            assert (
-                controller.changes is False
-            ), "Delete download command created a pending change."
+            assert controller.changes is False, (
+                "Delete download command created a pending change."
+            )
         finally:
             temp_download.unlink(missing_ok=True)
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
@@ -269,9 +269,9 @@ def test_pending_change_delete_plugin():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         controller.do_delete_plugin(0)
-        assert (
-            controller.changes is False
-        ), "Delete plugin command created a pending change."
+        assert controller.changes is False, (
+            "Delete plugin command created a pending change."
+        )
 
 
 def test_pending_change_rename_mod():
@@ -281,9 +281,9 @@ def test_pending_change_rename_mod():
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         controller.do_rename_mod(0, "new_mod_name")
-        assert (
-            controller.changes is False
-        ), "Rename mod command created a pending change."
+        assert controller.changes is False, (
+            "Rename mod command created a pending change."
+        )
 
 
 def test_pending_change_rename_download():
@@ -305,9 +305,9 @@ def test_pending_change_rename_download():
 
         try:
             controller.do_rename_download(download_index, "new_download_name")
-            assert (
-                controller.changes is False
-            ), "Rename download command created a pending change."
+            assert controller.changes is False, (
+                "Rename download command created a pending change."
+            )
         finally:
             temp_download.unlink(missing_ok=True)
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
@@ -323,9 +323,9 @@ def test_pending_change_sort():
         controller.do_move_plugin(0, -1)
         controller.do_commit()
         controller.do_sort()
-        assert (
-            controller.changes is True
-        ), "Sort command didn't create a pending change."
+        assert controller.changes is True, (
+            "Sort command didn't create a pending change."
+        )
 
 
 def test_pending_change_sort_no_op():
@@ -335,6 +335,6 @@ def test_pending_change_sort_no_op():
     """
     with AmmoController() as controller:
         controller.do_sort()
-        assert (
-            controller.changes is False
-        ), "Sort command created a pending change when it shouldn't have."
+        assert controller.changes is False, (
+            "Sort command created a pending change when it shouldn't have."
+        )

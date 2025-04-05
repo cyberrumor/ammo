@@ -8,7 +8,7 @@ from common import (
 )
 
 
-def test_move_validation():
+def test_move_validation(mock_has_extra_folder):
     """
     Install several mods, then check various arguments to "move" for validity.
     """
@@ -40,7 +40,7 @@ def test_move_validation():
             controller.do_move_mod(0, "nan")
 
 
-def test_activate_validation():
+def test_activate_validation(mock_has_extra_folder):
     """
     Install a mod, then check various arguments to "activate" for validity
     """
@@ -55,7 +55,7 @@ def test_activate_validation():
             controller.do_activate_mod(1000)
 
 
-def test_deactivate_validation():
+def test_deactivate_validation(mock_has_extra_folder):
     """
     Install a mod, then check various arguments to "deactivate" for validity
     """
@@ -74,7 +74,7 @@ def test_deactivate_validation():
             controller.do_deactivate_mod("nan")
 
 
-def test_install_validation():
+def test_install_validation(mock_has_extra_folder):
     """
     Attempt to install a valid and invalid index.
     """
@@ -85,7 +85,7 @@ def test_install_validation():
             controller.do_install(1000)
 
 
-def test_delete_validation():
+def test_delete_validation(mock_has_extra_folder):
     """
     Delete a valid and invalid mod and download
     """
@@ -147,7 +147,7 @@ def test_no_components_validation():
             controller.do_deactivate_mod(0)
 
 
-def test_no_install_twice():
+def test_no_install_twice(mock_has_extra_folder):
     """
     Attempting to install a mod that is already installed isn't supported.
     Explicitly test that this is not allowed.
@@ -179,7 +179,7 @@ def test_install_nan():
             controller.do_install("nan")
 
 
-def test_invisible_delete_mod():
+def test_invisible_delete_mod(mock_has_extra_folder):
     """
     Don't allow deleting hidden mods.
     """
@@ -203,7 +203,7 @@ def test_invisible_delete_download():
             controller.do_delete_download(0)
 
 
-def test_invisible_move_mod():
+def test_invisible_move_mod(mock_has_extra_folder):
     """
     Don't allow moving hidden mods.
     """
@@ -217,7 +217,7 @@ def test_invisible_move_mod():
             controller.do_move_mod(0, 1)
 
 
-def test_invisible_rename_mod():
+def test_invisible_rename_mod(mock_has_extra_folder):
     """
     Don't allow renaming hidden mods.
     """
@@ -230,7 +230,7 @@ def test_invisible_rename_mod():
             controller.do_rename_mod(0, "new_name")
 
 
-def test_invisible_configure():
+def test_invisible_configure(mock_has_extra_folder):
     """
     Don't allow configuring invisible mods.
     """

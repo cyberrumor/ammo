@@ -8,7 +8,7 @@ from common import (
 )
 
 
-def test_pending_change_restrictions_delete_mod():
+def test_pending_change_restrictions_delete_mod(mock_has_extra_folder):
     """
     Actions that require the persistent state and in-memory state to be the
     same should not be possible to perform when there are pending changes.
@@ -52,7 +52,7 @@ def test_pending_change_restrictions_delete_download():
             temp_download.unlink(missing_ok=True)
 
 
-def test_pending_change_restrictions_install():
+def test_pending_change_restrictions_install(mock_has_extra_folder):
     """
     Actions that require the persistent state and in-memory state to be the
     same should not be possible to perform when there are pending changes.
@@ -66,7 +66,7 @@ def test_pending_change_restrictions_install():
             controller.do_install(1)
 
 
-def test_pending_change_restrictions_rename_mod():
+def test_pending_change_restrictions_rename_mod(mock_has_extra_folder):
     """
     Actions that require the persistent state and in-memory state to be the
     same should not be possible to perform when there are pending changes.
@@ -111,7 +111,7 @@ def test_pending_change_restrictions_rename_download():
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
 
 
-def test_pending_change_move():
+def test_pending_change_move(mock_has_extra_folder):
     """
     Tests that a move operation creates a pending change.
     """
@@ -124,7 +124,7 @@ def test_pending_change_move():
         )
 
 
-def test_pending_change_move_nowhere():
+def test_pending_change_move_nowhere(mock_has_extra_folder):
     """
     Tests that a move operation where <from> and <to>
     are the same doesn't create a pending change.
@@ -138,7 +138,7 @@ def test_pending_change_move_nowhere():
         )
 
 
-def test_pending_change_activate():
+def test_pending_change_activate(mock_has_extra_folder):
     """
     Tests that an activate operation creates a pending change,
     unless it's to activate a component that was already activated.
@@ -158,7 +158,7 @@ def test_pending_change_activate():
         )
 
 
-def test_pending_change_deactivate():
+def test_pending_change_deactivate(mock_has_extra_folder):
     """
     Tests that a deactivate command creates a pending change,
     unless it's to deactivate an inactive component.
@@ -202,7 +202,7 @@ def test_pending_change_commit():
         )
 
 
-def test_pending_change_install():
+def test_pending_change_install(mock_has_extra_folder):
     """
     Tests that install does not create a pending change.
     """
@@ -211,7 +211,7 @@ def test_pending_change_install():
         assert controller.changes is False, "Install command created a pending change"
 
 
-def test_pending_change_delete_mod():
+def test_pending_change_delete_mod(mock_has_extra_folder):
     """
     Tests that delete does not create a pending change.
     """
@@ -247,7 +247,7 @@ def test_pending_change_delete_download():
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
 
 
-def test_pending_change_rename_mod():
+def test_pending_change_rename_mod(mock_has_extra_folder):
     """
     Tests that renaming a mod does not create a pending change.
     """

@@ -73,9 +73,9 @@ def test_rename_mod_preserves_enabled_state():
         # Rename.
         controller.do_rename_mod(index, "normal_mod_renamed")
 
-        assert (
-            controller.mods[index].enabled is True
-        ), "An enabled mod was disabled when renamed."
+        assert controller.mods[index].enabled is True, (
+            "An enabled mod was disabled when renamed."
+        )
 
 
 def test_rename_mod_preserves_disabled_state():
@@ -89,9 +89,9 @@ def test_rename_mod_preserves_disabled_state():
         # Rename.
         controller.do_rename_mod(index, "normal_mod_renamed")
 
-        assert (
-            controller.mods[index].enabled is False
-        ), "A disabled mod was enabled when renamed."
+        assert controller.mods[index].enabled is False, (
+            "A disabled mod was enabled when renamed."
+        )
 
 
 def test_rename_mod_preserves_index():
@@ -126,9 +126,9 @@ def test_rename_mod_preserves_plugin_index():
         new_plugin_index = [i.name for i in controller.plugins].index(
             "normal_plugin.esp"
         )
-        assert (
-            original_plugin_index == new_plugin_index
-        ), "Renaming a mod didn't preserve plugin order!"
+        assert original_plugin_index == new_plugin_index, (
+            "Renaming a mod didn't preserve plugin order!"
+        )
 
 
 def test_rename_mod_name_exists():

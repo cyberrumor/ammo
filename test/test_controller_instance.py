@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from pathlib import Path
 import shutil
 
 import pytest
@@ -48,7 +47,7 @@ def test_controller_first_launch():
     )
 
 
-def test_controller_subsequent_launch():
+def test_controller_subsequent_launch(mock_has_extra_folder):
     """
     Ensure ammo behaves correctly when launched against a game
     that already has mods installed, Plugins.txt populated with
@@ -78,7 +77,7 @@ def test_controller_subsequent_launch():
             )
 
 
-def test_controller_move():
+def test_controller_move(mock_has_extra_folder):
     """
     Test that moving a mod to a new position causes the
     components between the old location and the new location to collapse
@@ -100,7 +99,7 @@ def test_controller_move():
         assert controller.mods[2].name == "mock_conflict_1"
 
 
-def test_controller_missing_mod():
+def test_controller_missing_mod(mock_has_extra_folder):
     """
     Test that a mod which is specified in ammo.conf but can't be
     found (because it was deleted from ammo's mod dir) isn't added
@@ -116,7 +115,7 @@ def test_controller_missing_mod():
                 assert len(controller.mods) == 0
 
 
-def test_no_delete_all_if_mod_active():
+def test_no_delete_all_if_mod_active(mock_has_extra_folder):
     """
     It's not the first time I've done this on accident, but
     it will be the last. Test that deleting all mods fails if

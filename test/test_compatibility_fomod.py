@@ -14,15 +14,13 @@ def test_base_object_swapper():
     This ensures the conversion of the 'source' folder from the
     XML into a full path is accurate.
     """
+    has_extra_folder = True
     files = [
         Path("skse/Plugins/po3_BaseObjectSwapper.dll"),
         Path("skse/Plugins/po3_BaseObjectSwapper.pdb"),
     ]
 
-    fomod_selections_choose_files(
-        "mock_base_object_swapper",
-        files,
-    )
+    fomod_selections_choose_files("mock_base_object_swapper", files, has_extra_folder)
 
 
 def test_no_activate_unconfigred_fomod_with_data_dir():
@@ -31,21 +29,24 @@ def test_no_activate_unconfigred_fomod_with_data_dir():
     aren't possible to activate before they've been configured.
     """
     files = []
+    has_extra_folder = True
     with pytest.raises(Warning):
         # "Fomods must be configured before they can be enabled."
-        mod_installs_files("mock_embers_xd", files)
+        mod_installs_files("mock_embers_xd", files, has_extra_folder)
 
 
 def test_parse_broken_moduleconfig():
     """
     Test parsing a broken ModuleConfig.xml.
     """
+    has_extra_folder = True
     files = []
     with pytest.raises(Warning):
         # xml.etree.ElementTree.ParseError: no element found
         fomod_selections_choose_files(
             "mock_embers_xd",
             files,
+            has_extra_folder,
             selections=[
                 {
                     "page": 0,
@@ -64,6 +65,7 @@ def test_realistic_ragdolls():
     Test advancing through the installer with default options.
     This verifies auto-selection for "selectExactlyOne"
     """
+    has_extra_folder = True
     files = [
         Path("realistic_ragdolls_Realistic.esp"),
         Path("meshes/actors/bear/character assets/skeleton.nif"),
@@ -90,10 +92,7 @@ def test_realistic_ragdolls():
         Path("meshes/actors/character/character assets/skeletonbeast.nif"),
     ]
 
-    fomod_selections_choose_files(
-        "mock_realistic_ragdolls",
-        files,
-    )
+    fomod_selections_choose_files("mock_realistic_ragdolls", files, has_extra_folder)
 
 
 def test_realistic_ragdolls_no_ragdolls():
@@ -103,10 +102,12 @@ def test_realistic_ragdolls_no_ragdolls():
     files = [
         Path("realistic_ragdolls_Realistic.esp"),
     ]
+    has_extra_folder = True
 
     fomod_selections_choose_files(
         "mock_realistic_ragdolls",
         files,
+        has_extra_folder,
         selections=[
             {
                 "page": 0,  # Force
@@ -161,11 +162,8 @@ def test_fomod_relighting_skyrim():
         # Default options: USSEP yes, both indoors and outdoors
         Path("RelightingSkyrim_SSE.esp"),
     ]
-
-    fomod_selections_choose_files(
-        "mock_relighting_skyrim",
-        files,
-    )
+    has_extra_folder = True
+    fomod_selections_choose_files("mock_relighting_skyrim", files, has_extra_folder)
 
 
 def test_fomod_relighting_skyrim_exteriors_only():
@@ -183,11 +181,12 @@ def test_fomod_relighting_skyrim_exteriors_only():
         # exterior-only plugin
         Path("RelightingSkyrim_SSE_Exteriors.esp"),
     ]
-
+    has_extra_folder = True
     # With ussep
     fomod_selections_choose_files(
         "mock_relighting_skyrim",
         files,
+        has_extra_folder,
         selections=[
             {
                 "page": 0,  # with or without ussep requirement
@@ -204,6 +203,7 @@ def test_fomod_relighting_skyrim_exteriors_only():
     fomod_selections_choose_files(
         "mock_relighting_skyrim",
         files,
+        has_extra_folder,
         selections=[
             {
                 "page": 0,  # with or without ussep requirement
@@ -223,6 +223,7 @@ def test_fomod_relighting_skyrim_interiors_only():
 
     This verifies that flags correctly map to conditionalFileInstalls.
     """
+    has_extra_folder = True
     files = [
         # requiredInstallFiles
         Path("meshes/Relight/LightOccluder.nif"),
@@ -234,6 +235,7 @@ def test_fomod_relighting_skyrim_interiors_only():
     fomod_selections_choose_files(
         "mock_relighting_skyrim",
         files,
+        has_extra_folder,
         selections=[
             {
                 "page": 0,  # with/out ussep
@@ -251,6 +253,7 @@ def test_fomod_relighting_skyrim_interiors_only():
     fomod_selections_choose_files(
         "mock_relighting_skyrim",
         files,
+        has_extra_folder,
         selections=[
             {
                 "page": 0,  # with/out ussep

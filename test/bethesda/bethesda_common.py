@@ -147,18 +147,18 @@ def expect_files(directory, files) -> None:
             raise FileNotFoundError(expected_file)
 
         # Catch any broken symlinks.
-        assert (
-            expected_file.readlink().exists()
-        ), f"Detected broken symlink: {expected_file}"
+        assert expected_file.readlink().exists(), (
+            f"Detected broken symlink: {expected_file}"
+        )
 
     # Check that no unexpected files exist.
     for path, folders, filenames in os.walk(directory):
         for file in filenames:
             exists = os.path.join(path, file)
             local_exists = exists.split(str(directory))[-1].lstrip("/")
-            assert (
-                local_exists in [str(i) for i in files]
-            ), f"Got an extra file: {local_exists}\nExpected only: {[str(i) for i in files]}"
+            assert local_exists in [str(i) for i in files], (
+                f"Got an extra file: {local_exists}\nExpected only: {[str(i) for i in files]}"
+            )
 
 
 def mod_installs_files(mod_name, files):
@@ -239,9 +239,9 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
                 local_exists = exists.split(str(mod.location / mod.fomod_target))[
                     -1
                 ].lstrip("/")
-                assert local_exists in [
-                    str(i) for i in files
-                ], f"Got an extra file: {local_exists}\nExpected only: {files}"
+                assert local_exists in [str(i) for i in files], (
+                    f"Got an extra file: {local_exists}\nExpected only: {files}"
+                )
 
 
 def install_everything(controller):
