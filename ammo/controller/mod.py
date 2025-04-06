@@ -406,15 +406,13 @@ class ModController(Controller):
             download.location = new_location
             download.name = new_location.name
 
-        if "pytest" not in sys.modules:
-            # Don't run this during tests because it's slow.
-            try:
-                print("Verifying archive integrity...")
-                subprocess.check_output(["7z", "t", f"{download.location}"])
-            except subprocess.CalledProcessError:
-                raise Warning(
-                    f"Extraction of {index} failed at integrity check. Incomplete download?"
-                )
+        try:
+            print("Verifying archive integrity...")
+            subprocess.check_output(["7z", "t", f"{download.location}"])
+        except subprocess.CalledProcessError:
+            raise Warning(
+                f"Extraction of {index} failed at integrity check. Incomplete download?"
+            )
 
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
