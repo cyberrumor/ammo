@@ -14,26 +14,40 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Python 3.12.9
       uses: actions/setup-python@v3
       with:
         python-version: "3.12.9"
+
+    - name: Install ruff
+      run: pipx install ruff
+
+    - name: Lint
+      run: ruff check --output-format=github --target-version=py312
+
+    - name: Format
+      run: ruff format --diff --target-version=py312
+
     - name: Install dependencies
       run: |
         python3 -m venv .venv
         . .venv/bin/activate
         python -m pip install --upgrade pip
         pip3 install -r requirements.txt
+
     - name: Install ammo
       run: |
         . .venv/bin/activate
         pip install --break-system-packages --force-reinstall .
-    - name: Test with pytest
+
+    - name: Test
       run: |
         . .venv/bin/activate
         pytest -v
+
+    - name: Install ammo with pipx
+      run: pipx install .
