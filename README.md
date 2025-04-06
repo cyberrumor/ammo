@@ -6,14 +6,16 @@ A Simple Terminal-Based Mod Organizer for Linux
 
 ## Supported Games
 
-- Starfield
-- Skyrim
-- Skyrim SE
-- Oblivion
-- Fallout 4
-- Fallout New Vegas
 - Enderal
 - Enderal Special Edition
+- Fallout 4
+- Fallout New Vegas
+- Oblivion
+- Sims 4
+- Skyrim
+- Skyrim Special Edition
+- Skyrim VR
+- Starfield
 
 ## Features
 

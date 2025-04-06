@@ -21,14 +21,14 @@ from ammo.ui import (
 )
 
 BETHESDA_TITLES = [
-    "Enderal",
     "Enderal Special Edition",
+    "Enderal",
     "Fallout 4",
     "Fallout New Vegas",
     "Oblivion",
-    "Skyrim",
     "Skyrim Special Edition",
     "Skyrim VR",
+    "Skyrim",
     "Starfield",
 ]
 
