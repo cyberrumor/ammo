@@ -41,4 +41,5 @@ def test_bool_prompt_controller(user_input, expected_return_value):
 
         repl_return_value = ui.repl()
 
+        assert controller.return_value is expected_return_value
         assert repl_return_value is expected_return_value
