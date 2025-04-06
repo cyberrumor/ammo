@@ -377,7 +377,11 @@ class ModController(Controller):
         ui = UI(prompt_controller)
         return ui.repl()
 
-    def extract_archive(self, index, download) -> None:
+    def extract_archive(self, index: int, download: Path) -> Path:
+        """
+        Extract an archive and return the Path of the directory
+        it was extracted to.
+        """
         log.info(f"Installing archive: {download.name}")
         extract_to = "".join(
             [
@@ -414,17 +418,7 @@ class ModController(Controller):
 
         os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
-        if self.has_extra_folder(extract_to):
-            # This is needed for mods that have a nested folder inside
-            # the extracted archive that shares a name with the mod, like
-            # my_extracted_mod/my_extracted_mod/<files>,
-            # or for mods which have a version directory under the extracted
-            # dir, like
-            # my_extracted_mod/v1.0/<files>.
-            # This code turns both of those examples into:
-            # my_extracted_mod/<files>
-            for file in next(extract_to.iterdir()).iterdir():
-                file.rename(extract_to / file.name)
+        return extract_to
 
     def do_activate_mod(self, index: Union[int, str]) -> None:
         """
@@ -900,7 +894,12 @@ class ModController(Controller):
                 for i, download in enumerate(self.downloads):
                     if download.visible:
                         try:
-                            self.extract_archive(i, download)
+                            extract_to = self.extract_archive(i, download)
+
+                            if self.has_extra_folder(extract_to):
+                                for file in next(extract_to.iterdir()).iterdir():
+                                    file.rename(extract_to / file.name)
+
                         except Warning as e:
                             errors.append(str(e))
                 if errors:
@@ -915,7 +914,19 @@ class ModController(Controller):
                 if not download.visible:
                     raise Warning("You can only install visible downloads.")
 
-                self.extract_archive(index, download)
+                extract_to = self.extract_archive(index, download)
+
+                if self.has_extra_folder(extract_to):
+                    # This is needed for mods that have a nested folder inside
+                    # the extracted archive that shares a name with the mod, like
+                    # my_extracted_mod/my_extracted_mod/<files>,
+                    # or for mods which have a version directory under the extracted
+                    # dir, like
+                    # my_extracted_mod/v1.0/<files>.
+                    # This code turns both of those examples into:
+                    # my_extracted_mod/<files>
+                    for file in next(extract_to.iterdir()).iterdir():
+                        file.rename(extract_to / file.name)
 
         finally:
             # Add freshly installed mods to self.mods so that an error doesn't prevent
