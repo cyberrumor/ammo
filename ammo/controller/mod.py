@@ -377,6 +377,55 @@ class ModController(Controller):
         ui = UI(prompt_controller)
         return ui.repl()
 
+    def extract_archive(self, index, download) -> None:
+        log.info(f"Installing archive: {download.name}")
+        extract_to = "".join(
+            [
+                i
+                for i in download.location.stem.replace(" ", "_")
+                if i.isalnum() or i == "_"
+            ]
+        ).strip()
+        extract_to = self.game.ammo_mods_dir / extract_to
+        if extract_to.exists():
+            raise Warning(
+                f"Extraction of {index} failed since mod '{extract_to.name}' exists."
+            )
+
+        # 7z CLI has a bug with filenames with apostrophes. shlex.quote won't work around this.
+        # Rename the archive if it has an apostrophe in it.
+        if "'" in download.location.name:
+            new_location = download.location.parent / download.location.name.replace(
+                "'", "_"
+            )
+            download.location.rename(new_location)
+            download.location = new_location
+            download.name = new_location.name
+
+        if "pytest" not in sys.modules:
+            # Don't run this during tests because it's slow.
+            try:
+                print("Verifying archive integrity...")
+                subprocess.check_output(["7z", "t", f"{download.location}"])
+            except subprocess.CalledProcessError:
+                raise Warning(
+                    f"Extraction of {index} failed at integrity check. Incomplete download?"
+                )
+
+        os.system(f"7z x '{download.location}' -o'{extract_to}'")
+
+        if self.has_extra_folder(extract_to):
+            # This is needed for mods that have a nested folder inside
+            # the extracted archive that shares a name with the mod, like
+            # my_extracted_mod/my_extracted_mod/<files>,
+            # or for mods which have a version directory under the extracted
+            # dir, like
+            # my_extracted_mod/v1.0/<files>.
+            # This code turns both of those examples into:
+            # my_extracted_mod/<files>
+            for file in next(extract_to.iterdir()).iterdir():
+                file.rename(extract_to / file.name)
+
     def do_activate_mod(self, index: Union[int, str]) -> None:
         """
         Enabled mods will be loaded by game.
@@ -845,63 +894,13 @@ class ModController(Controller):
         except ValueError as e:
             if index != "all":
                 raise Warning(e)
-
-        def install_download(index, download) -> None:
-            log.info(f"Installing archive: {download.name}")
-            extract_to = "".join(
-                [
-                    i
-                    for i in download.location.stem.replace(" ", "_")
-                    if i.isalnum() or i == "_"
-                ]
-            ).strip()
-            extract_to = self.game.ammo_mods_dir / extract_to
-            if extract_to.exists():
-                raise Warning(
-                    f"Extraction of {index} failed since mod '{extract_to.name}' exists."
-                )
-
-            # 7z CLI has a bug with filenames with apostrophes. shlex.quote won't work around this.
-            # Rename the archive if it has an apostrophe in it.
-            if "'" in download.location.name:
-                new_location = (
-                    download.location.parent / download.location.name.replace("'", "_")
-                )
-                download.location.rename(new_location)
-                download.location = new_location
-                download.name = new_location.name
-
-            if "pytest" not in sys.modules:
-                # Don't run this during tests because it's slow.
-                try:
-                    print("Verifying archive integrity...")
-                    subprocess.check_output(["7z", "t", f"{download.location}"])
-                except subprocess.CalledProcessError:
-                    raise Warning(
-                        f"Extraction of {index} failed at integrity check. Incomplete download?"
-                    )
-
-            os.system(f"7z x '{download.location}' -o'{extract_to}'")
-
-            if self.has_extra_folder(extract_to):
-                # This is needed for mods that have a nested folder inside
-                # the extracted archive that shares a name with the mod, like
-                # my_extracted_mod/my_extracted_mod/<files>,
-                # or for mods which have a version directory under the extracted
-                # dir, like
-                # my_extracted_mod/v1.0/<files>.
-                # This code turns both of those examples into:
-                # my_extracted_mod/<files>
-                for file in next(extract_to.iterdir()).iterdir():
-                    file.rename(extract_to / file.name)
-
         try:
             if index == "all":
                 errors = []
                 for i, download in enumerate(self.downloads):
                     if download.visible:
                         try:
-                            install_download(i, download)
+                            self.extract_archive(i, download)
                         except Warning as e:
                             errors.append(str(e))
                 if errors:
@@ -916,12 +915,12 @@ class ModController(Controller):
                 if not download.visible:
                     raise Warning("You can only install visible downloads.")
 
-                install_download(index, download)
+                self.extract_archive(index, download)
 
         finally:
             # Add freshly installed mods to self.mods so that an error doesn't prevent
             # any successfully installed mods from appearing during 'install all'.
-            # This is better than adding to self.mods during install_download because
+            # This is better than adding to self.mods during self.extract_archive because
             # subclasses of ModController might use a different class than component.Mod.
             self.do_refresh()
 
