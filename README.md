@@ -11,6 +11,7 @@ A Simple Terminal-Based Mod Organizer for Linux
 - Fallout 4
 - Fallout New Vegas
 - Oblivion
+- Oblivion Remastered (experimental, expect bugs)
 - Sims 4
 - Skyrim
 - Skyrim Special Edition

@@ -89,6 +89,7 @@ class BethesdaMod(Mod):
             # Order matters
             "data files": "Data Files",
             "data": "Data",
+            "obvdata": "ObvData",
             # Order matters
             "edit scripts": "Edit Scripts",
             "scripts": "Scripts",

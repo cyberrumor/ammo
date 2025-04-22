@@ -26,6 +26,7 @@ BETHESDA_TITLES = [
     "Fallout 4",
     "Fallout New Vegas",
     "Oblivion",
+    "Oblivion Remastered",
     "Skyrim Special Edition",
     "Skyrim VR",
     "Skyrim",
@@ -95,6 +96,11 @@ Oblivion = SteamGame(
     id=22330,
 )
 
+OblivionRemastered = SteamGame(
+    name="Oblivion Remastered",
+    id=2623190,
+)
+
 Sims4 = SteamGame(
     name="The Sims 4",
     id=1222670,
@@ -139,6 +145,7 @@ class GameController(Controller):
             Fallout4,
             FalloutNewVegas,
             Oblivion,
+            OblivionRemastered,
             Sims4,
             Skyrim,
             SkyrimSpecialEdition,
@@ -229,15 +236,28 @@ class GameController(Controller):
                         )
 
                     if game.name in BETHESDA_TITLES:
-                        game_selection = BethesdaGameSelection(
-                            name=game.name,
-                            directory=library / f"common/{game.name}",
-                            data=library / f"common/{game.name}/Data",
-                            dlc_file=app_data
-                            / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
-                            plugin_file=app_data
-                            / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
-                        )
+                        if game.name == "Oblivion Remastered":
+                            data = (
+                                library
+                                / f"common/{game.name}/OblivionRemastered/Content/Dev/ObvData/Data"
+                            )
+                            game_selection = BethesdaGameSelection(
+                                name=game.name,
+                                directory=library / f"common/{game.name}",
+                                data=data,
+                                dlc_file=data / "DLCList.txt",
+                                plugin_file=data / "Plugins.txt",
+                            )
+                        else:
+                            game_selection = BethesdaGameSelection(
+                                name=game.name,
+                                directory=library / f"common/{game.name}",
+                                data=library / f"common/{game.name}/Data",
+                                dlc_file=app_data
+                                / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
+                                plugin_file=app_data
+                                / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
+                            )
 
                     if game_selection not in self.games:
                         self.games.append(game_selection)
@@ -310,7 +330,7 @@ class GameController(Controller):
                     # Some games expect plugins to be disabled if they begin with
                     # something besides the name, like an asterisk. Other games
                     # use asterisk to denote an enabled plugin.
-                    case "Skyrim":
+                    case "Skyrim" | "Oblivion Remastered":
 
                         def enabled_formula(line) -> bool:
                             return not line.strip().startswith("*")
