@@ -262,3 +262,25 @@ def test_fomod_relighting_skyrim_interiors_only():
             },
         ],
     )
+
+
+def test_fomod_no_file_destination():
+    """
+    Immersive Armors doesn't list a destination key for files.
+    It's unclear whether this is optional or not, but supporting this
+    is easy so we might as well.
+    """
+    files = [
+        Path("immersive_armors.esp"),
+        Path("immersive_armors.bsa"),
+    ]
+    fomod_selections_choose_files(
+        "mock_immersive_armors",
+        files,
+        selections=[
+            {
+                "page": 0,
+                "option": 0,  # This is completely arbitrary
+            }
+        ],
+    )

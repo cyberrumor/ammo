@@ -422,7 +422,7 @@ class FomodController(Controller):
             # the mod's game files folder.
             full_destination = reduce(
                 lambda path, name: path / name,
-                node.get("destination").split("\\"),
+                node.get("destination", full_source.name).split("\\"),
                 ammo_fomod,
             )
 
