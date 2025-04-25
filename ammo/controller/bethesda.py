@@ -44,6 +44,7 @@ NO_EXTRACT_DIRS = [
     "edit scripts",
     "scripts",
     "seq",
+    "oblivionremastered",
 ]
 
 

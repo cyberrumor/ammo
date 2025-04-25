@@ -115,10 +115,12 @@ class BethesdaMod(Mod):
             match file.is_dir():
                 case True:
                     match file.name.lower():
-                        case "data" | "data files":
-                            self.install_dir = self.game_root
-
-                        case "edit scripts":
+                        case (
+                            "data"
+                            | "data files"
+                            | "edit scripts"
+                            | "oblivionremastered"
+                        ):
                             self.install_dir = self.game_root
 
                         case "fomod":
@@ -150,13 +152,16 @@ class BethesdaMod(Mod):
                 loc_parent = Path(parent_dir)
                 self.files.append(loc_parent / f)
 
-        # populate plugins
+        # Find the folder that plugins should be populated from.
+        # Start from the game directory or the ammo_fomod directory.
         plugin_dir = location
 
-        for i in location.iterdir():
-            if i.name.lower() == self.game_data.name.lower():
-                plugin_dir /= i.name
-                break
+        # See if there's a Data folder nested in here anywhere.
+        for parent_dir, folders, files in os.walk(location):
+            for folder in folders:
+                if folder.lower() == self.game_data.name.lower():
+                    plugin_dir = Path(parent_dir) / folder
+                    break
 
         if plugin_dir.exists():
             for f in plugin_dir.iterdir():
