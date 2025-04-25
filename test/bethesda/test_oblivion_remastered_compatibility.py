@@ -73,9 +73,9 @@ def test_extract_pak_mods():
 
 def test_activate_pak_mods():
     """
-    Test that installing a pak mod which only includes the ~mods
-    directory is installed to the correct location under the game
-    directory.
+    Test that activating a pak mod which only includes the ~mods
+    directory has files installed to the correct location under
+    the game directory.
 
     Since these mods aren't packaged from the game root, we have to
     guess what the directory name between the game root and "Content"
@@ -96,3 +96,21 @@ def test_activate_pak_mods():
         Path("MockGame/Content/Paks/~mods/test.utoc"),
     ]
     mod_installs_files("pak_mods", files)
+
+
+def test_extract_pak_no_dir():
+    """
+    Test that installing a pak mod which contains only loose files
+    without any sort of directory structure is extracted without
+    modification.
+    ├── pak_no_dir.7z
+    │   ├── test.pak
+    │   ├── test.ucas
+    │   └── test.utoc
+    """
+    files = [
+        Path("test.pak"),
+        Path("test.ucas"),
+        Path("test.utoc"),
+    ]
+    mod_extracts_files("pak_no_dir", files)
