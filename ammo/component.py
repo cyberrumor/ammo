@@ -94,6 +94,7 @@ class BethesdaMod(Mod):
             "content": "Content",
             "binaries": "Binaries",
             "dev": "Dev",
+            "pak": "Pak",
             # Order matters
             "edit scripts": "Edit Scripts",
             "scripts": "Scripts",
