@@ -87,9 +87,13 @@ class BethesdaMod(Mod):
 
         self.replacements = {
             # Order matters
+            "obvdata": "ObvData",
             "data files": "Data Files",
             "data": "Data",
-            "obvdata": "ObvData",
+            "oblivionremastered": "OblivionRemastered",
+            "content": "Content",
+            "binaries": "Binaries",
+            "dev": "Dev",
             # Order matters
             "edit scripts": "Edit Scripts",
             "scripts": "Scripts",
