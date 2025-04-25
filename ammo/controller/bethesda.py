@@ -310,6 +310,12 @@ class BethesdaController(ModController):
                 files[0].name.lower() != self.game.data.name.lower(),
                 files[0].name.lower() not in NO_EXTRACT_DIRS,
                 files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
+                all(
+                    [
+                        file.suffix.lower() not in [".pak"]
+                        for file in list(files[0].iterdir())
+                    ]
+                ),
             ]
         )
 
