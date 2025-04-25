@@ -56,6 +56,24 @@ class BethesdaGame(Game):
     enabled_formula: Callable[[str], bool] = field(
         default=lambda line: line.strip().startswith("*")
     )
+    # unreal engine 5 games expect a Paks directory:
+    # <ProjectName>/Content/Paks/ - This is the primary location for pak files specific to your project.
+    #                               For some games, this also includes a ~mods directory at the end.
+    # Engine/Content/Paks/        - This location contains pak files that are part of the Unreal Engine itself.
+    # Saved/Content/Paks/         - This location is typically for pak files related to game saves or other
+    #                               runtime-generated content.
+    # This variable refers to the <ProjectName>/Content/Paks/[~mods] directory.
+    # https://docs.mod.io/guides/ue-mod-loading
+    # Rust Traits would be a more correct solution than just putting this on every bethesda game -_-.
+    pak: Path = field(init=False, default_factory=Path)
+
+    def __post_init__(self):
+        # Get past dataclasses.FrozenInstanceError produced by direct assignment via object.__setattr__.
+        object.__setattr__(
+            self,
+            "pak",
+            self.directory / self.name.replace(" ", "") / "Content" / "Paks" / "~mods",
+        )
 
 
 class BethesdaController(ModController):
@@ -195,6 +213,7 @@ class BethesdaController(ModController):
                 location=self.game.ammo_mods_dir / path.name,
                 game_root=self.game.directory,
                 game_data=self.game.data,
+                game_pak=self.game.pak,
             )
             mods.append(mod)
         return mods

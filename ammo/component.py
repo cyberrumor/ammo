@@ -8,7 +8,7 @@ from dataclasses import (
 )
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(kw_only=True, slots=True)
 class Mod:
     location: Path
     game_root: Path
@@ -78,6 +78,7 @@ class Mod:
 @dataclass(kw_only=True, slots=True)
 class BethesdaMod(Mod):
     game_data: Path
+    game_pak: Path
     plugins: list[str] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
@@ -86,23 +87,22 @@ class BethesdaMod(Mod):
         self.fomod_target = Path("ammo_fomod") / self.game_data.name
 
         self.replacements = {
-            # Order matters
-            "obvdata": "ObvData",
+            "binaries": "Binaries",
+            "content": "Content",
             "data files": "Data Files",
             "data": "Data",
-            "oblivionremastered": "OblivionRemastered",
-            "content": "Content",
-            "binaries": "Binaries",
             "dev": "Dev",
-            "pak": "Pak",
-            # Order matters
-            "edit scripts": "Edit Scripts",
-            "scripts": "Scripts",
-            "dyndolod": "DynDOLOD",
-            "plugins": "Plugins",
-            "netscriptframework": "NetScriptFramework",
-            "skse": "SKSE",
             "docs": "Docs",
+            "dyndolod": "DynDOLOD",
+            "edit scripts": "Edit Scripts",
+            "mockgame": "MockGame",
+            "netscriptframework": "NetScriptFramework",
+            "oblivionremastered": "OblivionRemastered",
+            "obvdata": "ObvData",
+            "paks": "Paks",
+            "plugins": "Plugins",
+            "scripts": "Scripts",
+            "skse": "SKSE",
             "source": "Source",
         }
 
@@ -110,7 +110,7 @@ class BethesdaMod(Mod):
         # files via manually calling __post_init__.
         self.files = []
         # Scan the surface level of the mod to determine whether this mod will
-        # need to be installed in game.directory or game.data.
+        # need to be installed in game.directory, game.data, or game.pak.
         # Also determine whether this is a fomod.
         for file in self.location.iterdir():
             match file.is_dir():
@@ -123,6 +123,13 @@ class BethesdaMod(Mod):
                             | "oblivionremastered"
                         ):
                             self.install_dir = self.game_root
+
+                        case "~mods":
+                            # This will only be true for Oblivion Remastered, and potentially
+                            # also future UE5 Bethesda games. It's unlikely that this directory
+                            # will be used by mods for non-UE5 games, so no need to hide this
+                            # behind a game name condition.
+                            self.install_dir = self.game_pak.parent
 
                         case "fomod":
                             # Assign ModuleConfig.xml. Only check surface of fomod folder.
