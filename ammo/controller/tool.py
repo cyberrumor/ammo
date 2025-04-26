@@ -2,7 +2,6 @@
 import os
 import shutil
 import subprocess
-import sys
 import readline
 from pathlib import Path
 import typing
@@ -148,15 +147,13 @@ class ToolController(Controller):
         except IndexError as e:
             raise Warning(e)
 
-        if "pytest" not in sys.modules:
-            # Don't run this during tests because it's slow.
-            try:
-                print("Verifying archive integrity...")
-                subprocess.check_output(["7z", "t", f"{download.location}"])
-            except subprocess.CalledProcessError:
-                raise Warning(
-                    f"Rename of {index} failed at integrity check. Incomplete download?"
-                )
+        try:
+            print("Verifying archive integrity...")
+            subprocess.check_output(["7z", "t", f"{download.location}"])
+        except subprocess.CalledProcessError:
+            raise Warning(
+                f"Rename of {index} failed at integrity check. Incomplete download?"
+            )
 
         new_location = download.location.parent / f"{name}{download.location.suffix}"
         if new_location.exists():
@@ -266,15 +263,13 @@ class ToolController(Controller):
                     f"Extraction of {index} failed since tool '{extract_to.name}' exists."
                 )
 
-            if "pytest" not in sys.modules:
-                # Don't run this during tests because it's slow.
-                try:
-                    print("Verifying archive integrity...")
-                    subprocess.check_output(["7z", "t", f"{download.location}"])
-                except subprocess.CalledProcessError:
-                    raise Warning(
-                        f"Extraction of {index} failed at integrity check. Incomplete download?"
-                    )
+            try:
+                print("Verifying archive integrity...")
+                subprocess.check_output(["7z", "t", f"{download.location}"])
+            except subprocess.CalledProcessError:
+                raise Warning(
+                    f"Extraction of {index} failed at integrity check. Incomplete download?"
+                )
 
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
 

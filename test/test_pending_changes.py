@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import shutil
+
 import pytest
 
 from common import (
@@ -267,8 +269,7 @@ def test_pending_change_rename_download():
     # download in range.
     with AmmoController() as controller:
         temp_download = controller.downloads_dir / "temp_download.7z"
-        with open(temp_download, "w") as f:
-            f.write("")
+        shutil.copy(controller.downloads_dir / "normal_mod.7z", temp_download)
 
         controller.do_refresh()
 

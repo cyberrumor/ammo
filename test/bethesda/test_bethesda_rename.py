@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import shutil
+
 import pytest
 
 from bethesda_common import (
@@ -159,14 +161,14 @@ def test_rename_download_moves_file():
     Test that renaming a download causes the file to be moved.
     """
     with AmmoController() as controller:
-        temp_download = controller.downloads_dir / "rename_me.7z"
-        temp_download.touch()
+        temp_download = controller.downloads_dir / "temp_download.7z"
+        shutil.copy(controller.downloads_dir / "normal_mod.7z", temp_download)
         renamed_download = controller.downloads_dir / "i_was_renamed.7z"
 
         try:
             controller.do_refresh()
 
-            index = [i.name for i in controller.downloads].index("rename_me.7z")
+            index = [i.name for i in controller.downloads].index("temp_download.7z")
             original_download = controller.downloads[index]
 
             # Rename.
