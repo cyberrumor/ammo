@@ -79,6 +79,7 @@ class Mod:
 class BethesdaMod(Mod):
     game_data: Path
     game_pak: Path
+    game_dll: Path
     plugins: list[str] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
@@ -98,12 +99,14 @@ class BethesdaMod(Mod):
             "mockgame": "MockGame",
             "netscriptframework": "NetScriptFramework",
             "oblivionremastered": "OblivionRemastered",
+            "obse": "OBSE",
             "obvdata": "ObvData",
             "paks": "Paks",
             "plugins": "Plugins",
             "scripts": "Scripts",
             "skse": "SKSE",
             "source": "Source",
+            "win64": "Win64",
         }
 
         # Explicitly set self.files to an empty list in case we're rereshing
@@ -141,7 +144,7 @@ class BethesdaMod(Mod):
                                     break
                 case False:
                     if file.suffix.lower() == ".dll":
-                        self.install_dir = self.game_root
+                        self.install_dir = self.game_dll
 
                     if file.suffix.lower() == ".pak":
                         self.install_dir = self.game_pak

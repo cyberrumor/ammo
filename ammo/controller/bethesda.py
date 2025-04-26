@@ -66,6 +66,7 @@ class BethesdaGame(Game):
     # https://docs.mod.io/guides/ue-mod-loading
     # Rust Traits would be a more correct solution than just putting this on every bethesda game -_-.
     pak: Path = field(init=False, default_factory=Path)
+    dll: Path = field(init=False, default_factory=Path)
 
     def __post_init__(self):
         # Get past dataclasses.FrozenInstanceError produced by direct assignment via object.__setattr__.
@@ -73,6 +74,12 @@ class BethesdaGame(Game):
             self,
             "pak",
             self.directory / self.name.replace(" ", "") / "Content" / "Paks" / "~mods",
+        )
+
+        object.__setattr__(
+            self,
+            "dll",
+            self.directory / self.name.replace(" ", "") / "Binaries" / "Win64",
         )
 
 
@@ -214,6 +221,9 @@ class BethesdaController(ModController):
                 game_root=self.game.directory,
                 game_data=self.game.data,
                 game_pak=self.game.pak,
+                game_dll=self.game.dll
+                if self.game.name == "Oblivion Remastered"
+                else self.game.directory,
             )
             mods.append(mod)
         return mods
