@@ -68,7 +68,6 @@ class AmmoController:
 
         # remove empty directories
         def remove_empty_dirs(path):
-            print(f"deleting stuff in {path}")
             for dirpath, dirnames, _filenames in list(os.walk(path, topdown=False)):
                 for dirname in dirnames:
                     try:
