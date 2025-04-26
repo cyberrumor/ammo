@@ -412,7 +412,7 @@ class UI:
         # Not a union, cast directly.
         return _cast(arg, target_type)
 
-    def repl(self):
+    def repl(self, clear=True):
         """
         Read, execute, print loop
         """
@@ -424,7 +424,8 @@ class UI:
             # Set the completer here to fix returning from nested UIs.
             readline.set_completer(self.autocomplete)
 
-            os.system("clear")
+            if clear:
+                os.system("clear")
             print(self.controller)
 
             try:
