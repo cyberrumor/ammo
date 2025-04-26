@@ -143,6 +143,9 @@ class BethesdaMod(Mod):
                     if file.suffix.lower() == ".dll":
                         self.install_dir = self.game_root
 
+                    if file.suffix.lower() == ".pak":
+                        self.install_dir = self.game_pak
+
         # Determine which folder to populate self.files from. For fomods, only
         # care about files inside of an ammo_fomod folder
         # which may or may not exist.

@@ -40,9 +40,9 @@ def test_activate_pak_root():
     │       └── Content
     │           └── Paks
     │               └── ~mods
-    │                   ├── test.pak
-    │                   ├── test.ucas
-    │                   └── test.utoc
+    │                   ├── test.pak  -> OblivionRemastered/Content/Paks/~mods/test.pak
+    │                   ├── test.ucas -> OblivionRemastered/Content/Paks/~mods/test.ucas
+    │                   └── test.utoc -> OblivionRemastered/Content/Paks/~mods/test.utoc
     """
     files = [
         Path("OblivionRemastered/Content/Paks/~mods/test.pak"),
@@ -103,6 +103,7 @@ def test_extract_pak_no_dir():
     Test that installing a pak mod which contains only loose files
     without any sort of directory structure is extracted without
     modification.
+    .
     ├── pak_no_dir.7z
     │   ├── test.pak
     │   ├── test.ucas
@@ -114,3 +115,22 @@ def test_extract_pak_no_dir():
         Path("test.utoc"),
     ]
     mod_extracts_files("pak_no_dir", files)
+
+
+def test_activate_pak_no_dir():
+    """
+    Test that activating a pak mod which contains only loose files and no
+    directories leading up to the installation location results in files
+    being installed into the correct location.
+    .
+    ├── pak_no_dir.7z
+    │   ├── test.pak  -> MockGame/Content/Paks/~mods/test.pak
+    │   ├── test.ucas -> MockGame/Content/Paks/~mods/test.ucas
+    │   └── test.utoc -> MockGame/Content/Paks/~mods/test.utoc
+    """
+    files = [
+        Path("MockGame/Content/Paks/~mods/test.pak"),
+        Path("MockGame/Content/Paks/~mods/test.ucas"),
+        Path("MockGame/Content/Paks/~mods/test.utoc"),
+    ]
+    mod_installs_files("pak_no_dir", files)
