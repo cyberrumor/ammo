@@ -416,7 +416,6 @@ class UI:
         """
         Read, execute, print loop
         """
-        cmd: str = ""
         while True:
             # Repopulate commands on every iteration so controllers
             # that dynamically change available methods work.
@@ -440,8 +439,10 @@ class UI:
             func = cmds[0]
 
             if not (command := self.command.get(func, None)):
-                print(f"unknown command {cmd}")
-                self.help()
+                print(
+                    f"Unknown command '{func}'. Type 'help' to see available commands."
+                )
+                input("[Enter] ")
                 continue
 
             # Validate that we received a sane number of arguments.
