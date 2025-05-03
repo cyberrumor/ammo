@@ -211,18 +211,18 @@ class BethesdaController(ModController):
         the parent class ModController.
         """
         mods = []
-        mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
-        for path in mod_folders:
-            mod = BethesdaMod(
-                location=self.game.ammo_mods_dir / path.name,
-                game_root=self.game.directory,
-                game_data=self.game.data,
-                game_pak=self.game.pak,
-                game_dll=self.game.dll
-                if self.game.name == "Oblivion Remastered"
-                else self.game.directory,
-            )
-            mods.append(mod)
+        for path in self.game.ammo_mods_dir.iterdir():
+            if path.is_dir():
+                mod = BethesdaMod(
+                    location=self.game.ammo_mods_dir / path.name,
+                    game_root=self.game.directory,
+                    game_data=self.game.data,
+                    game_pak=self.game.pak,
+                    game_dll=self.game.dll
+                    if self.game.name == "Oblivion Remastered"
+                    else self.game.directory,
+                )
+                mods.append(mod)
         return mods
 
     def __str__(self) -> str:

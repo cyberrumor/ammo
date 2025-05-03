@@ -80,13 +80,13 @@ class ModController(Controller):
     def get_mods(self):
         # Instance a Mod class for each mod folder in the mod directory.
         mods = []
-        mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
-        for path in mod_folders:
-            mod = Mod(
-                location=self.game.ammo_mods_dir / path.name,
-                game_root=self.game.directory,
-            )
-            mods.append(mod)
+        for path in self.game.ammo_mods_dir.iterdir():
+            if path.is_dir():
+                mod = Mod(
+                    location=self.game.ammo_mods_dir / path.name,
+                    game_root=self.game.directory,
+                )
+                mods.append(mod)
         return mods
 
     def populate_mods(self):
