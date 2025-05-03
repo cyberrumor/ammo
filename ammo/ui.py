@@ -27,7 +27,7 @@ from ammo.lib import ignored
 
 SEPARATOR_ROW = "."
 SEPARATOR_COL = ":"
-TERM_WIDTH = 96
+TERM_WIDTH = 92
 
 
 class Controller(ABC):
