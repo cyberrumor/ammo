@@ -71,30 +71,7 @@ class ModController(Controller):
         logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
         log.info("initializing")
 
-        mods = self.get_mods()
-        # Read self.game.ammo_conf. If there's mods in it, put them in order.
-        if self.game.ammo_conf.exists():
-            with open(self.game.ammo_conf, "r") as file:
-                for line in file:
-                    if not line.strip() or line.strip().startswith("#"):
-                        continue
-                    name = line.strip().strip("*").strip()
-                    enabled = line.strip().startswith("*")
-
-                    for mod in mods:
-                        if mod.name != name:
-                            continue
-
-                        mod.enabled = enabled
-                        self.mods.append(mod)
-                        break
-
-        # Put mods that aren't listed in self.game.ammo_conf file
-        # at the end in an arbitrary order.
-        for mod in mods:
-            if mod not in self.mods:
-                self.mods.append(mod)
-
+        self.populate_mods()
         downloads: list[Path] = []
         for file in self.downloads_dir.iterdir():
             if file.is_dir():
@@ -118,6 +95,35 @@ class ModController(Controller):
             )
             mods.append(mod)
         return mods
+
+    def populate_mods(self):
+        """
+        Populate self.mods in the correct order.
+        """
+        self.mods: list[Mod] = []
+        mods = self.get_mods()
+        # Read self.game.ammo_conf. If there's mods in it, put them in order.
+        if self.game.ammo_conf.exists():
+            with open(self.game.ammo_conf, "r") as file:
+                for line in file:
+                    if not line.strip() or line.strip().startswith("#"):
+                        continue
+                    name = line.strip().strip("*").strip()
+                    enabled = line.strip().startswith("*")
+
+                    for mod in mods:
+                        if mod.name != name:
+                            continue
+
+                        mod.enabled = enabled
+                        self.mods.append(mod)
+                        break
+
+        # Put mods that aren't listed in self.game.ammo_conf file
+        # at the end in an arbitrary order.
+        for mod in mods:
+            if mod not in self.mods:
+                self.mods.append(mod)
 
     def __str__(self) -> str:
         """
