@@ -204,7 +204,12 @@ class BethesdaController(ModController):
         self.stage()
 
     def get_mods(self):
-        # Instance a Mod class for each mod folder in the mod directory.
+        """
+        Instance a Mod class for each mod folder in the mod directory.
+
+        This method is called by self.populate_mods which is defined in
+        the parent class ModController.
+        """
         mods = []
         mod_folders = [i for i in self.game.ammo_mods_dir.iterdir() if i.is_dir()]
         for path in mod_folders:
@@ -323,6 +328,10 @@ class BethesdaController(ModController):
                 file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
 
     def has_extra_folder(self, path) -> bool:
+        """
+        This method is called by self.do_install which is defined in
+        the parent class ModController.
+        """
         files = list(path.iterdir())
         return all(
             [
