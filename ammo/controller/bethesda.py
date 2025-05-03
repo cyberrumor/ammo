@@ -15,7 +15,6 @@ from dataclasses import (
 )
 from ammo.component import (
     BethesdaMod,
-    Download,
     Plugin,
 )
 from ammo.lib import ignored
@@ -199,14 +198,7 @@ class BethesdaController(ModController):
             if plugin.mod is None and plugin.name not in (i.name for i in self.plugins):
                 self.plugins.append(plugin)
 
-        downloads: list[Path] = []
-        for file in self.downloads_dir.iterdir():
-            if file.is_dir():
-                continue
-            if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
-                download = Download(file)
-                downloads.append(download)
-        self.downloads = downloads
+        self.populate_downloads()
         self.changes = False
         self.do_find(*self.keywords)
         self.stage()

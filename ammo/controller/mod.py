@@ -72,14 +72,7 @@ class ModController(Controller):
         log.info("initializing")
 
         self.populate_mods()
-        downloads: list[Path] = []
-        for file in self.downloads_dir.iterdir():
-            if file.is_dir():
-                continue
-            if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
-                download = Download(file)
-                downloads.append(download)
-        self.downloads = downloads
+        self.populate_downloads()
         self.changes = False
         self.do_find(*self.keywords)
         self.stage()
@@ -124,6 +117,20 @@ class ModController(Controller):
         for mod in mods:
             if mod not in self.mods:
                 self.mods.append(mod)
+
+    def populate_downloads(self):
+        """
+        Populate self.downloads.
+        """
+        self.downloads: list[Download] = []
+        downloads: list[Path] = []
+        for file in self.downloads_dir.iterdir():
+            if file.is_dir():
+                continue
+            if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
+                download = Download(file)
+                downloads.append(download)
+        self.downloads = downloads
 
     def __str__(self) -> str:
         """
