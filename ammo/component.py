@@ -171,11 +171,10 @@ class BethesdaMod(Mod):
         plugin_dir = location
 
         # See if there's a Data folder nested in here anywhere.
-        for parent_dir, folders, files in os.walk(location):
-            for folder in folders:
-                if folder.lower() == self.game_data.name.lower():
-                    plugin_dir = Path(parent_dir) / folder
-                    break
+        for path in self.files:
+            if path.parent.name.lower() == self.game_data.name.lower():
+                plugin_dir = path.parent
+                break
 
         if plugin_dir.exists():
             for f in plugin_dir.iterdir():
