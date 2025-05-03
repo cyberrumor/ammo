@@ -465,7 +465,7 @@ class BethesdaController(ModController):
 
     def do_move_plugin(self, index: int, new_index: int) -> None:
         """
-        Larger numbers win file conflicts.
+        Larger numbers win record conflicts.
         """
         # Since this operation it not atomic, validation must be performed
         # before anything is attempted to ensure nothing can become mangled.

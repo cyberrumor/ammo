@@ -131,7 +131,7 @@ log               :                     : Show debug log history.
 move_mod          : <index> <new_index> : Larger numbers win file conflicts.
                   :                     : - `move_mod 0 1`
 ............................................................................................
-move_plugin       : <index> <new_index> : Larger numbers win file conflicts.
+move_plugin       : <index> <new_index> : Larger numbers win record conflicts.
                   :                     : - `move_plugin 0 1`
 ............................................................................................
 refresh           :                     : Abandon pending changes.
