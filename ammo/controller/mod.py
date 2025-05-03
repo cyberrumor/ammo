@@ -291,11 +291,9 @@ class ModController(Controller):
                     continue
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
-                    corrected_name = (
-                        str(src).split(f"{mod.name}/ammo_fomod", 1)[-1].strip("/")
-                    )
+                    corrected_name = src.relative_to(mod.location / "ammo_fomod")
                 else:
-                    corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
+                    corrected_name = src.relative_to(mod.location)
 
                 dest = mod.install_dir / corrected_name
 
@@ -524,7 +522,7 @@ class ModController(Controller):
             except FileExistsError:
                 skipped_files.append(
                     f"{name} skipped overwriting an unmanaged file: \
-                        {str(dest).split(str(self.game.directory))[-1].lstrip('/')}."
+                        {dest.relative_to(self.game.directory)}."
                 )
             finally:
                 print(f"files processed: {i + 1}/{count}", end="\r", flush=True)
@@ -568,15 +566,13 @@ class ModController(Controller):
 
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
-                    corrected_name = (
-                        str(src).split(f"{mod.name}/ammo_fomod", 1)[-1].strip("/")
-                    )
+                    corrected_name = src.relative_to(mod.location / "ammo_fomod")
                 else:
-                    corrected_name = str(src).split(mod.name, 1)[-1].strip("/")
+                    corrected_name = src.relative_to(mod.location)
 
                 dest = mod.install_dir / corrected_name
                 dest = normalize(mod, dest, self.game.directory)
-                dest = str(dest).split(str(self.game.directory), 1)[-1].strip("/")
+                dest = dest.relative_to(self.game.directory)
 
                 yield dest
 
