@@ -71,7 +71,21 @@ pipx install . --force
 
 ## Usage
 
-`ammo` - Launch the interactive shell. Select a game via index if prompted.
+```
+usage: ammo [-h] [--downloads PATH] [--conf PATH] [--mods PATH] [--title TITLE]
+
+Almost Manual Mod Organizer
+
+options:
+  -h, --help        show this help message and exit
+  --downloads PATH  directory containing installable archives
+  --conf PATH       directory containing configs for managed games
+  --mods PATH       directory containing mods for this session
+  --title TITLE     manage a detected game with TITLE (skip game selection menu)
+```
+
+## Help
+
 ```
 ............................................................................................
 activate_mod      : <index>             : Enabled mods will be loaded by game.
@@ -147,7 +161,6 @@ sort              :                     : Arrange plugins by mod order.
 tools             :                     : Manage tools.
 ............................................................................................
 ```
-
 
 ## License
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from ammo.ui import UI
 from ammo.controller.game import GameController
 
-parser = argparse.ArgumentParser(description="Manage mods for Bethesda games.")
+parser = argparse.ArgumentParser(description="Almost Manual Mod Organizer")
 
 parser.add_argument(
     "--downloads",
