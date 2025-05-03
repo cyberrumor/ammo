@@ -441,13 +441,14 @@ class FomodController(Controller):
                     continue
                 # Subsurface files require path localization.
                 for parent_dir, _, files in os.walk(src):
+                    parent_path = Path(parent_dir)
                     for file in files:
                         # Determine the local directory structure
-                        local_parent_dir = parent_dir.split(str(src))[-1].strip("/")
+                        relative_parent_path = parent_path.relative_to(src)
 
                         # Build the destination and source paths
-                        destination = dest / local_parent_dir / file
-                        source = Path(parent_dir) / file
+                        destination = dest / relative_parent_path / file
+                        source = parent_path / file
                         stage[destination] = source
 
         # install the new files

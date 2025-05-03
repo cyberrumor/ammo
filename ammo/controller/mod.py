@@ -322,20 +322,20 @@ class ModController(Controller):
         """
         Removes empty folders.
         """
-        for dirpath, dirnames, _ in list(os.walk(self.game.directory, topdown=False)):
-            for dirname in dirnames:
-                d = Path(dirpath) / dirname
+        for parent_dir, folders, _ in list(os.walk(self.game.directory, topdown=False)):
+            parent_path = Path(parent_dir)
+            for folder in folders:
                 with ignored(OSError):
-                    d.resolve().rmdir()
+                    (parent_path / folder).resolve().rmdir()
 
     def clean_game_dir(self):
         """
         Removes all links and deletes empty folders.
         """
-        for dirpath, _, filenames in os.walk(self.game.directory):
-            d = Path(dirpath)
-            for file in filenames:
-                full_path = d / file
+        for parent_dir, _, files in os.walk(self.game.directory):
+            parent_path = Path(parent_dir)
+            for file in files:
+                full_path = parent_path / file
                 if full_path.is_symlink():
                     with ignored(FileNotFoundError):
                         full_path.unlink()

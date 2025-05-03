@@ -69,10 +69,9 @@ class Mod:
 
         # Populate self.files
         for parent_dir, _, files in os.walk(location):
+            parent_path = Path(parent_dir)
             for file in files:
-                f = Path(file)
-                loc_parent = Path(parent_dir)
-                self.files.append(loc_parent / f)
+                self.files.append(parent_path / file)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -160,11 +159,11 @@ class BethesdaMod(Mod):
             # No files to populate
             return
 
+        # Populate self.files
         for parent_dir, _, files in os.walk(location):
+            parent_path = Path(parent_dir)
             for file in files:
-                f = Path(file)
-                loc_parent = Path(parent_dir)
-                self.files.append(loc_parent / f)
+                self.files.append(parent_path / file)
 
         # Find the folder that plugins should be populated from.
         # Start from the game directory or the ammo_fomod directory.
