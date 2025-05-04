@@ -439,15 +439,20 @@ class FomodController(Controller):
                 if src.is_file():
                     stage[dest] = src
                     continue
-                # Subsurface files require path localization.
+                # If a folder was specified instead of files,
+                # fetch files from inside the folder.
+                # src is like Path("textures/effects/")
                 for parent_dir, _, files in os.walk(src):
                     parent_path = Path(parent_dir)
                     for file in files:
                         # Determine the local directory structure
-                        relative_parent_path = parent_path.relative_to(src)
+                        # relative_path is like Path("effects/")
+                        relative_path = parent_path.relative_to(src)
 
                         # Build the destination and source paths
-                        destination = dest / relative_parent_path / file
+                        # destination is like /path/to/ammo_fomod/textures/effects/candle01.dds
+                        destination = dest / relative_path / file
+                        # source is the full path to the actual mod file.
                         source = parent_path / file
                         stage[destination] = source
 

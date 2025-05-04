@@ -291,23 +291,25 @@ class ModController(Controller):
                     continue
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
-                    corrected_name = src.relative_to(mod.location / "ammo_fomod")
+                    relative_path = src.relative_to(mod.location / "ammo_fomod")
                 else:
-                    corrected_name = src.relative_to(mod.location)
+                    relative_path = src.relative_to(mod.location)
 
-                dest = mod.install_dir / corrected_name
+                dest = mod.install_dir / relative_path
 
-                # Add the sanitized full path to the stage, resolving
+                # Add the case-corrected full path to the stage, resolving
                 # conflicts. Record whether a mod has conflicting files.
-                dest = normalize(mod, dest, self.game.directory)
-                if dest in result:
+                case_corrected_dest = normalize(mod, dest, self.game.directory)
+                if case_corrected_dest in result:
                     conflicting_mod = [
-                        i for i in enabled_mods[:index] if i.name == result[dest][0]
+                        i
+                        for i in enabled_mods[:index]
+                        if i.name == result[case_corrected_dest][0]
                     ]
                     if conflicting_mod and conflicting_mod[0].enabled:
                         mod.conflict = True
                         conflicting_mod[0].conflict = True
-                result[dest] = (mod.name, src)
+                result[case_corrected_dest] = (mod.name, src)
 
         # Record whether a mod is obsolete (all files are overwritten by other mods).
         for mod in enabled_mods:
@@ -566,15 +568,17 @@ class ModController(Controller):
 
                 # Get the sanitized full path relative to the game.directory.
                 if mod.fomod:
-                    corrected_name = src.relative_to(mod.location / "ammo_fomod")
+                    relative_path = src.relative_to(mod.location / "ammo_fomod")
                 else:
-                    corrected_name = src.relative_to(mod.location)
+                    relative_path = src.relative_to(mod.location)
 
-                dest = mod.install_dir / corrected_name
-                dest = normalize(mod, dest, self.game.directory)
-                dest = dest.relative_to(self.game.directory)
+                dest = mod.install_dir / relative_path
+                case_corrected_dest = normalize(mod, dest, self.game.directory)
+                case_corrected_relative_dest = case_corrected_dest.relative_to(
+                    self.game.directory
+                )
 
-                yield dest
+                yield case_corrected_relative_dest
 
         enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
         enabled_mod_names = [i.name for i in enabled_mods]
