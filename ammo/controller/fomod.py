@@ -420,20 +420,20 @@ class FomodController(Controller):
 
             # get the 'destination' folder from the xml. This path is relative to
             # the mod's game files folder.
-            full_destination = reduce(
+            relative_path = reduce(
                 lambda path, name: path / name,
                 node.get("destination", full_source.name).split("\\"),
-                ammo_fomod,
+                self.mod.fomod_target,
             )
 
-            # TODO: this is broken :)
-            # Normalize the capitalization of folder names
-            full_destination = normalize(self.mod, full_destination, ammo_fomod.parent)
+            case_corrected_destination = normalize(
+                self.mod, self.mod.location, relative_path
+            )
 
             # Handle the mod's file conflicts that are caused by itself.
             # There's technically a priority clause in the fomod spec that
             # isn't implemented here yet.
-            pre_stage[full_source] = full_destination
+            pre_stage[full_source] = case_corrected_destination
 
             for src, dest in pre_stage.items():
                 if src.is_file():
