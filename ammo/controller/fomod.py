@@ -427,7 +427,7 @@ class FomodController(Controller):
             )
 
             case_corrected_destination = casefold_path(
-                self.mod, self.mod.location, relative_path
+                self.mod.replacements, self.mod.location, relative_path
             )
 
             # Handle the mod's file conflicts that are caused by itself.

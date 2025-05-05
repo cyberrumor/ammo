@@ -1,10 +1,6 @@
 #!/usr/bin/python3
 from pathlib import Path
 from contextlib import contextmanager
-from .component import (
-    Mod,
-    BethesdaMod,
-)
 
 
 @contextmanager
@@ -16,7 +12,7 @@ def ignored(*exceptions):
 
 
 def casefold_path(
-    mod: Mod | BethesdaMod, parent_path: Path, relative_path: Path
+    replacements: dict[str, str], parent_path: Path, relative_path: Path
 ) -> Path:
     """
     Prevent folders with the same name but different case
@@ -30,8 +26,7 @@ def casefold_path(
 
     # relative_path is like Path("data/textures/")
     case_corrected_parts = tuple(
-        mod.replacements.get(p := part.lower(), p)
-        for part in relative_path.parent.parts
+        replacements.get(p := part.lower(), p) for part in relative_path.parent.parts
     )
 
     # case_corrected_relative_path is like Path("Data/textures/")
