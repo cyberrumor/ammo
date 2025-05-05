@@ -23,7 +23,7 @@ from ammo.component import (
     Download,
 )
 from ammo.lib import (
-    normalize,
+    casefold_path,
     ignored,
 )
 from .tool import ToolController
@@ -297,7 +297,7 @@ class ModController(Controller):
 
                 # Add the case-corrected full path to the stage, resolving
                 # conflicts. Record whether a mod has conflicting files.
-                case_corrected_absolute_path = normalize(
+                case_corrected_absolute_path = casefold_path(
                     mod, mod.install_dir, relative_path
                 )
                 if case_corrected_absolute_path in result:
@@ -575,7 +575,7 @@ class ModController(Controller):
                 relative_path = (
                     mod.install_dir.relative_to(self.game.directory) / relative_path
                 )
-                case_corrected_absolute_path = normalize(
+                case_corrected_absolute_path = casefold_path(
                     mod, self.game.directory, relative_path
                 )
                 case_corrected_relative_dest = case_corrected_absolute_path.relative_to(

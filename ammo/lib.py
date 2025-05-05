@@ -15,7 +15,9 @@ def ignored(*exceptions):
         pass
 
 
-def normalize(mod: Mod | BethesdaMod, parent_path: Path, relative_path: Path) -> Path:
+def casefold_path(
+    mod: Mod | BethesdaMod, parent_path: Path, relative_path: Path
+) -> Path:
     """
     Prevent folders with the same name but different case
     from being created.

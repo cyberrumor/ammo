@@ -16,7 +16,7 @@ from ammo.component import (
     BethesdaMod,
 )
 from ammo.lib import (
-    normalize,
+    casefold_path,
     ignored,
 )
 
@@ -426,7 +426,7 @@ class FomodController(Controller):
                 self.mod.fomod_target,
             )
 
-            case_corrected_destination = normalize(
+            case_corrected_destination = casefold_path(
                 self.mod, self.mod.location, relative_path
             )
 
