@@ -289,11 +289,17 @@ class ModController(Controller):
                     continue
                 if set(src.parts).intersection(IGNORE_COLLISIONS):
                     continue
-                # Get the sanitized full path relative to the game.directory.
+
+                # equivalent to:
+                # relative_path = src.relative_to(mod.location)
+                # or
+                # relative_path = src.relative_to(mod.location / "ammo_fomod")
+                # relative_to is slow and we already know the leftmost directories
+                # are the same, so we can do this to avoid calling relative_to.
+                trim_count = len(mod.location.parts)
                 if mod.fomod:
-                    relative_path = src.relative_to(mod.location / "ammo_fomod")
-                else:
-                    relative_path = src.relative_to(mod.location)
+                    trim_count += 1  # to account for ammo_fomod dir
+                relative_path = Path(*tuple(src.parts[trim_count:]))
 
                 # Add the case-corrected full path to the stage, resolving
                 # conflicts. Record whether a mod has conflicting files.
