@@ -77,7 +77,7 @@ class Mod:
             parent_path = Path(parent_dir).relative_to(location)
             for file in files:
                 case_corrected_destination = casefold_path(
-                    self.replacements, Path("."), parent_path / Path(file)
+                    self.replacements, Path("."), parent_path / file
                 )
                 self.files.append(
                     (
