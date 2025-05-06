@@ -7,6 +7,8 @@ from dataclasses import (
     field,
 )
 
+from .lib import casefold_path
+
 
 @dataclass(kw_only=True, slots=True)
 class Mod:
@@ -69,9 +71,17 @@ class Mod:
 
         # Populate self.files
         for parent_dir, _, files in os.walk(location):
-            parent_path = Path(parent_dir)
+            parent_path = Path(parent_dir).relative_to(location)
             for file in files:
-                self.files.append(parent_path / file)
+                case_corrected_destination = casefold_path(
+                    self.replacements, Path("."), parent_path / Path(file)
+                )
+                self.files.append(
+                    (
+                        Path(parent_dir) / file,  # absolute
+                        case_corrected_destination,  # relative
+                    )
+                )
 
 
 @dataclass(kw_only=True, slots=True)
@@ -161,18 +171,26 @@ class BethesdaMod(Mod):
 
         # Populate self.files
         for parent_dir, _, files in os.walk(location):
-            parent_path = Path(parent_dir)
+            parent_path = Path(parent_dir).relative_to(location)
             for file in files:
-                self.files.append(parent_path / file)
+                case_corrected_destination = casefold_path(
+                    self.replacements, Path(), parent_path / file
+                )
+                self.files.append(
+                    (
+                        Path(parent_dir) / file,  # absolute
+                        case_corrected_destination,  # relative
+                    )
+                )
 
         # Find the folder that plugins should be populated from.
         # Start from the game directory or the ammo_fomod directory.
         plugin_dir = location
 
         # See if there's a Data folder nested in here anywhere.
-        for path in self.files:
-            if path.parent.name.lower() == self.game_data.name.lower():
-                plugin_dir = path.parent
+        for src, dest in self.files:
+            if dest.parent.name == self.game_data.name:
+                plugin_dir = src.parent
                 break
 
         if plugin_dir.exists():

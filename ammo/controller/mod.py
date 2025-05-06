@@ -22,10 +22,7 @@ from ammo.component import (
     Mod,
     Download,
 )
-from ammo.lib import (
-    casefold_path,
-    ignored,
-)
+from ammo.lib import ignored
 from .tool import ToolController
 from .fomod import FomodController
 from .bool_prompt import BoolPromptController
@@ -284,28 +281,13 @@ class ModController(Controller):
         enabled_mods = [i for i in self.mods if i.enabled]
         for index, mod in enumerate(enabled_mods):
             # Iterate through the source files of the mod
-            for src in mod.files:
-                if src.name in IGNORE_COLLISIONS:
+            for src, relative_dest in mod.files:
+                if relative_dest.name in IGNORE_COLLISIONS:
                     continue
-                if set(src.parts).intersection(IGNORE_COLLISIONS):
+                if set(relative_dest.parts).intersection(IGNORE_COLLISIONS):
                     continue
 
-                # equivalent to:
-                # relative_path = src.relative_to(mod.location)
-                # or
-                # relative_path = src.relative_to(mod.location / "ammo_fomod")
-                # relative_to is slow and we already know the leftmost directories
-                # are the same, so we can do this to avoid calling relative_to.
-                trim_count = len(mod.location.parts)
-                if mod.fomod:
-                    trim_count += 1  # to account for ammo_fomod dir
-                relative_path = Path(*tuple(src.parts[trim_count:]))
-
-                # Add the case-corrected full path to the stage, resolving
-                # conflicts. Record whether a mod has conflicting files.
-                case_corrected_absolute_path = casefold_path(
-                    mod.replacements, mod.install_dir, relative_path
-                )
+                case_corrected_absolute_path = mod.install_dir / relative_dest
                 if case_corrected_absolute_path in result:
                     conflicting_mod = [
                         i
@@ -564,46 +546,21 @@ class ModController(Controller):
         if not target_mod.conflict:
             raise Warning("No conflicts.")
 
-        def get_relative_files(mod: Mod):
-            # Iterate through the source files of the mod
-            for src in mod.files:
-                if src.name in IGNORE_COLLISIONS:
-                    continue
-                if set(src.parts).intersection(IGNORE_COLLISIONS):
-                    continue
-
-                # Get the sanitized full path relative to the game.directory.
-                if mod.fomod:
-                    relative_path = src.relative_to(mod.location / "ammo_fomod")
-                else:
-                    relative_path = src.relative_to(mod.location)
-
-                relative_path = (
-                    mod.install_dir.relative_to(self.game.directory) / relative_path
-                )
-                case_corrected_absolute_path = casefold_path(
-                    mod.replacements, self.game.directory, relative_path
-                )
-                case_corrected_relative_dest = case_corrected_absolute_path.relative_to(
-                    self.game.directory
-                )
-
-                yield case_corrected_relative_dest
-
         enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
         enabled_mod_names = [i.name for i in enabled_mods]
-        target_mod_files = list(get_relative_files(target_mod))
+        target_mod_files = [i[1] for i in target_mod.files]
+
         conflicts = {}
 
         for mod in enabled_mods:
             if mod.name == target_mod.name:
                 continue
-            for file in get_relative_files(mod):
-                if file in target_mod_files:
-                    if conflicts.get(file, None):
-                        conflicts[file].append(mod.name)
+            for src, dest in mod.files:
+                if dest in target_mod_files:
+                    if conflicts.get(dest, None):
+                        conflicts[dest].append(mod.name)
                     else:
-                        conflicts[file] = [mod.name, target_mod.name]
+                        conflicts[dest] = [mod.name, target_mod.name]
 
         result = ""
         for file, mods in conflicts.items():

@@ -204,16 +204,22 @@ def test_conflicting_plugins_mult_delete_plugin():
             install_mod(controller, mod)
 
         controller.do_delete_plugin(0)
-        files = controller.mods[
-            [i.name for i in controller.mods].index("plugin_wrong_spot")
-        ].files
+        files = (
+            src
+            for src, dest in controller.mods[
+                [i.name for i in controller.mods].index("plugin_wrong_spot")
+            ].files
+        )
         file = controller.game.ammo_mods_dir / "plugin_wrong_spot/Data/test/plugin.esp"
         # Check that we didn't delete a plugin that wasn't in Data
         assert file in files
 
-        files = controller.mods[
-            [i.name for i in controller.mods].index("mult_plugins_same_name")
-        ].files
+        files = [
+            src
+            for src, dest in controller.mods[
+                [i.name for i in controller.mods].index("mult_plugins_same_name")
+            ].files
+        ]
         file = controller.game.ammo_mods_dir / "mult_plugins_same_name/Data/plugin.esp"
         # Check that we deleted what we intended to
         assert file not in files

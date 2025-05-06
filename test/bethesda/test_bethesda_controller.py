@@ -156,7 +156,7 @@ def test_controller_enabled_plugin_is_broken_symlink():
             mod = first_launch.mods[index]
             plugin = first_launch.plugins[0]
 
-            file = [i for i in mod.files if i.name == plugin.name][0]
+            file = [src for src, dest in mod.files if src.name == plugin.name][0]
             file.unlink()
 
             with AmmoController() as controller:

@@ -21,7 +21,6 @@ def casefold_path(
     parent_path is like Path("/tmp/MockGame")
     relative_path is like Path("data/Textures/My_Texture.dds")
     """
-    assert parent_path.is_absolute()
     assert relative_path.is_absolute() is False
 
     # relative_path is like Path("data/textures/")
