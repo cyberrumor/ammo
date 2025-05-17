@@ -321,7 +321,7 @@ class GameController(Controller):
 
         ammo_conf_dir = self.args.conf.resolve() / game_selection.name
         ammo_mods_dir = (self.args.mods or ammo_conf_dir / "mods").resolve()
-        ammo_tools_dir = (ammo_conf_dir / "tools").resolve()
+        ammo_tools_dir = (self.args.tools or ammo_conf_dir / "tools").resolve()
         ammo_conf = ammo_conf_dir / "ammo.conf"
         ammo_log = ammo_conf_dir / "ammo.log"
 

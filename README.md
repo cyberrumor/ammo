@@ -81,6 +81,7 @@ options:
   --downloads PATH  directory containing installable archives
   --conf PATH       directory containing configs for managed games
   --mods PATH       directory containing mods for this session
+  --tools PATH      directory containing tools for this session
   --title TITLE     manage a detected game with TITLE (skip game selection menu)
 ```
 
