@@ -6,7 +6,7 @@ import pytest
 
 from ammo.controller.mod import ModController
 
-from common import (
+from mod_common import (
     AmmoController,
     extract_mod,
     install_mod,

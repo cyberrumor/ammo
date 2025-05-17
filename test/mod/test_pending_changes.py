@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from common import (
+from mod_common import (
     AmmoController,
     install_mod,
     extract_mod,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import pytest
-from common import (
+from mod_common import (
     AmmoController,
     install_mod,
     extract_mod,

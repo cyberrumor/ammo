@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from common import (
+from mod_common import (
     AmmoController,
     install_mod,
     extract_mod,
