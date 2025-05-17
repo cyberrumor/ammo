@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from common import (
+from mod.common import (
     fomod_selections_choose_files,
 )
 
@@ -21,8 +21,8 @@ def test_missing_data_fomod():
     We require the following:
     - plugins have names: <plugin name="some text here">
     - groups have types: <group type="SelectExactlyOne">
-    - file has source and dest: <file source="my_file" destination=""/>
-    - folder has source and dest: <folder source="my_folder" destination=""/>
+    - file has source: <file source="my_file"/>
+    - folder has source: <folder source="my_folder"/>
     """
     files = [
         # Default options: USSEP yes, both indoors and outdoors
