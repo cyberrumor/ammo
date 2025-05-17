@@ -321,6 +321,7 @@ class GameController(Controller):
 
         ammo_conf_dir = self.args.conf.resolve() / game_selection.name
         ammo_mods_dir = (self.args.mods or ammo_conf_dir / "mods").resolve()
+        ammo_tools_dir = (ammo_conf_dir / "tools").resolve()
         ammo_conf = ammo_conf_dir / "ammo.conf"
         ammo_log = ammo_conf_dir / "ammo.log"
 
@@ -345,6 +346,7 @@ class GameController(Controller):
                     ammo_conf=ammo_conf,
                     ammo_log=ammo_log,
                     ammo_mods_dir=ammo_mods_dir,
+                    ammo_tools_dir=ammo_tools_dir,
                     name=game_selection.name,
                     directory=game_selection.directory,
                     # Bethesda attributes
@@ -360,6 +362,7 @@ class GameController(Controller):
                     ammo_conf=ammo_conf,
                     ammo_log=ammo_log,
                     ammo_mods_dir=ammo_mods_dir,
+                    ammo_tools_dir=ammo_tools_dir,
                     name=game_selection.name,
                     directory=game_selection.directory,
                 )

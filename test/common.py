@@ -21,6 +21,7 @@ GAME = Game(
     ammo_conf=Path(f"{AMMO_DIR}/ammo.conf"),
     ammo_log=Path(f"{AMMO_DIR}/ammo.log"),
     ammo_mods_dir=Path(f"{AMMO_DIR}/MockGame/mods"),
+    ammo_tools_dir=Path(f"{AMMO_DIR}/MockGame/tools"),
 )
 
 

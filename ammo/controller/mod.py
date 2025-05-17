@@ -42,6 +42,7 @@ class Game:
     ammo_conf: Path
     ammo_log: Path
     ammo_mods_dir: Path
+    ammo_tools_dir: Path
     name: str
     directory: Path
 
@@ -917,7 +918,7 @@ class ModController(Controller):
         """
         tool_controller = ToolController(
             self.downloads_dir,
-            self.game.ammo_conf.parent / "tools",
+            self.game.ammo_tools_dir,
         )
         ui = UI(tool_controller)
         ui.repl()
