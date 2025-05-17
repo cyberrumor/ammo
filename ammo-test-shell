@@ -4,7 +4,7 @@ import argparse
 
 import ammo
 
-from test.common import AmmoController
+from test.mod.mod_common import AmmoController
 from test.bethesda.bethesda_common import AmmoController as BethesdaController
 
 
