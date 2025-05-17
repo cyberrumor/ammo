@@ -4,9 +4,14 @@ import shutil
 import subprocess
 import readline
 from pathlib import Path
+import textwrap
 import typing
 from typing import Union
-from ammo.ui import Controller
+from ammo.ui import (
+    Controller,
+    UI,
+)
+from ammo.controller.bool_prompt import BoolPromptController
 from ammo.lib import ignored
 from ammo.component import (
     Download,
@@ -121,9 +126,47 @@ class ToolController(Controller):
 
         return completions[state] + " "
 
-    def has_extra_folder(self, path) -> bool:
-        # Just extract the archive, don't remove extra folders.
-        return False
+    def has_extra_folder(self, path: Path) -> bool:
+        """
+        The only assumption that the generic tool controller can reasonable make
+        about whether extracted archives have an extra folder between the extraction
+        dir and the actual contents that should be installed into the tool dir
+        is that there's an extra dir if the extraction dir contains exactly 1
+        directory.
+
+        Every other scenario needs to prompt the user.
+        """
+        folders = [i for i in path.iterdir() if i.is_dir()]
+        if len(folders) != 1:
+            # If there's more than one folder, we can't tell which folder we
+            # should elevate files out of. If there's no folders, there's no
+            # depth to elevate files out of.
+            return False
+
+        subdir_contents = [i.name for i in folders[0].iterdir()]
+        display_subdir_contents = subdir_contents[0 : min(3, len(subdir_contents))]
+        question = textwrap.dedent(
+            f"""
+            This tool contains a single directory.
+
+            Tool files will be installed into the tool directory like this:
+
+            {path}/
+            └──{folders[0].name}/
+                └──{"\n                └──".join(display_subdir_contents)}
+
+            If files are elevated above '{folders[0].name}/',
+            they will be installed into the tool directory like this instead:
+
+            {path}/
+            └──{"\n            └──".join(display_subdir_contents)}
+
+            Elevate files above '{folders[0].name}/'?
+            """
+        )
+        prompt_controller = BoolPromptController(question)
+        ui = UI(prompt_controller)
+        return ui.repl()
 
     def do_rename_download(self, index: int, name: str) -> None:
         """
@@ -274,13 +317,13 @@ class ToolController(Controller):
             os.system(f"7z x '{download.location}' -o'{extract_to}'")
 
             if self.has_extra_folder(extract_to):
-                # It is reasonable to conclude an extra directory can be eliminated.
-                # This is needed for tools like skse that have a version directory
+                # The user concluded an extra directory can be eliminated.
+                # This is needed for several tools which have a version directory
                 # between the tool's base folder and the self.tools_dir.name folder.
                 for file in next(extract_to.iterdir()).iterdir():
                     file.rename(extract_to / file.name)
 
-            # Add the freshly install tool to self.tools so that an error doesn't prevent
+            # Add the freshly installed tool to self.tools so that an error doesn't prevent
             # any successfully installed tools from appearing during 'install all'.
             self.tools.append(Tool(extract_to))
 
