@@ -146,8 +146,8 @@ class ModController(Controller):
             result += "\n"
 
         if len([i for i in self.mods if i.visible]):
-            result += " index | Activated | Mod name\n"
-            result += "-------|-----------|------------\n"
+            result += " index | Active | Mod name\n"
+            result += "-------|--------|------------\n"
             for i, mod in enumerate(self.mods):
                 if mod.visible:
                     priority = f"[{i}]"
@@ -157,7 +157,7 @@ class ModController(Controller):
                         if mod.enabled and mod.obsolete
                         else ("*" if mod.conflict else " ")
                     )
-                    result += f"{priority:<7} {enabled:<9} {conflict:<1} {mod.name}\n"
+                    result += f"{priority:<7} {enabled:<7} {conflict:<1} {mod.name}\n"
 
         if not result:
             result = "\n"

@@ -232,15 +232,15 @@ class BethesdaController(ModController):
         result = super().__str__()
         if len([i for i in self.plugins if i.visible]):
             result += "\n"
-            result += " index | Activated | Plugin name\n"
-            result += "-------|-----------|------------\n"
+            result += " index | Active | Plugin name\n"
+            result += "-------|--------|------------\n"
             for i, plugin in enumerate(self.plugins):
                 if plugin.visible:
                     priority = f"[{i}]"
                     enabled = f"[{plugin.enabled}]"
                     conflict = "*" if plugin.conflict else " "
                     result += (
-                        f"{priority:<7} {enabled:<9} {conflict:<1} {plugin.name}\n"
+                        f"{priority:<7} {enabled:<7} {conflict:<1} {plugin.name}\n"
                     )
 
         if not result:
