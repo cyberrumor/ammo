@@ -135,6 +135,14 @@ class ModController(Controller):
         Output a string representing all downloads, mods.
         """
         result = ""
+
+        if self.keywords:
+            result += (
+                "A filter is applied with `find`, so components might be hidden.\n"
+            )
+            result += "Commands which accept the `all` arg only operate on shown components.\n"
+            result += "Execute `find` without arguments to remove the filter.\n\n"
+
         if len([i for i in self.downloads if i.visible]):
             result += " index | Download\n"
             result += "-------|---------\n"
