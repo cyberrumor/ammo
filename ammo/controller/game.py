@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import json
 import re
-from typing import Union
+from typing import (
+    Iterator,
+    Union,
+)
 from dataclasses import (
     dataclass,
     field,
@@ -155,28 +158,8 @@ class GameController(Controller):
         self.downloads = self.args.downloads.resolve(strict=True)
         self.games: list[GameSelection | BethesdaGameSelection] = []
 
-        # Find manually configured games
-        if args.conf.exists():
-            for i in args.conf.iterdir():
-                if i.is_file() and i.suffix == ".json":
-                    with open(i, "r") as file:
-                        j = json.loads(file.read())
-
-                    game_selection = GameSelection(
-                        name=i.stem,
-                        directory=Path(j["directory"]),
-                    )
-
-                    if i.stem in BETHESDA_TITLES:
-                        game_selection = BethesdaGameSelection(
-                            name=i.stem,
-                            directory=Path(j["directory"]),
-                            data=Path(j["data"]),
-                            dlc_file=Path(j["dlc_file"]),
-                            plugin_file=Path(j["plugin_file"]),
-                        )
-
-                    self.games.append(game_selection)
+        for game in self.get_custom_games(args.conf):
+            self.games.append(game)
 
         # Find games from instances of Steam
         self.libraries: list[Path] = []
@@ -278,6 +261,35 @@ class GameController(Controller):
                 )
         else:
             self.populate_index_commands()
+
+    def get_custom_games(
+        self, conf_dir: Path
+    ) -> Iterator[GameSelection | BethesdaGameSelection]:
+        """
+        Find manually configured games and yield them
+        as GameSelections. conf_dir is like /path/to/.local/share/ammo/
+        """
+        if conf_dir.exists():
+            for i in conf_dir.iterdir():
+                if i.is_file() and i.suffix == ".json":
+                    with open(i, "r") as file:
+                        j = json.loads(file.read())
+
+                    game_selection = GameSelection(
+                        name=i.stem,
+                        directory=Path(j["directory"]),
+                    )
+
+                    if i.stem in BETHESDA_TITLES:
+                        game_selection = BethesdaGameSelection(
+                            name=i.stem,
+                            directory=Path(j["directory"]),
+                            data=Path(j["data"]),
+                            dlc_file=Path(j["dlc_file"]),
+                            plugin_file=Path(j["plugin_file"]),
+                        )
+
+                    yield game_selection
 
     def prompt(self) -> str:
         return super().prompt()
