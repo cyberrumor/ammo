@@ -3,6 +3,7 @@ import argparse
 import textwrap
 from pathlib import Path
 import shutil
+from unittest.mock import patch
 
 import pytest
 
@@ -55,7 +56,8 @@ def test_custom_selection(ammo_dir, args):
     with open(game_json_file, "w") as f:
         f.write(contents)
 
-    game_controller = GameController(args)
+    with patch("ammo.controller.game.GameController.manage_game", autospec=True):
+        game_controller = GameController(args)
     game_selections = list(game_controller.get_custom_games(game_controller.args.conf))
 
     # Verify the get_custom_games did exactly what we wanted.
@@ -94,7 +96,8 @@ def test_custom_selection_bethesda(ammo_dir, args):
     with open(game_json_file, "w") as f:
         f.write(contents)
 
-    game_controller = GameController(args)
+    with patch("ammo.controller.game.GameController.manage_game", autospec=True):
+        game_controller = GameController(args)
     game_selections = list(game_controller.get_custom_games(game_controller.args.conf))
 
     # Verify the get_custom_games did exactly what we wanted.
