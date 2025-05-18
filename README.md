@@ -72,7 +72,7 @@ pipx install . --force
 ## Usage
 
 ```
-usage: ammo [-h] [--downloads PATH] [--conf PATH] [--mods PATH] [--title TITLE]
+usage: ammo [-h] [--downloads PATH] [--conf PATH] [--mods PATH] [--tools PATH] [--title TITLE]
 
 Almost Manual Mod Organizer
 
