@@ -691,11 +691,11 @@ class ModController(Controller):
     @requires_sync
     def do_rename_download(self, index: int, name: str) -> None:
         """
-        Names may contain alphanumerics and underscores.
+        Names may contain alphanumerics, periods, and underscores.
         """
-        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+        if name != "".join([i for i in name if i.isalnum() or i in ("_", ".")]):
             raise Warning(
-                "Names can only contain alphanumeric characters or underscores"
+                "Names can only contain alphanumeric characters, periods, or underscores"
             )
 
         forbidden_names = []
@@ -733,11 +733,11 @@ class ModController(Controller):
     @requires_sync
     def do_rename_mod(self, index: int, name: str) -> None:
         """
-        Names may contain alphanumerics and underscores.
+        Names may contain alphanumerics, periods, and underscores.
         """
-        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+        if name != "".join([i for i in name if i.isalnum() or i in ("_", ".")]):
             raise Warning(
-                "Names can only contain alphanumeric characters or underscores"
+                "Names can only contain alphanumeric characters, periods, or underscores"
             )
 
         forbidden_names = []
