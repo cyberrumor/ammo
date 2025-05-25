@@ -151,10 +151,12 @@ move_plugin       : <index> <new_index> : Larger numbers win record conflicts.
 ............................................................................................
 refresh           :                     : Abandon pending changes.
 ............................................................................................
-rename_download   : <index> <name>      : Names may contain alphanumerics and underscores.
+rename_download   : <index> <name>      : Names may contain alphanumerics, periods, and
+                  :                     : underscores.
                   :                     : - `rename_download 0 some_text`
 ............................................................................................
-rename_mod        : <index> <name>      : Names may contain alphanumerics and underscores.
+rename_mod        : <index> <name>      : Names may contain alphanumerics, periods, and
+                  :                     : underscores.
                   :                     : - `rename_mod 0 some_text`
 ............................................................................................
 sort              :                     : Arrange plugins by mod order.
