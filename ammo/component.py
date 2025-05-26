@@ -108,6 +108,7 @@ class BethesdaMod(Mod):
             "docs": "Docs",
             "dyndolod": "DynDOLOD",
             "edit scripts": "Edit Scripts",
+            "lightplacer": "LightPlacer",
             "mockgame": "MockGame",
             "netscriptframework": "NetScriptFramework",
             "oblivionremastered": "OblivionRemastered",
@@ -117,6 +118,7 @@ class BethesdaMod(Mod):
             "plugins": "Plugins",
             "scripts": "Scripts",
             "skse": "SKSE",
+            "skypatcher": "SkyPatcher",
             "source": "Source",
             "win64": "Win64",
         }

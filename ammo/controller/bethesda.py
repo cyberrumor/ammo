@@ -26,24 +26,25 @@ from .mod import (
 log = logging.getLogger(__name__)
 
 NO_EXTRACT_DIRS = [
-    "skse",
-    "netscriptframework",
+    "animations",
     "bashtags",
     "docs",
-    "meshes",
-    "textures",
-    "grass",
-    "animations",
-    "interface",
-    "strings",
-    "misc",
-    "shaders",
-    "sounds",
-    "voices",
     "edit scripts",
+    "grass",
+    "interface",
+    "lightplacer",
+    "meshes",
+    "misc",
+    "netscriptframework",
+    "oblivionremastered",
     "scripts",
     "seq",
-    "oblivionremastered",
+    "shaders",
+    "skse",
+    "sounds",
+    "strings",
+    "textures",
+    "voices",
 ]
 
 
