@@ -128,7 +128,7 @@ class ModController(Controller):
             if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
                 download = Download(file)
                 downloads.append(download)
-        self.downloads = downloads
+        self.downloads = sorted(downloads, key=lambda x: x.name)
 
     def __str__(self) -> str:
         """
