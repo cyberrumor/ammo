@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
+
+import pytest
+
 from mod_common import (
     mod_extracts_files,
     mod_installs_files,
@@ -189,3 +192,20 @@ def test_install_edit_scripts():
     """
     files = [Path("edit scripts/script.pas")]
     mod_installs_files("edit_scripts", files)
+
+
+def test_extract_double_dir_same_name():
+    """
+    Test that extracting a mod which contains a single folder,
+    where that single folder would have its files elevated above it,
+    is resilient to that folder containing a folder of the same name
+    as the top level folder.
+
+    Placed Light is an example of a mod packaged like this.
+
+    This needs to be tested for the controller.mod and controller.bethesda
+    because they have different has_extra_folder functions.
+    """
+    files = [Path("placed light/placed light/Data/meshes/test.nif")]
+    with pytest.raises(Warning):
+        mod_extracts_files("mock_placed_light", files)

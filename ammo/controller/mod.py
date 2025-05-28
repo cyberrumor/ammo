@@ -354,14 +354,27 @@ class ModController(Controller):
         Game-specific subclasses may wish to override this in order to
         automatically correct common packaging mistakes, skipping the prompt.
         """
-        folders = [i for i in path.iterdir() if i.is_dir()]
-        if len(folders) != 1:
+        contents = list(path.iterdir())
+        if len(contents) != 1:
             # If there's more than one folder, we can't tell which folder we
             # should elevate files out of. If there's no folders, there's no
             # depth to elevate files out of.
             return False
 
-        subdir_contents = [i.name for i in folders[0].iterdir()]
+        folders = [i for i in contents if i.is_dir()]
+        if len(folders) != 1:
+            return False
+
+        subdir_contents = list(folders[0].iterdir())
+
+        if any(p.name == folders[0].name for p in subdir_contents):
+            # Returning True here would force trying to rename
+            # extract_to / my_mod_dir / my_mod_dir
+            # to
+            # extract_to / my_mod_dir
+            # which can't be done.
+            return False
+
         display_subdir_contents = subdir_contents[0 : min(3, len(subdir_contents))]
         question = textwrap.dedent(
             f"""
@@ -872,6 +885,18 @@ class ModController(Controller):
         except ValueError as e:
             if index != "all":
                 raise Warning(e)
+
+        mod_packaging_error = textwrap.dedent(
+            """
+            This mod may have been packaged incorrectly!
+            You should manually confirm that this mod's directory
+            structure matches your expectations:
+
+                "{0}"
+
+            """
+        )
+
         try:
             if index == "all":
                 errors = []
@@ -883,6 +908,17 @@ class ModController(Controller):
                             if self.has_extra_folder(extract_to):
                                 for file in next(extract_to.iterdir()).iterdir():
                                     file.rename(extract_to / file.name)
+
+                            else:
+                                requires_unique = next(extract_to.iterdir())
+                                if requires_unique.is_dir():
+                                    if any(
+                                        file.name == requires_unique.name
+                                        for file in requires_unique.iterdir()
+                                    ):
+                                        raise Warning(
+                                            mod_packaging_error.format(extract_to)
+                                        )
 
                         except Warning as e:
                             errors.append(str(e))
@@ -911,6 +947,15 @@ class ModController(Controller):
                     # my_extracted_mod/<files>
                     for file in next(extract_to.iterdir()).iterdir():
                         file.rename(extract_to / file.name)
+
+                else:
+                    requires_unique = next(extract_to.iterdir())
+                    if requires_unique.is_dir():
+                        if any(
+                            file.name == requires_unique.name
+                            for file in requires_unique.iterdir()
+                        ):
+                            raise Warning(mod_packaging_error.format(extract_to))
 
         finally:
             # Add freshly installed mods to self.mods so that an error doesn't prevent

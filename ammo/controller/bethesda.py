@@ -333,14 +333,29 @@ class BethesdaController(ModController):
         This method is called by self.do_install which is defined in
         the parent class ModController.
         """
-        files = list(path.iterdir())
+        contents = list(path.iterdir())
+        if len(contents) != 1:
+            return False
+
+        folders = [i for i in contents if i.is_dir()]
+        if len(folders) != 1:
+            return False
+
+        subdir_contents = list(folders[0].iterdir())
+
+        if any(p.name == folders[0].name for p in subdir_contents):
+            # Returning True here would force trying to rename
+            # extract_to / my_mod_dir / my_mod_dir
+            # to
+            # extract_to / my_mod_dir
+            # which can't be done.
+            return False
+
         return all(
             [
-                len(files) == 1,
-                files[0].is_dir(),
-                files[0].name.lower() != self.game.data.name.lower(),
-                files[0].name.lower() not in NO_EXTRACT_DIRS,
-                files[0].suffix.lower() not in [".esp", ".esl", ".esm"],
+                contents[0].name.lower() != self.game.data.name.lower(),
+                contents[0].name.lower() not in NO_EXTRACT_DIRS,
+                contents[0].suffix.lower() not in [".esp", ".esl", ".esm"],
             ]
         )
 

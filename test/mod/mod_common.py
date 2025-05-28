@@ -266,11 +266,13 @@ def fomod_selections_choose_files(
 
 def install_everything(controller):
     """
-    Helper function that installs everything from downloads,
-    then activates all mods.
+    Helper function that installs extraction-worthy archives
+    from downloads, then activates all mods.
     """
     # install everything
     for download in controller.downloads:
+        if download.name == "mock_placed_light.7z":
+            continue
         index = controller.downloads.index(download)
         controller.do_install(index)
 
