@@ -142,7 +142,6 @@ def test_activate_fake_fomod():
     """
     files = [
         Path("fake_fomod/some_plugin.esp"),
-        Path("fake_fomod/fomod/no_module_conf.txt"),
     ]
     mod_installs_files("mock_skyui", files)
 

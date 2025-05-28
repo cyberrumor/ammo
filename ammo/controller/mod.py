@@ -31,9 +31,10 @@ log = logging.getLogger(__name__)
 
 # Filenames which won't contribute to collision detection.
 IGNORE_COLLISIONS = {
+    ".git",
     "LICENSE",
     "README.md",
-    ".git",
+    "fomod",
 }
 
 
