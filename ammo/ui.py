@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import sys
 import typing
 from typing import (
     Callable,
@@ -22,7 +21,10 @@ from abc import (
 from dataclasses import dataclass
 from itertools import product
 
-from ammo.lib import ignored
+from ammo.lib import (
+    ignored,
+    UserExit,
+)
 
 
 SEPARATOR_ROW = "."
@@ -371,13 +373,13 @@ class UI:
             input("[Enter] ")
         except (KeyboardInterrupt, EOFError):
             print()
-            sys.exit(0)
+            self.controller.exit = True
 
     def exit(self):
         """
         Quit.
         """
-        sys.exit(0)
+        raise UserExit("exit command detected.")
 
     def cast_to_type(self, arg: str, target_type: typing.Type):
         """
@@ -431,8 +433,7 @@ class UI:
                 if not (stdin := input(f"{self.controller.prompt()}")):
                     continue
             except (KeyboardInterrupt, EOFError):
-                print()
-                sys.exit(0)
+                raise UserExit("KeyboardInterrupt or EOFError detected.")
 
             cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
@@ -502,6 +503,9 @@ class UI:
             except Warning as warning:
                 print(f"\n{warning}")
                 input("[Enter] ")
+
+            except UserExit:
+                raise
 
             except Exception as e:
                 print(e)

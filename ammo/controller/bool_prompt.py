@@ -14,7 +14,7 @@ class BoolPromptController(Controller):
     def __init__(self, question: str):
         self.question = question
         self.return_value = None
-        self.do_exit = False
+        self.exit = False
 
     def prompt(self) -> str:
         """
@@ -27,7 +27,7 @@ class BoolPromptController(Controller):
         This function is executed after every command.
         It returns whether the UI should break from repl.
         """
-        if self.do_exit:
+        if self.exit:
             return True
 
         return False
@@ -53,11 +53,11 @@ class BoolPromptController(Controller):
         affirm or accept.
         """
         self.return_value = True
-        self.do_exit = True
+        self.exit = True
 
     def do_no(self) -> bool:
         """
         deny or reject.
         """
         self.return_value = False
-        self.do_exit = True
+        self.exit = True

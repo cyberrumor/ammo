@@ -1,9 +1,46 @@
 #!/usr/bin/env python3
 import argparse
+from contextlib import contextmanager
+import os
 from pathlib import Path
 
+from ammo.lib import (
+    ignored,
+    UserExit,
+)
 from ammo.ui import UI
 from ammo.controller.game import GameController
+
+
+@contextmanager
+def unique_pid():
+    """
+    Locks a pidfile for ammo and deletes it upon termination.
+
+    If a pidfile already exists, it raises FileExistsError.
+    """
+    pidfile = Path(f"/var/run/user/{os.getuid()}/ammo/pid")
+    if pidfile.exists():
+        with open(pidfile, "r") as f:
+            pid = f.read().strip()
+
+        raise FileExistsError(
+            f"ammo is already running with pid {pid}.\n"
+            f"Close all sessions before starting a new one or delete {pidfile}"
+        )
+
+    pid = str(os.getpid())
+
+    pidfile.parent.mkdir(parents=True, exist_ok=True)
+    with open(pidfile, "w") as f:
+        f.write(pid)
+
+    yield
+
+    with ignored(FileNotFoundError):
+        pidfile.unlink()
+        pidfile.parent.rmdir()
+
 
 parser = argparse.ArgumentParser(description="Almost Manual Mod Organizer")
 
@@ -45,8 +82,11 @@ parser.add_argument(
     help="manage a detected game with TITLE (skip game selection menu)",
 )
 
-args = parser.parse_args()
+if __name__ == "__main__":
 
-controller = GameController(args)
-ui = UI(controller)
-ui.repl()
+    with unique_pid():
+        with ignored(UserExit):
+            args = parser.parse_args()
+            controller = GameController(args)
+            ui = UI(controller)
+            ui.repl()

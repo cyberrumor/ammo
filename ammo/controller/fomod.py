@@ -97,7 +97,6 @@ class FomodController(Controller):
             self.steps.index(self.visible_pages[self.page_index])
         ]
         self.selection_type: str = self.page.archtype.lower()
-        self.do_exit: bool = False
         self.populate_index_commands()
 
     def __str__(self) -> str:
@@ -128,9 +127,6 @@ class FomodController(Controller):
         return f"{self.selection_type} >_: "
 
     def postcmd(self) -> bool:
-        if self.do_exit:
-            return True
-
         self.flags = self.get_flags()
         self.visible_pages: list[Page] = self.get_visible_pages()
         if self.page_index >= len(self.visible_pages):
@@ -480,9 +476,3 @@ class FomodController(Controller):
         Advance to the next page
         """
         self.page_index += 1
-
-    def do_exit(self) -> None:
-        """
-        Abandon configuration
-        """
-        self.do_exit = True

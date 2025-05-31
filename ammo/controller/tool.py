@@ -32,7 +32,7 @@ class ToolController(Controller):
         self.downloads: list[Download] = []
         self.tools: list[Tool] = []
 
-        self.do_exit: bool = False
+        self.exit: bool = False
 
         # Create required directories. Harmless if exists.
         Path.mkdir(self.tools_dir, parents=True, exist_ok=True)
@@ -80,8 +80,6 @@ class ToolController(Controller):
         return "Tools >_: "
 
     def postcmd(self) -> bool:
-        if self.do_exit:
-            return True
         self.do_refresh()
         return False
 
@@ -351,7 +349,7 @@ class ToolController(Controller):
         """
         Return to the mod controller.
         """
-        self.do_exit = True
+        self.exit = True
 
     def do_refresh(self) -> None:
         """
