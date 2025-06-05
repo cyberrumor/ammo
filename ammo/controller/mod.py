@@ -396,13 +396,13 @@ class ModController(Controller):
 
             {self.game.directory}/
             └──{folders[0].name}/
-                └──{"\n                └──".join(display_subdir_contents)}
+                └──{"\n                └──".join(i.name for i in display_subdir_contents)}
 
             If files are elevated above '{folders[0].name}/',
             they will be installed into the game directory like this instead:
 
             {self.game.directory}/
-            └──{"\n            └──".join(display_subdir_contents)}
+            └──{"\n            └──".join(i.name for i in display_subdir_contents)}
 
             Elevate files above '{folders[0].name}/'?
             """

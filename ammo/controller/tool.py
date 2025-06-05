@@ -160,13 +160,13 @@ class ToolController(Controller):
 
             {path}/
             └──{folders[0].name}/
-                └──{"\n                └──".join(display_subdir_contents)}
+                └──{"\n                └──".join(i.name for i in display_subdir_contents)}
 
             If files are elevated above '{folders[0].name}/',
             they will be installed into the tool directory like this instead:
 
             {path}/
-            └──{"\n            └──".join(display_subdir_contents)}
+            └──{"\n            └──".join(i.name for i in display_subdir_contents)}
 
             Elevate files above '{folders[0].name}/'?
             """
