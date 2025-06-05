@@ -22,7 +22,7 @@ def test_pending_change_restrictions_delete_mod(mock_has_extra_folder):
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.do_delete_mod(0)
+            controller.delete_mod(0)
 
 
 def test_pending_change_restrictions_delete_download():
@@ -49,7 +49,7 @@ def test_pending_change_restrictions_delete_download():
 
         try:
             with pytest.raises(Warning):
-                controller.do_delete_download(download_index)
+                controller.delete_download(download_index)
         finally:
             temp_download.unlink(missing_ok=True)
 
@@ -80,7 +80,7 @@ def test_pending_change_restrictions_rename_mod(mock_has_extra_folder):
         controller.changes = True
 
         with pytest.raises(Warning):
-            controller.do_rename_mod(0, "new_name")
+            controller.rename_mod(0, "new_name")
 
 
 def test_pending_change_restrictions_rename_download():
@@ -107,7 +107,7 @@ def test_pending_change_restrictions_rename_download():
 
         try:
             with pytest.raises(Warning):
-                controller.do_rename_download(download_index, "new_download_name")
+                controller.rename_download(download_index, "new_download_name")
         finally:
             temp_download.unlink(missing_ok=True)
             (controller.downloads_dir / "new_download_name.7z").unlink(missing_ok=True)
@@ -120,7 +120,7 @@ def test_pending_change_move(mock_has_extra_folder):
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.do_move_mod(0, 1)
+        controller.move_mod(0, 1)
         assert controller.changes is True, (
             "move command did not create a pending change"
         )
@@ -134,7 +134,7 @@ def test_pending_change_move_nowhere(mock_has_extra_folder):
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
         install_mod(controller, "multiple_plugins")
-        controller.do_move_mod(0, 0)
+        controller.move_mod(0, 0)
         assert controller.changes is False, (
             "move command created a pending change when it shouldn't have."
         )
@@ -147,14 +147,14 @@ def test_pending_change_activate(mock_has_extra_folder):
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.do_activate_mod(0)
+        controller.activate_mod(0)
         assert controller.changes is False, (
             "activate command created a pending change when it shouldn't have."
         )
 
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.do_activate_mod(0)
+        controller.activate_mod(0)
         assert controller.changes is True, (
             "activate command failed to create a pending change."
         )
@@ -167,14 +167,14 @@ def test_pending_change_deactivate(mock_has_extra_folder):
     """
     with AmmoController() as controller:
         extract_mod(controller, "normal_mod")
-        controller.do_deactivate_mod(0)
+        controller.deactivate_mod(0)
         assert controller.changes is False, (
             "deactivate command created a pending change when it shouldn't have."
         )
 
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.do_deactivate_mod(0)
+        controller.deactivate_mod(0)
         assert controller.changes is True, (
             "deactivate command failed to create a pending change."
         )
@@ -219,7 +219,7 @@ def test_pending_change_delete_mod(mock_has_extra_folder):
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.do_delete_mod(0)
+        controller.delete_mod(0)
         assert controller.changes is False, (
             "Delete mod command created a pending change."
         )
@@ -240,7 +240,7 @@ def test_pending_change_delete_download():
         )
 
         try:
-            controller.do_delete_download(download_index)
+            controller.delete_download(download_index)
             assert controller.changes is False, (
                 "Delete download command created a pending change."
             )
@@ -255,7 +255,7 @@ def test_pending_change_rename_mod(mock_has_extra_folder):
     """
     with AmmoController() as controller:
         install_mod(controller, "normal_mod")
-        controller.do_rename_mod(0, "new_mod_name")
+        controller.rename_mod(0, "new_mod_name")
         assert controller.changes is False, (
             "Rename mod command created a pending change."
         )
@@ -278,7 +278,7 @@ def test_pending_change_rename_download():
         )
 
         try:
-            controller.do_rename_download(download_index, "new_download_name")
+            controller.rename_download(download_index, "new_download_name")
             assert controller.changes is False, (
                 "Rename download command created a pending change."
             )

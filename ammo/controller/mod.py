@@ -13,6 +13,8 @@ import typing
 from typing import Union
 from enum import (
     EnumMeta,
+    StrEnum,
+    auto,
 )
 from ammo.ui import (
     UI,
@@ -36,6 +38,15 @@ IGNORE_COLLISIONS = {
     "README.md",
     "fomod",
 }
+
+
+class ComponentWrite(StrEnum):
+    MOD = auto()
+    DOWNLOAD = auto()
+
+
+class ComponentMove(StrEnum):
+    MOD = auto()
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -441,7 +452,7 @@ class ModController(Controller):
 
         return extract_to
 
-    def do_activate_mod(self, index: Union[int, str]) -> None:
+    def activate_mod(self, index: Union[int, str]) -> None:
         """
         Enabled mods will be loaded by game.
         """
@@ -467,9 +478,21 @@ class ModController(Controller):
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def do_deactivate_mod(self, index: Union[int, str]) -> None:
+    def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
-        Diabled mods will not be loaded by game.
+        Enabled mods will be loaded by the game.
+        """
+        match component:
+            case ComponentMove.MOD:
+                return self.activate_mod(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentMove)} but got '{component}'"
+                )
+
+    def deactivate_mod(self, index: Union[int, str]) -> None:
+        """
+        Diabled mods will not be loaded by the game.
         """
         try:
             int(index)
@@ -486,7 +509,19 @@ class ModController(Controller):
 
         self.stage()
 
-    def do_move_mod(self, index: int, new_index: int) -> None:
+    def do_deactivate(self, component: ComponentMove, index: Union[int, str]) -> None:
+        """
+        Disabled mods will not be loaded by the game.
+        """
+        match component:
+            case ComponentMove.MOD:
+                return self.activate_mod(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentMove)} but got '{component}'"
+                )
+
+    def move_mod(self, index: int, new_index: int) -> None:
         """
         Larger numbers win file conflicts.
         """
@@ -513,6 +548,18 @@ class ModController(Controller):
         self.mods.insert(new_index, comp)
         self.stage()
         self.changes = True
+
+    def do_move(self, component: ComponentMove, index: int, new_index: int) -> None:
+        """
+        Larger numbers win file conflicts.
+        """
+        match component:
+            case ComponentMove.MOD:
+                return self.move_mod(index, new_index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentMove)}, got '{component}'"
+                )
 
     def do_commit(self) -> None:
         """
@@ -703,7 +750,7 @@ class ModController(Controller):
         self.do_refresh()
 
     @requires_sync
-    def do_rename_download(self, index: int, name: str) -> None:
+    def rename_download(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics, periods, and underscores.
         """
@@ -745,7 +792,7 @@ class ModController(Controller):
         self.do_refresh()
 
     @requires_sync
-    def do_rename_mod(self, index: int, name: str) -> None:
+    def rename_mod(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics, periods, and underscores.
         """
@@ -792,7 +839,22 @@ class ModController(Controller):
         self.do_commit()
 
     @requires_sync
-    def do_delete_mod(self, index: Union[int, str]) -> None:
+    def do_rename(self, component: ComponentWrite, index: int, name: str) -> None:
+        """
+        Names may contain alphanumerics, periods, and underscores.
+        """
+        match component:
+            case ComponentWrite.MOD:
+                self.rename_mod(index, name)
+            case ComponentWrite.DOWNLOAD:
+                self.rename_download(index, name)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentWrite)}, got '{component}'"
+                )
+
+    @requires_sync
+    def delete_mod(self, index: Union[int, str]) -> None:
         """
         Removes specified mod from the filesystem.
         """
@@ -845,7 +907,7 @@ class ModController(Controller):
                 self.do_commit()
 
     @requires_sync
-    def do_delete_download(self, index: Union[int, str]) -> None:
+    def delete_download(self, index: Union[int, str]) -> None:
         """
         Removes specified download from the filesystem.
         """
@@ -875,6 +937,17 @@ class ModController(Controller):
                 download.location.unlink()
             except FileNotFoundError:
                 pass
+
+    @requires_sync
+    def do_delete(self, component: ComponentWrite, index: Union[int, str]):
+        """
+        Removes specified component from the filesystem.
+        """
+        match component:
+            case ComponentWrite.DOWNLOAD:
+                self.delete_download(index)
+            case ComponentWrite.MOD:
+                self.delete_mod(index)
 
     @requires_sync
     def do_install(self, index: Union[int, str]) -> None:

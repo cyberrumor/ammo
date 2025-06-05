@@ -173,11 +173,11 @@ def mod_installs_files(mod_name, files):
         )
         controller.do_install(mod_index_download)
         mod_index = [i.name for i in controller.mods].index(mod_name)
-        controller.do_activate_mod(mod_index)
+        controller.activate_mod(mod_index)
 
         # activate any plugins this mod has
         for plugin in range(len(controller.plugins)):
-            controller.do_activate_plugin(plugin)
+            controller.activate_plugin(plugin)
 
         controller.do_commit()
         expect_files(controller.game.directory, files)
@@ -260,11 +260,11 @@ def install_everything(controller):
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            controller.do_activate_mod(index)
+            controller.activate_mod(index)
 
     for plugin in controller.plugins:
         index = controller.plugins.index(plugin)
-        controller.do_activate_plugin(index)
+        controller.activate_plugin(index)
 
     controller.do_commit()
 
@@ -296,11 +296,11 @@ def install_mod(controller, mod_name: str):
     controller.do_install(index)
 
     mod_index = [i.name for i in controller.mods].index(mod_name)
-    controller.do_activate_mod(mod_index)
+    controller.activate_mod(mod_index)
 
     for plugin in controller.mods[mod_index].plugins:
         plugin_index = [i.name for i in controller.plugins].index(plugin.name)
-        controller.do_activate_plugin(plugin_index)
+        controller.activate_plugin(plugin_index)
 
     controller.do_commit()
     assert controller.mods[mod_index].enabled is True

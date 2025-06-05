@@ -7,7 +7,9 @@ from pathlib import Path
 import typing
 from typing import Union
 from enum import (
+    auto,
     EnumMeta,
+    StrEnum,
 )
 from dataclasses import (
     dataclass,
@@ -46,6 +48,17 @@ NO_EXTRACT_DIRS = [
     "textures",
     "voices",
 ]
+
+
+class ComponentWrite(StrEnum):
+    MOD = auto()
+    PLUGIN = auto()
+    DOWNLOAD = auto()
+
+
+class ComponentMove(StrEnum):
+    MOD = auto()
+    PLUGIN = auto()
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -435,7 +448,7 @@ class BethesdaController(ModController):
         if not self.changes:
             self.changes = starting_state != target_plugin.enabled
 
-    def do_activate_plugin(self, index: Union[int, str]) -> None:
+    def activate_plugin(self, index: Union[int, str]) -> None:
         """
         Enabled plugins will be loaded by the game.
         """
@@ -461,9 +474,23 @@ class BethesdaController(ModController):
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def do_deactivate_plugin(self, index: Union[int, str]) -> None:
+    def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
-        Disabled plugins will not be loaded by game.
+        Enabled components will be loaded by the game.
+        """
+        match component:
+            case ComponentMove.PLUGIN:
+                return self.activate_plugin(index)
+            case ComponentMove.MOD:
+                return self.activate_mod(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentMove)} but got '{component}'"
+                )
+
+    def deactivate_plugin(self, index: Union[int, str]) -> None:
+        """
+        Disabled plugins will not be loaded by the game.
         """
         try:
             int(index)
@@ -480,7 +507,21 @@ class BethesdaController(ModController):
 
         self.stage()
 
-    def do_move_plugin(self, index: int, new_index: int) -> None:
+    def do_deactivate(self, component: ComponentMove, index: Union[int, str]) -> None:
+        """
+        Disabled components will not be loaded by the game.
+        """
+        match component:
+            case ComponentMove.PLUGIN:
+                return self.deactivate_plugin(index)
+            case ComponentMove.MOD:
+                return self.deactivate_mod(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentMove)} but got '{component}'"
+                )
+
+    def move_plugin(self, index: int, new_index: int) -> None:
         """
         Larger numbers win record conflicts.
         """
@@ -507,6 +548,20 @@ class BethesdaController(ModController):
         self.plugins.insert(new_index, comp)
         self.stage()
         self.changes = True
+
+    def do_move(self, component: ComponentMove, index: int, new_index: int) -> None:
+        """
+        Larger numbers win conflicts.
+        """
+        match component:
+            case ComponentMove.PLUGIN:
+                return self.move_plugin(index, new_index)
+            case ComponentMove.MOD:
+                return self.move_mod(index, new_index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentMove)}, got '{component}'"
+                )
 
     def do_find(self, *keyword: str) -> None:
         """
@@ -612,7 +667,7 @@ class BethesdaController(ModController):
         return wrapper
 
     @requires_sync
-    def do_delete_plugin(self, index: Union[int, str]) -> None:
+    def delete_plugin(self, index: Union[int, str]) -> None:
         """
         Removes specified plugin from the filesystem.
         """
@@ -665,3 +720,19 @@ class BethesdaController(ModController):
 
             self.do_refresh()
             self.do_commit()
+
+    def do_delete(self, component: ComponentWrite, index: Union[int, str]) -> None:
+        """
+        Removes the specified file from the filesystem.
+        """
+        match component:
+            case ComponentWrite.MOD:
+                return self.delete_mod(index)
+            case ComponentWrite.PLUGIN:
+                return self.delete_plugin(index)
+            case ComponentWrite.DOWNLOAD:
+                return self.delete_download(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentWrite)}, got '{component}'"
+                )

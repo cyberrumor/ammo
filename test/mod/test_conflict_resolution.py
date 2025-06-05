@@ -37,7 +37,7 @@ def test_conflict_resolution():
 
                 mod_index = [i.name for i in controller.mods].index(mod)
 
-                controller.do_activate_mod(mod_index)
+                controller.activate_mod(mod_index)
                 controller.do_commit()
 
             # Commit changes
@@ -61,7 +61,7 @@ def test_conflict_resolution():
                 check_links(expected_game_file, expected_mod_file)
 
             # Rearrange the mods
-            controller.do_move_mod(1, 0)
+            controller.move_mod(1, 0)
             controller.do_commit()
 
             # Assert that the symlinks point to "mock_conflict_1" now.
@@ -123,7 +123,7 @@ def test_conflicting_mods_have_conflict_flag_after_move():
             for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
                 install_mod(controller, mod)
 
-            controller.do_move_mod(2, 0)
+            controller.move_mod(2, 0)
 
             assert (
                 controller.mods[
@@ -159,9 +159,9 @@ def test_conflicting_mods_have_conflict_flag_after_actviate():
             for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
                 extract_mod(controller, mod)
 
-            controller.do_activate_mod(0)
-            controller.do_activate_mod(1)
-            controller.do_activate_mod(2)
+            controller.activate_mod(0)
+            controller.activate_mod(1)
+            controller.activate_mod(2)
 
             assert (
                 controller.mods[
@@ -197,7 +197,7 @@ def test_conflicting_mods_have_conflict_flag_after_deactivate():
             for mod in ["mock_conflict_1", "mock_conflict_2", "normal_mod"]:
                 install_mod(controller, mod)
 
-            controller.do_deactivate_mod(2)
+            controller.deactivate_mod(2)
 
             assert (
                 controller.mods[
@@ -235,11 +235,11 @@ def test_conflicting_mods_only_conflict_when_activated():
             assert controller.mods[0].conflict is False
             assert controller.mods[1].conflict is False
 
-            controller.do_activate_mod(0)
+            controller.activate_mod(0)
             assert controller.mods[0].conflict is False
             assert controller.mods[1].conflict is False
 
-            controller.do_activate_mod(1)
+            controller.activate_mod(1)
             assert controller.mods[0].conflict is True
             assert controller.mods[1].conflict is True
 
@@ -258,7 +258,7 @@ def test_conflicting_mods_conflict_after_rename():
             for mod in ["mock_conflict_1", "mock_conflict_2"]:
                 install_mod(controller, mod)
 
-            controller.do_rename_mod(0, "new_name")
+            controller.rename_mod(0, "new_name")
 
             assert controller.mods[0].conflict is True
             assert controller.mods[1].conflict is True
@@ -333,7 +333,7 @@ def test_obsolete_init():
             assert controller.mods[normal_mod].obsolete is False
 
             # perform a move
-            controller.do_move_mod(mock_conflict_1, mock_conflict_2)
+            controller.move_mod(mock_conflict_1, mock_conflict_2)
             # fix indices
             mock_conflict_1, mock_conflict_2 = mock_conflict_2, mock_conflict_1
 
@@ -342,7 +342,7 @@ def test_obsolete_init():
             assert controller.mods[normal_mod].obsolete is False
 
             # Perform a deactivate
-            controller.do_deactivate_mod(mock_conflict_1)
+            controller.deactivate_mod(mock_conflict_1)
             assert controller.mods[mock_conflict_2].obsolete is False
             assert controller.mods[normal_mod].obsolete is False
 

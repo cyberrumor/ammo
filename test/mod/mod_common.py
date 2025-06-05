@@ -185,7 +185,7 @@ def mod_installs_files(mod_name, files, has_extra_folder=False):
             )
             controller.do_install(mod_index_download)
             mod_index = [i.name for i in controller.mods].index(mod_name)
-            controller.do_activate_mod(mod_index)
+            controller.activate_mod(mod_index)
 
             controller.do_commit()
             expect_files(controller.game.directory, files)
@@ -280,7 +280,7 @@ def install_everything(controller):
     for mod in controller.mods:
         if not mod.fomod:
             index = controller.mods.index(mod)
-            controller.do_activate_mod(index)
+            controller.activate_mod(index)
 
     controller.do_commit()
 
@@ -311,7 +311,7 @@ def install_mod(controller, mod_name: str):
     controller.do_install(index)
 
     mod_index = [i.name for i in controller.mods].index(mod_name)
-    controller.do_activate_mod(mod_index)
+    controller.activate_mod(mod_index)
 
     controller.do_commit()
     assert controller.mods[mod_index].enabled is True

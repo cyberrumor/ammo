@@ -57,8 +57,8 @@ def test_controller_subsequent_launch(mock_has_extra_folder):
         install_everything(first_launch)
 
         # change some config to ensure it's not just alphabetic
-        first_launch.do_move_mod(2, 0)
-        first_launch.do_deactivate_mod(1)
+        first_launch.move_mod(2, 0)
+        first_launch.deactivate_mod(1)
         first_launch.do_commit()
 
         mods = [(i.name, i.location, i.enabled) for i in first_launch.mods]
@@ -93,7 +93,7 @@ def test_controller_move(mock_has_extra_folder):
         assert controller.mods[1].name == "mock_conflict_1"
         assert controller.mods[2].name == "mock_conflict_2"
 
-        controller.do_move_mod(1, 3)  # index larger than list should resolve to len()
+        controller.move_mod(1, 3)  # index larger than list should resolve to len()
         assert controller.mods[0].name == "normal_mod"
         assert controller.mods[1].name == "mock_conflict_2"
         assert controller.mods[2].name == "mock_conflict_1"
@@ -129,5 +129,5 @@ def test_no_delete_all_if_mod_active(mock_has_extra_folder):
         expected = "You must deactivate all visible components of that type before deleting them with all."
 
         with pytest.raises(Warning) as warning:
-            controller.do_delete_mod("all")
+            controller.delete_mod("all")
             assert warning.value.args == (expected,)

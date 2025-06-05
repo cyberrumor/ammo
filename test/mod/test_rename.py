@@ -27,7 +27,7 @@ def test_rename_mod_moves_folder(mock_has_extra_folder):
         assert location_original.exists()
 
         # Rename.
-        controller.do_rename_mod(index, "normal_mod_renamed")
+        controller.rename_mod(index, "normal_mod_renamed")
 
         # Verify the original folder doesn't exist after rename.
         assert location_original.exists() is False
@@ -56,7 +56,7 @@ def test_rename_mod_fomod():
             assert original_modconf.exists() is True
 
             # Rename.
-            controller.do_rename_mod(original_index, "bos")
+            controller.rename_mod(original_index, "bos")
 
             # Verify the original modconf doesn't exist
             assert original_modconf.exists() is False
@@ -82,7 +82,7 @@ def test_rename_mod_preserves_enabled_state(mock_has_extra_folder):
         assert controller.mods[index].enabled is True
 
         # Rename.
-        controller.do_rename_mod(index, "normal_mod_renamed")
+        controller.rename_mod(index, "normal_mod_renamed")
 
         assert controller.mods[index].enabled is True, (
             "An enabled mod was disabled when renamed."
@@ -98,7 +98,7 @@ def test_rename_mod_preserves_disabled_state(mock_has_extra_folder):
         assert controller.mods[index].enabled is False
 
         # Rename.
-        controller.do_rename_mod(index, "normal_mod_renamed")
+        controller.rename_mod(index, "normal_mod_renamed")
 
         assert controller.mods[index].enabled is False, (
             "A disabled mod was enabled when renamed."
@@ -114,7 +114,7 @@ def test_rename_mod_preserves_index(mock_has_extra_folder):
         original_index = [i.name for i in controller.mods].index("normal_mod")
 
         # Rename.
-        controller.do_rename_mod(original_index, "normal_mod_renamed")
+        controller.rename_mod(original_index, "normal_mod_renamed")
         new_index = [i.name for i in controller.mods].index("normal_mod_renamed")
 
         assert new_index == original_index, "A renamed mod didn't preserve load order!"
@@ -132,7 +132,7 @@ def test_rename_mod_name_exists(mock_has_extra_folder):
         index_2 = [i.name for i in controller.mods].index("mock_conflict_2")
 
         with pytest.raises(Warning):
-            controller.do_rename_mod(index_1, "mock_conflict_2")
+            controller.rename_mod(index_1, "mock_conflict_2")
 
         assert controller.mods[index_1].location.exists()
         assert controller.mods[index_1].location.stem == "mock_conflict_1"
@@ -159,7 +159,7 @@ def test_rename_download_moves_file():
             original_download = controller.downloads[index]
 
             # Rename.
-            controller.do_rename_download(index, "i_was_renamed")
+            controller.rename_download(index, "i_was_renamed")
 
             new_index = [i.name for i in controller.downloads].index("i_was_renamed.7z")
             new_download = controller.downloads[new_index]

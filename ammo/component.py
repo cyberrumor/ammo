@@ -23,7 +23,7 @@ class Mod:
     files: list[Path] = field(default_factory=list, init=False)
     modconf: Union[None, Path] = field(init=False, default=None)
     fomod: bool = field(init=False, default=False)
-    fomod_target: Path = field(init=False, default=False)
+    fomod_target: Union[None, Path] = field(init=False, default=None)
     replacements: dict[str, str] = field(init=False, default_factory=dict)
 
     def find_module_conf(self, location) -> Path | None:

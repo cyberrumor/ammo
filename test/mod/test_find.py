@@ -50,7 +50,7 @@ def test_find_activate_all_mods(mock_has_extra_folder):
         extract_mod(controller, "normal_mod")
 
         controller.do_find("conflict")
-        controller.do_activate_mod("all")
+        controller.activate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -72,7 +72,7 @@ def test_find_deactivate_all_mods(mock_has_extra_folder):
         install_mod(controller, "normal_mod")
 
         controller.do_find("conflict")
-        controller.do_deactivate_mod("all")
+        controller.deactivate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -90,7 +90,7 @@ def test_find_delete_all_mods(mock_has_extra_folder):
         extract_mod(controller, "no_data_folder_plugin")
 
         controller.do_find("normal", "conflict")
-        controller.do_delete_mod("all")
+        controller.delete_mod("all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

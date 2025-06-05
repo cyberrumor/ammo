@@ -52,7 +52,7 @@ def test_find_activate_all_mods():
         extract_mod(controller, "normal_mod")
 
         controller.do_find("conflict")
-        controller.do_activate_mod("all")
+        controller.activate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             [
@@ -74,7 +74,7 @@ def test_find_deactivate_all_mods():
         install_mod(controller, "normal_mod")
 
         controller.do_find("conflict")
-        controller.do_deactivate_mod("all")
+        controller.deactivate_mod("all")
 
         assert set([i.name for i in controller.mods if i.enabled]) == set(
             ["normal_mod"]
@@ -91,10 +91,10 @@ def test_find_activate_all_plugins():
         extract_mod(controller, "normal_mod")
         extract_mod(controller, "mock_conflict_1")
         extract_mod(controller, "no_data_folder_plugin")
-        controller.do_activate_mod("all")
+        controller.activate_mod("all")
 
         controller.do_find("normal", "mock")
-        controller.do_activate_plugin("all")
+        controller.activate_plugin("all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             [
@@ -116,7 +116,7 @@ def test_find_deactivate_all_plugins():
         install_mod(controller, "no_data_folder_plugin")
 
         controller.do_find("normal", "mock")
-        controller.do_deactivate_plugin("all")
+        controller.deactivate_plugin("all")
 
         assert set([i.name for i in controller.plugins if i.enabled]) == set(
             ["no_data_folder_plugin.esp"]
@@ -134,7 +134,7 @@ def test_find_delete_all_mods():
         extract_mod(controller, "no_data_folder_plugin")
 
         controller.do_find("normal", "conflict")
-        controller.do_delete_mod("all")
+        controller.delete_mod("all")
 
         assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
 

@@ -7,6 +7,10 @@ from pathlib import Path
 import textwrap
 import typing
 from typing import Union
+from enum import (
+    auto,
+    StrEnum,
+)
 from ammo.ui import (
     Controller,
     UI,
@@ -17,6 +21,11 @@ from ammo.component import (
     Download,
     Tool,
 )
+
+
+class ComponentWrite(StrEnum):
+    TOOL = auto()
+    DOWNLOAD = auto()
 
 
 class ToolController(Controller):
@@ -166,7 +175,7 @@ class ToolController(Controller):
         ui = UI(prompt_controller)
         return ui.repl()
 
-    def do_rename_download(self, index: int, name: str) -> None:
+    def rename_download(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics or underscores.
         """
@@ -202,7 +211,7 @@ class ToolController(Controller):
 
         download.location.rename(new_location)
 
-    def do_rename_tool(self, index: int, name: str) -> None:
+    def rename_tool(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics or underscores.
         """
@@ -232,7 +241,21 @@ class ToolController(Controller):
         tool.path.rename(new_location)
         tool.path = new_location
 
-    def do_delete_tool(self, index: Union[int, str]) -> None:
+    def do_rename(self, component: ComponentWrite, index: int, name: str) -> None:
+        """
+        Names may contain alphanumerics or underscores.
+        """
+        match component:
+            case ComponentWrite.TOOL:
+                return self.rename_tool(index, name)
+            case ComponentWrite.DOWNLOAD:
+                return self.rename_download(index, name)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentWrite)} but got '{component}'"
+                )
+
+    def delete_tool(self, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
         """
@@ -261,7 +284,7 @@ class ToolController(Controller):
             with ignored(FileNotFoundError):
                 shutil.rmtree(tool.path)
 
-    def do_delete_download(self, index: Union[int, str]) -> None:
+    def delete_download(self, index: Union[int, str]) -> None:
         """
         Removes specified file from the filesystem.
         """
@@ -279,6 +302,20 @@ class ToolController(Controller):
                 raise Warning(e)
             with ignored(FileNotFoundError):
                 download.location.unlink()
+
+    def do_delete(self, component: ComponentWrite, index: Union[int, str]) -> None:
+        """
+        Removes specified file from the filesystem.
+        """
+        match component:
+            case ComponentWrite.TOOL:
+                return self.delete_tool(index)
+            case ComponentWrite.DOWNLOAD:
+                return self.delete_download(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentWrite)} but got '{component}'"
+                )
 
     def do_install(self, index: Union[int, str]) -> None:
         """
