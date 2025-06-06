@@ -212,7 +212,7 @@ class ToolController(Controller):
         """
         Names may contain alphanumerics or underscores.
         """
-        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+        if name != "".join([i for i in name if i.isalnum() or i in ("_", ".")]):
             raise Warning(
                 "Names can only contain alphanumeric characters or underscores"
             )
@@ -246,9 +246,9 @@ class ToolController(Controller):
 
     def rename_tool(self, index: int, name: str) -> None:
         """
-        Names may contain alphanumerics or underscores.
+        Names may contain alphanumerics, periods, and underscores.
         """
-        if name != "".join([i for i in name if i.isalnum() or i == "_"]):
+        if name != "".join([i for i in name if i.isalnum() or i in ("_", ".")]):
             raise Warning(
                 "Names can only contain alphanumeric characters or underscores"
             )
