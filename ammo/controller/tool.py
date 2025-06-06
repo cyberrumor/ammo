@@ -89,8 +89,9 @@ class ToolController(Controller):
         return "Tools >_: "
 
     def postcmd(self) -> bool:
+        if self.exit:
+            return self.exit
         self.do_refresh()
-        return self.exit
 
     def autocomplete(self, text: str, state: int) -> Union[str, None]:
         buf = readline.get_line_buffer()
