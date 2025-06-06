@@ -90,7 +90,7 @@ class ToolController(Controller):
 
     def postcmd(self) -> bool:
         self.do_refresh()
-        return False
+        return self.exit
 
     def autocomplete(self, text: str, state: int) -> Union[str, None]:
         buf = readline.get_line_buffer()
@@ -143,14 +143,27 @@ class ToolController(Controller):
 
         Every other scenario needs to prompt the user.
         """
-        folders = [i for i in path.iterdir() if i.is_dir()]
+        contents = list(path.iterdir())
+        if len(contents) != 1:
+            return False
+
+        folders = [i for i in contents if i.is_dir()]
         if len(folders) != 1:
             # If there's more than one folder, we can't tell which folder we
             # should elevate files out of. If there's no folders, there's no
             # depth to elevate files out of.
             return False
 
-        subdir_contents = [i.name for i in folders[0].iterdir()]
+        subdir_contents = list(folders[0].iterdir())
+
+        if any(p.name == folders[0].name for p in subdir_contents):
+            # Returning True here would force trying to rename
+            # extract_to / my_mod_dir / my_mod_dir
+            # to
+            # extract_to / my_mod_dir
+            # which can't be done.
+            return False
+
         display_subdir_contents = subdir_contents[0 : min(3, len(subdir_contents))]
         question = textwrap.dedent(
             f"""
