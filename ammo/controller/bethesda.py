@@ -302,9 +302,22 @@ class BethesdaController(ModController):
                     completions.append("all")
 
         elif isinstance(target_type, EnumMeta):
-            for i in list(target_type):
-                if i.value.startswith(text):
-                    completions.append(i.value)
+            if target_type == ComponentMove:
+                # If we're activating, deactivating, or moving something,
+                # and there's no plugins, autocomplete 'mod'. If there's no mods,
+                # autocomplete 'plugin'.
+                if not self.mods:
+                    completions.append(ComponentMove.PLUGIN.value)
+                elif not self.plugins:
+                    completions.append(ComponentMove.MOD.value)
+                else:
+                    for i in list(target_type):
+                        if i.value.startswith(text):
+                            completions.append(i.value)
+            else:
+                for i in list(target_type):
+                    if i.value.startswith(text):
+                        completions.append(i.value)
 
         if func == self.do_install.__func__:
             for i in range(len(self.downloads)):
