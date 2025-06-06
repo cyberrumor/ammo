@@ -16,15 +16,10 @@ from enum import (
     StrEnum,
     auto,
 )
-from ammo.ui import (
-    UI,
-    Controller,
-)
-from ammo.component import (
-    Mod,
-    Download,
-)
+from ammo.ui import UI
+from ammo.component import Mod
 from ammo.lib import ignored
+from .download import DownloadController
 from .tool import ToolController
 from .fomod import FomodController
 from .bool_prompt import BoolPromptController
@@ -59,18 +54,17 @@ class Game:
     directory: Path
 
 
-class ModController(Controller):
+class ModController(DownloadController):
     """
     ModController is responsible for managing mods. It exposes
     methods to the UI that allow the user to easily manage mods.
     """
 
     def __init__(self, downloads_dir: Path, game: Game, *keywords):
-        self.downloads_dir: Path = downloads_dir
+        super().__init__(downloads_dir)
         self.game: Game = game
         self.keywords = [*keywords]
         self.changes: bool = False
-        self.downloads: list[Download] = []
         self.mods: list[Mod] = []
 
         # Create required directories. Harmless if exists.
@@ -128,20 +122,6 @@ class ModController(Controller):
             if mod not in self.mods:
                 self.mods.append(mod)
 
-    def populate_downloads(self):
-        """
-        Populate self.downloads.
-        """
-        self.downloads: list[Download] = []
-        downloads: list[Path] = []
-        for file in self.downloads_dir.iterdir():
-            if file.is_dir():
-                continue
-            if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
-                download = Download(file)
-                downloads.append(download)
-        self.downloads = sorted(downloads, key=lambda x: x.name)
-
     def __str__(self) -> str:
         """
         Output a string representing all downloads, mods.
@@ -155,15 +135,7 @@ class ModController(Controller):
             result += "Commands which accept the `all` arg only operate on shown components.\n"
             result += "Execute `find` without arguments to remove the filter.\n\n"
 
-        if len([i for i in self.downloads if i.visible]):
-            result += " index | Download\n"
-            result += "-------|---------\n"
-
-            for i, download in enumerate(self.downloads):
-                if download.visible:
-                    priority = f"[{i}]"
-                    result += f"{priority:<7} {download.name}\n"
-            result += "\n"
+        result += super().__str__()
 
         if len([i for i in self.mods if i.visible]):
             result += " index | Active | Mod name\n"
@@ -767,42 +739,9 @@ class ModController(Controller):
         """
         Names may contain alphanumerics, periods, and underscores.
         """
-        if name != "".join([i for i in name if i.isalnum() or i in ("_", ".")]):
-            raise Warning(
-                "Names can only contain alphanumeric characters, periods, or underscores"
-            )
-
-        forbidden_names = []
-        for i in self.game.directory.parts:
-            forbidden_names.append(i.lower())
-        if name.lower() in forbidden_names:
-            raise Warning(
-                f"Choose something else. These names are forbidden: {forbidden_names}"
-            )
-
-        try:
-            download = self.downloads[index]
-        except IndexError as e:
-            raise Warning(e)
-
-        if not download.visible:
-            raise Warning("You can only rename visible components.")
-
-        try:
-            print("Verifying archive integrity...")
-            subprocess.check_output(["7z", "t", f"{download.location}"])
-        except subprocess.CalledProcessError:
-            raise Warning(
-                f"Rename of {index} failed at integrity check. Incomplete download?"
-            )
-
-        new_location = download.location.parent / f"{name}{download.location.suffix}"
-        if new_location.exists():
-            raise Warning(f"Can't rename because download {new_location} exists.")
-
-        log.info(f"Renaming DOWNLOAD {download.location} to {new_location}")
-        download.location.rename(new_location)
-        self.do_refresh()
+        # This function basically only exists so we can put the
+        # requires_sync decorator on it.
+        return super().rename_download(index, name)
 
     @requires_sync
     def rename_mod(self, index: int, name: str) -> None:
@@ -924,32 +863,9 @@ class ModController(Controller):
         """
         Removes specified download from the filesystem.
         """
-        if index == "all":
-            visible_downloads = [i for i in self.downloads if i.visible]
-            for visible_download in visible_downloads:
-                download = self.downloads.pop(self.downloads.index(visible_download))
-                try:
-                    log.info(f"Deleting DOWNLOAD: {download.location}")
-                    download.location.unlink()
-                except FileNotFoundError:
-                    pass
-        else:
-            try:
-                index = int(index)
-                download = self.downloads[index]
-            except (ValueError, IndexError) as e:
-                raise Warning(e)
-
-            if not download.visible:
-                raise Warning("You can only delete visible components")
-
-            self.downloads.remove(download)
-
-            try:
-                log.info(f"Deleting DOWNLOAD: {download.location}")
-                download.location.unlink()
-            except FileNotFoundError:
-                pass
+        # This function basically only exists so we can put the
+        # requires_sync decorator on it.
+        return super().delete_download(index)
 
     @requires_sync
     def do_delete(self, component: ComponentWrite, index: Union[int, str]):

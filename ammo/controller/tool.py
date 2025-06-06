@@ -12,16 +12,11 @@ from enum import (
     StrEnum,
     EnumMeta,
 )
-from ammo.ui import (
-    Controller,
-    UI,
-)
+from ammo.ui import UI
 from ammo.controller.bool_prompt import BoolPromptController
+from ammo.controller.download import DownloadController
 from ammo.lib import ignored
-from ammo.component import (
-    Download,
-    Tool,
-)
+from ammo.component import Tool
 
 
 class ComponentWrite(StrEnum):
@@ -29,17 +24,16 @@ class ComponentWrite(StrEnum):
     DOWNLOAD = auto()
 
 
-class ToolController(Controller):
+class ToolController(DownloadController):
     """
     Tool controller is responsible for managing files that you
     don't want to have installed into your game directory.
     """
 
     def __init__(self, downloads_dir: Path, tools_dir: Path):
-        self.downloads_dir: Path = downloads_dir
+        super().__init__(downloads_dir)
         self.tools_dir: Path = tools_dir
 
-        self.downloads: list[Download] = []
         self.tools: list[Tool] = []
 
         self.exit: bool = False
@@ -52,29 +46,11 @@ class ToolController(Controller):
             if path.is_dir():
                 self.tools.append(Tool(path))
 
-        downloads: list[Path] = []
-        for file in self.downloads_dir.iterdir():
-            if file.is_dir():
-                continue
-            if any(file.suffix.lower() == ext for ext in (".rar", ".zip", ".7z")):
-                download = Download(file)
-                downloads.append(download)
-        self.downloads = downloads
-
     def __str__(self) -> str:
         """
         Output a string representing all Downloads and Tools.
         """
-        result = ""
-        if len([i for i in self.downloads if i.visible]):
-            result += " index | Download\n"
-            result += "-------|---------\n"
-
-            for i, download in enumerate(self.downloads):
-                priority = f"[{i}]"
-                result += f"{priority:<7} {download.name}\n"
-            result += "\n"
-
+        result = super().__str__()
         result += " index | Tool\n"
         result += "-------|----------\n"
         for i, tool in enumerate(self.tools):
@@ -208,42 +184,6 @@ class ToolController(Controller):
         ui = UI(prompt_controller)
         return ui.repl()
 
-    def rename_download(self, index: int, name: str) -> None:
-        """
-        Names may contain alphanumerics or underscores.
-        """
-        if name != "".join([i for i in name if i.isalnum() or i in ("_", ".")]):
-            raise Warning(
-                "Names can only contain alphanumeric characters or underscores"
-            )
-
-        forbidden_names = []
-        for i in self.tools_dir.parts:
-            forbidden_names.append(i.lower())
-        if name.lower() in forbidden_names:
-            raise Warning(
-                f"Choose something else. These names are forbidden: {forbidden_names}"
-            )
-
-        try:
-            download = self.downloads[index]
-        except IndexError as e:
-            raise Warning(e)
-
-        try:
-            print("Verifying archive integrity...")
-            subprocess.check_output(["7z", "t", f"{download.location}"])
-        except subprocess.CalledProcessError:
-            raise Warning(
-                f"Rename of {index} failed at integrity check. Incomplete download?"
-            )
-
-        new_location = download.location.parent / f"{name}{download.location.suffix}"
-        if new_location.exists():
-            raise Warning(f"Can't rename because download {new_location} exists.")
-
-        download.location.rename(new_location)
-
     def rename_tool(self, index: int, name: str) -> None:
         """
         Names may contain alphanumerics, periods, and underscores.
@@ -316,25 +256,6 @@ class ToolController(Controller):
 
             with ignored(FileNotFoundError):
                 shutil.rmtree(tool.path)
-
-    def delete_download(self, index: Union[int, str]) -> None:
-        """
-        Removes specified file from the filesystem.
-        """
-        if index == "all":
-            visible_downloads = [i for i in self.downloads if i.visible]
-            for visible_download in visible_downloads:
-                download = self.downloads.pop(self.downloads.index(visible_download))
-                download.location.unlink()
-        else:
-            index = int(index)
-            try:
-                download = self.downloads.pop(index)
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
-            with ignored(FileNotFoundError):
-                download.location.unlink()
 
     def do_delete(self, component: ComponentWrite, index: Union[int, str]) -> None:
         """
