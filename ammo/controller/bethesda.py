@@ -303,7 +303,7 @@ class BethesdaController(ModController):
                 for i in range(len(components)):
                     if str(i).startswith(text):
                         completions.append(str(i))
-                if "all".startswith(text):
+                if "all".startswith(text) and len(components) > 1:
                     completions.append("all")
 
         elif isinstance(target_type, EnumMeta):
@@ -343,7 +343,7 @@ class BethesdaController(ModController):
             for i in range(len(self.downloads)):
                 if str(i).startswith(text):
                     completions.append(str(i))
-            if "all".startswith(text) and len(self.downloads) > 0:
+            if "all".startswith(text) and len(self.downloads) > 1:
                 completions.append("all")
 
         elif func == self.do_configure.__func__:
