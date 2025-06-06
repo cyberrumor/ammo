@@ -230,9 +230,22 @@ class ModController(Controller):
                     completions.append("all")
 
         elif isinstance(target_type, EnumMeta):
-            for i in list(target_type):
-                if i.value.startswith(text):
-                    completions.append(i.value)
+            if target_type == ComponentWrite:
+                # If we're renaming or deleting something,
+                # and there's only one type of component available,
+                # only autocomplete that component.
+                if self.mods and not self.downloads:
+                    completions.append(ComponentWrite.MOD.value)
+                elif self.downloads and not self.mods:
+                    completions.append(ComponentWrite.DOWNLOAD.value)
+                else:
+                    for i in list(target_type):
+                        if i.value.startswith(text):
+                            completions.append(i.value)
+            else:
+                for i in list(target_type):
+                    if i.value.startswith(text):
+                        completions.append(i.value)
 
         if func == self.do_install.__func__:
             for i in range(len(self.downloads)):

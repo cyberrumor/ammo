@@ -10,6 +10,7 @@ from typing import Union
 from enum import (
     auto,
     StrEnum,
+    EnumMeta,
 )
 from ammo.ui import (
     Controller,
@@ -124,6 +125,24 @@ class ToolController(Controller):
                         completions.append(str(i))
                 if "all".startswith(text):
                     completions.append("all")
+
+        elif isinstance(target_type, EnumMeta):
+            if target_type == ComponentWrite:
+                # If we're renaming or deleting something,
+                # and there's only one type of component present,
+                # autocomplete that type of component only.
+                if self.tools and not self.downloads:
+                    completions.append(ComponentWrite.TOOL.value)
+                elif self.downloads and not self.tools:
+                    completions.append(ComponentWrite.DOWNLOAD.value)
+                else:
+                    for i in list(target_type):
+                        if i.value.startswith(text):
+                            completions.append(i.value)
+            else:
+                for i in list(target_type):
+                    if i.value.startswith(text):
+                        completions.append(i.value)
 
         if func == self.do_install.__func__:
             for i in range(len(self.downloads)):

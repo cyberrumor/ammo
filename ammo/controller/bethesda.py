@@ -50,9 +50,14 @@ NO_EXTRACT_DIRS = [
 ]
 
 
-class ComponentWrite(StrEnum):
+class ComponentDelete(StrEnum):
     MOD = auto()
     PLUGIN = auto()
+    DOWNLOAD = auto()
+
+
+class ComponentRename(StrEnum):
+    MOD = auto()
     DOWNLOAD = auto()
 
 
@@ -304,12 +309,27 @@ class BethesdaController(ModController):
         elif isinstance(target_type, EnumMeta):
             if target_type == ComponentMove:
                 # If we're activating, deactivating, or moving something,
-                # and there's no plugins, autocomplete 'mod'. If there's no mods,
-                # autocomplete 'plugin'.
-                if not self.mods:
-                    completions.append(ComponentMove.PLUGIN.value)
-                elif not self.plugins:
+                # and there's only one type of component,
+                # only autocomplete that component.
+                if self.mods and not self.plugins:
                     completions.append(ComponentMove.MOD.value)
+                elif self.plugins and not self.mods:
+                    completions.append(ComponentMove.PLUGIN.value)
+                else:
+                    for i in list(target_type):
+                        if i.value.startswith(text):
+                            completions.append(i.value)
+
+            elif target_type == ComponentDelete:
+                # If we're deleting something,
+                # and there's only one type of component,
+                # only autocomplete that component.
+                if self.mods and not self.downloads and not self.plugins:
+                    completions.append(ComponentDelete.MOD.value)
+                elif self.plugins and not self.mods and not self.downloads:
+                    completions.append(ComponentDelete.PLUGIN.value)
+                elif self.downloads and not self.mods and not self.plugins:
+                    completions.append(ComponentDelete.DOWNLOAD.value)
                 else:
                     for i in list(target_type):
                         if i.value.startswith(text):
@@ -734,18 +754,18 @@ class BethesdaController(ModController):
             self.do_refresh()
             self.do_commit()
 
-    def do_delete(self, component: ComponentWrite, index: Union[int, str]) -> None:
+    def do_delete(self, component: ComponentDelete, index: Union[int, str]) -> None:
         """
         Removes the specified file from the filesystem.
         """
         match component:
-            case ComponentWrite.MOD:
+            case ComponentDelete.MOD:
                 return self.delete_mod(index)
-            case ComponentWrite.PLUGIN:
+            case ComponentDelete.PLUGIN:
                 return self.delete_plugin(index)
-            case ComponentWrite.DOWNLOAD:
+            case ComponentDelete.DOWNLOAD:
                 return self.delete_download(index)
             case _:
                 raise Warning(
-                    f"Expected one of {list(ComponentWrite)}, got '{component}'"
+                    f"Expected one of {list(ComponentDelete)}, got '{component}'"
                 )
