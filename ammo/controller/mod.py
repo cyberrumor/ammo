@@ -219,24 +219,25 @@ class ModController(DownloadController):
                     if i.value.startswith(text):
                         completions.append(i.value)
 
-        if func == self.do_install.__func__:
-            for i in range(len(self.downloads)):
-                if str(i).startswith(text):
-                    completions.append(str(i))
-            if "all".startswith(text) and len(self.downloads) > 1:
-                completions.append("all")
-
-        elif func == self.do_configure.__func__:
-            for i in range(len(self.mods)):
-                if str(i).startswith(text):
-                    if self.mods[i].fomod:
+        match func:
+            case self.do_install.__func__:
+                for i in range(len(self.downloads)):
+                    if str(i).startswith(text):
                         completions.append(str(i))
+                if "all".startswith(text) and len(self.downloads) > 1:
+                    completions.append("all")
 
-        elif func == self.do_collisions.__func__:
-            for i in range(len(self.mods)):
-                if str(i).startswith(text):
-                    if self.mods[i].conflict:
-                        completions.append(str(i))
+            case self.do_configure.__func__:
+                for i in range(len(self.mods)):
+                    if str(i).startswith(text):
+                        if self.mods[i].fomod:
+                            completions.append(str(i))
+
+            case self.do_collisions.__func__:
+                for i in range(len(self.mods)):
+                    if str(i).startswith(text):
+                        if self.mods[i].conflict:
+                            completions.append(str(i))
 
         return completions[state] + " "
 

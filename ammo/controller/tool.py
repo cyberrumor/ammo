@@ -120,12 +120,13 @@ class ToolController(DownloadController):
                     if i.value.startswith(text):
                         completions.append(i.value)
 
-        if func == self.do_install.__func__:
-            for i in range(len(self.downloads)):
-                if str(i).startswith(text):
-                    completions.append(str(i))
-            if "all".startswith(text) and len(self.downloads) > 1:
-                completions.append("all")
+        match func:
+            case self.do_install.__func__:
+                for i in range(len(self.downloads)):
+                    if str(i).startswith(text):
+                        completions.append(str(i))
+                if "all".startswith(text) and len(self.downloads) > 1:
+                    completions.append("all")
 
         return completions[state] + " "
 
