@@ -282,6 +282,29 @@ class BethesdaController(ModController):
         else:
             func = attribute
 
+        match func:
+            case self.do_install.__func__:
+                for i in range(len(self.downloads)):
+                    if str(i).startswith(text):
+                        completions.append(str(i))
+                if "all".startswith(text) and len(self.downloads) > 1:
+                    completions.append("all")
+
+            case self.do_configure.__func__:
+                for i in range(len(self.mods)):
+                    if str(i).startswith(text):
+                        if self.mods[i].fomod:
+                            completions.append(str(i))
+
+            case self.do_collisions.__func__:
+                for i in range(len(self.mods)):
+                    if str(i).startswith(text):
+                        if self.mods[i].conflict:
+                            completions.append(str(i))
+
+        if completions:
+            return completions[state] + " "
+
         type_hints = typing.get_type_hints(func)
         if buf.endswith(" "):
             target_type = list(type_hints.values())[len(args)]
@@ -289,75 +312,78 @@ class BethesdaController(ModController):
             target_type = list(type_hints.values())[max(0, abs(len(args) - 1))]
 
         if hasattr(target_type, "__args__"):
-            if func not in [
-                self.do_install.__func__,
-                self.do_configure.__func__,
-                self.do_collisions.__func__,
-            ]:
+            target_type = target_type.__args__
+
+        if target_type == (int, str):
+            # handle completing int or 'all for functions that accept either.
+            components = []
+            if args[0] == "mod":
                 components = self.mods
-                if name.endswith("download"):
-                    components = self.downloads
-                elif name.endswith("plugin"):
-                    components = self.plugins
+            elif args[0] == "download":
+                components = self.downloads
+            elif args[0] == "plugin":
+                components = self.plugins
 
-                for i in range(len(components)):
-                    if str(i).startswith(text):
-                        completions.append(str(i))
-                if "all".startswith(text) and len(components) > 1:
-                    completions.append("all")
+            for i in range(len(components)):
+                if str(i).startswith(text):
+                    completions.append(str(i))
+            if "all".startswith(text) and len(components) > 1:
+                completions.append("all")
 
-        elif isinstance(target_type, EnumMeta):
+        if target_type is int:
+            # handle rename and move
+            components = []
+            if args[0] == "download":
+                components = self.downloads
+            elif args[0] == "mod":
+                components = self.mods
+            elif args[0] == "plugin" and name != "rename":
+                components = self.plugins
+
+            for i in range(len(components)):
+                if str(i).startswith(text):
+                    completions.append(str(i))
+
+        if isinstance(target_type, EnumMeta):
             if target_type == ComponentMove:
                 # If we're activating, deactivating, or moving something,
-                # and there's only one type of component,
-                # only autocomplete that component.
-                if self.mods and not self.plugins:
-                    completions.append(ComponentMove.MOD.value)
-                elif self.plugins and not self.mods:
-                    completions.append(ComponentMove.PLUGIN.value)
+                # and there's only one type of component, only autocomplete
+                # that component. Take care not to switch a component a
+                # user has already typed though!
+                if len(args):
+                    if ComponentMove.MOD.value.startswith(args[0]):
+                        completions.append(ComponentMove.MOD.value)
+                    if ComponentMove.PLUGIN.value.startswith(args[0]):
+                        completions.append(ComponentMove.PLUGIN.value)
                 else:
-                    for i in list(target_type):
-                        if i.value.startswith(text):
-                            completions.append(i.value)
+                    if self.mods and not self.plugins:
+                        completions.append(ComponentMove.MOD.value)
+                    if self.plugins and not self.mods:
+                        completions.append(ComponentMove.PLUGIN.value)
 
-            elif target_type == ComponentDelete:
-                # If we're deleting something,
-                # and there's only one type of component,
-                # only autocomplete that component.
-                if self.mods and not self.downloads and not self.plugins:
-                    completions.append(ComponentDelete.MOD.value)
-                elif self.plugins and not self.mods and not self.downloads:
-                    completions.append(ComponentDelete.PLUGIN.value)
-                elif self.downloads and not self.mods and not self.plugins:
-                    completions.append(ComponentDelete.DOWNLOAD.value)
+            if target_type == ComponentDelete:
+                # If we're deleting something and there's only one type of component
+                # available, only autocomplete that component. Take care not to
+                # switch a component a user has already typed though!
+                if len(args):
+                    if ComponentDelete.MOD.value.startswith(args[0]):
+                        completions.append(ComponentDelete.MOD.value)
+                    if ComponentDelete.DOWNLOAD.value.startswith(args[0]):
+                        completions.append(ComponentDelete.DOWNLOAD.value)
+                    if ComponentDelete.PLUGIN.value.startswith(args[0]):
+                        completions.append(ComponentDelete.PLUGIN.value)
                 else:
-                    for i in list(target_type):
-                        if i.value.startswith(text):
-                            completions.append(i.value)
-            else:
+                    if self.mods and not self.downloads and not self.plugins:
+                        completions.append(ComponentDelete.MOD.value)
+                    if self.plugins and not self.mods and not self.downloads:
+                        completions.append(ComponentDelete.PLUGIN.value)
+                    if self.downloads and not self.mods and not self.plugins:
+                        completions.append(ComponentDelete.DOWNLOAD.value)
+
+            if not completions:
                 for i in list(target_type):
                     if i.value.startswith(text):
                         completions.append(i.value)
-
-            match func:
-                case self.do_install.__func__:
-                    for i in range(len(self.downloads)):
-                        if str(i).startswith(text):
-                            completions.append(str(i))
-                    if "all".startswith(text) and len(self.downloads) > 1:
-                        completions.append("all")
-
-                case self.do_configure.__func__:
-                    for i in range(len(self.mods)):
-                        if str(i).startswith(text):
-                            if self.mods[i].fomod:
-                                completions.append(str(i))
-
-                case self.do_collisions.__func__:
-                    for i in range(len(self.mods)):
-                        if str(i).startswith(text):
-                            if self.mods[i].conflict:
-                                completions.append(str(i))
 
         return completions[state] + " "
 

@@ -179,46 +179,6 @@ class ModController(DownloadController):
         else:
             func = attribute
 
-        type_hints = typing.get_type_hints(func)
-        if buf.endswith(" "):
-            target_type = list(type_hints.values())[len(args)]
-        else:
-            target_type = list(type_hints.values())[max(0, abs(len(args) - 1))]
-
-        if hasattr(target_type, "__args__"):
-            if func not in [
-                self.do_install.__func__,
-                self.do_configure.__func__,
-                self.do_collisions.__func__,
-            ]:
-                components = self.mods
-                if name.endswith("download"):
-                    components = self.downloads
-
-                for i in range(len(components)):
-                    if str(i).startswith(text):
-                        completions.append(str(i))
-                if "all".startswith(text) and len(components) > 1:
-                    completions.append("all")
-
-        elif isinstance(target_type, EnumMeta):
-            if target_type == ComponentWrite:
-                # If we're renaming or deleting something,
-                # and there's only one type of component available,
-                # only autocomplete that component.
-                if self.mods and not self.downloads:
-                    completions.append(ComponentWrite.MOD.value)
-                elif self.downloads and not self.mods:
-                    completions.append(ComponentWrite.DOWNLOAD.value)
-                else:
-                    for i in list(target_type):
-                        if i.value.startswith(text):
-                            completions.append(i.value)
-            else:
-                for i in list(target_type):
-                    if i.value.startswith(text):
-                        completions.append(i.value)
-
         match func:
             case self.do_install.__func__:
                 for i in range(len(self.downloads)):
@@ -238,6 +198,65 @@ class ModController(DownloadController):
                     if str(i).startswith(text):
                         if self.mods[i].conflict:
                             completions.append(str(i))
+        if completions:
+            return completions[state] + " "
+
+        type_hints = typing.get_type_hints(func)
+        if buf.endswith(" "):
+            target_type = list(type_hints.values())[len(args)]
+        else:
+            target_type = list(type_hints.values())[max(0, abs(len(args) - 1))]
+
+        if hasattr(target_type, "__args__"):
+            target_type = target_type.__args__
+
+        if target_type == (int, str):
+            # handle completing int or 'all' for functions that accept either.
+            components = []
+            if args[0] == "mod":
+                components = self.mods
+            elif args[0] == "download":
+                components = self.downloads
+
+            for i in range(len(components)):
+                if str(i).startswith(text):
+                    completions.append(str(i))
+            if "all".startswith(text) and len(components) > 1:
+                completions.append("all")
+
+        if target_type is int:
+            # handle rename and move.
+            components = []
+            if args[0] == "mod":
+                components = self.mods
+            elif args[0] == "download":
+                components = self.downloads
+
+            for i in range(len(components)):
+                if str(i).startswith(text):
+                    completions.append(str(i))
+
+        if isinstance(target_type, EnumMeta):
+            if target_type == ComponentWrite:
+                # If we're renaming or deleting something,
+                # and there's only one type of component available,
+                # only autocomplete that component. Take care not
+                # to switch a component a user has already typed though!
+                if len(args):
+                    if ComponentWrite.MOD.value.startswith(args[0]):
+                        completions.append(ComponentWrite.MOD.value)
+                    if ComponentWrite.DOWNLOAD.value.startswith(args[0]):
+                        completions.append(ComponentWrite.DOWNLOAD.value)
+                else:
+                    if self.mods and not self.downloads:
+                        completions.append(ComponentWrite.MOD.value)
+                    if self.downloads and not self.mods:
+                        completions.append(ComponentWrite.DOWNLOAD.value)
+
+            if not completions:
+                for i in list(target_type):
+                    if i.value.startswith(text):
+                        completions.append(i.value)
 
         return completions[state] + " "
 
