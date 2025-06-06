@@ -23,7 +23,7 @@ GAME = BethesdaGame(
     dlc_file=Path(f"{AMMO_DIR}/dlcList.txt"),
     plugin_file=Path(f"{AMMO_DIR}/Plugins.txt"),
     ammo_mods_dir=Path(f"{AMMO_DIR}/MockGame/mods"),
-    ammo_tools_dir=Path("{AMMO_DIR}/MockGame/tools"),
+    ammo_tools_dir=Path(f"{AMMO_DIR}/MockGame/tools"),
 )
 
 
