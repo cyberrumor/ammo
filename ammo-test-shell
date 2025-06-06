@@ -27,6 +27,9 @@ if __name__ == "__main__":
     else:
         controller_class = AmmoController
 
-    with controller_class() as controller:
-        ui = ammo.ui.UI(controller)
-        ui.repl(clear=False)
+    try:
+        with controller_class() as controller:
+            ui = ammo.ui.UI(controller)
+            ui.repl(clear=False)
+    except ammo.lib.UserExit:
+        pass
