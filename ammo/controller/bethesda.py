@@ -732,16 +732,16 @@ class BethesdaController(ModController):
         Removes specified plugin from the filesystem.
         """
 
-        def get_plugin_files(plugin):
+        def get_plugin_file(plugin) -> Path:
             """
-            Get plugin files from all enabled mods.
+            Get the plugin file from the winning mod.
             """
-            for mod in self.mods:
+            for mod in self.mods[-1:]:
                 if not mod.enabled:
                     continue
                 for file in mod.plugins:
                     if file.name == plugin.name:
-                        yield file
+                        return file
 
         if index == "all":
             deleted_plugins = ""
@@ -757,7 +757,7 @@ class BethesdaController(ModController):
                     self.do_refresh()
                     self.do_commit()
                 self.plugins.remove(plugin)
-                for file in get_plugin_files(plugin):
+                if (file := get_plugin_file(plugin)) is not None:
                     with ignored(FileNotFoundError):
                         log.info(f"Deleting PLUGIN: {file}")
                         file.unlink()
@@ -773,7 +773,7 @@ class BethesdaController(ModController):
                 raise Warning("You can only delete visible components.")
 
             self.plugins.remove(plugin)
-            for file in get_plugin_files(plugin):
+            if (file := get_plugin_file(plugin)) is not None:
                 with ignored(FileNotFoundError):
                     log.info(f"Deleting PLUGIN: {file}")
                     file.unlink()

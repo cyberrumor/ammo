@@ -169,7 +169,7 @@ def test_conflicting_plugins_delete():
 def test_conflicting_plugins_delete_plugin():
     """
     Install two mods with the same files. Delete a plugin provided
-    by both mods. Expect the plugin to be deleted from both mods.
+    by both mods. Expect the plugin to be deleted from the winning mod only.
     """
     with AmmoController() as controller:
         for mod in ["mock_conflict_1", "mock_conflict_2"]:
@@ -178,17 +178,11 @@ def test_conflicting_plugins_delete_plugin():
             controller.activate_mod(mod_index)
             controller.do_commit()
 
+        # We expect mock_conflict_2's plugin to be deleted.
         controller.delete_plugin(0)
-
-        assert len(controller.plugins) == 0, (
-            "A plugin provided by multiple enabled mods wasn't deleted."
-        )
-
-        controller.deactivate_mod("all")
-        controller.activate_mod("all")
-
-        assert len(controller.plugins) == 0, (
-            "A plugin provided by multiple mods came back from the grave!"
+        controller.deactivate_mod(1)
+        assert len(controller.plugins) != 0, (
+            "A plugin provided by multiple enabled mods was deleted from the losing mod"
         )
 
 
