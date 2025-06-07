@@ -83,10 +83,9 @@ parser.add_argument(
 )
 
 if __name__ == "__main__":
-
+    args = parser.parse_args()
     with unique_pid():
         with ignored(UserExit):
-            args = parser.parse_args()
             controller = GameController(args)
             ui = UI(controller)
             ui.repl()
