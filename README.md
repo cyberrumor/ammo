@@ -5,20 +5,19 @@
 >
 > - Advertisements.
 > - Auto-updates.
-> - Account-required-before-use fuckery.
-> - EULAs or other contracts with Satan.
-> - Uncensored BDSM hentai.
+> - EULAs and contracts with Satan.
+> - In-app news feeds with uncensored BDSM hentai.
 > - GUIs (and other bloat).
 
-Ammo is a mod manager specifically designed to be bullshit-free. This
-revolutionary approach required a _prodigious_ amount of IQ [^1].
+Ammo is a CLI mod manager specifically designed to be bullshit-free. This
+revolutionary approach required a _prodigious_ amount of IQ (defined as _around
+100 IQ_).
 
 Under the hood, ammo works by installing symlinks in your game directory which
 point at your mod files. This is 100% guaranteed to be marginally better than
-nothing [^2].
+nothing [^1].
 
-[^1]: Exactly 100 IQ.
-[^2]: Except in countries where it is banned.
+[^1]: Except in countries where it is banned.
 
 ## Supported Games
 
