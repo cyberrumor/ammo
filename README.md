@@ -1,23 +1,24 @@
 # Almost Manual Mod Organizer (ammo)
 
-Say "No!" to bullshit like:
-
-- Advertisements.
-- Auto-updates.
-- Account-required-before-use fuckery.
-- EULAs or other contracts with Satan.
-- Uncensored BDSM hentai.
-- GUIs (and other bloat).
+> [!TIP]
+> Say "No!" to bullshit like:
+>
+> - Advertisements.
+> - Auto-updates.
+> - Account-required-before-use fuckery.
+> - EULAs or other contracts with Satan.
+> - Uncensored BDSM hentai.
+> - GUIs (and other bloat).
 
 Ammo is a mod manager specifically designed to be bullshit-free. This
-revolutionary approach required a _prodigious_ amount of IQ (100 IQ).
+revolutionary approach required a _prodigious_ amount of IQ [^1].
 
 Under the hood, ammo works by installing symlinks in your game directory which
 point at your mod files. This is 100% guaranteed to be marginally better than
-nothing.
+nothing [^2].
 
-*WARNING*: By virtue of being efficient, transparent, and respectful of your
-autonomy, Ammo is probably illegal in some countries.
+[^1]: Exactly 100 IQ.
+[^2]: Except in countries where it is banned.
 
 ## Supported Games
 
@@ -145,6 +146,17 @@ sort       :                                  : Arrange plugins by mod order.
 tools      :                                  : Manage tools.
 ............................................................................................
 ```
+
+## Praise for Ammo
+
+> "Surprisingly stable, given how little effort was involved."
+> - @crazycori
+
+> "Every time I opened it, a little part of me died."
+> - @NicexLoud
+
+> "I was finally able to close it will `kill -9`"
+> - @cyberrumor, author
 
 ## License
 
