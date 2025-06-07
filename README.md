@@ -150,13 +150,13 @@ tools      :                                  : Manage tools.
 ## Praise for Ammo
 
 > "Surprisingly stable, given how little effort was involved."
-> - @crazycori
+> -- @crazycori
 
 > "Every time I opened it, a little part of me died."
-> - @NicexLoud
+> -- @NicexLoud
 
 > "I was finally able to close it will `kill -9`"
-> - @cyberrumor, author
+> -- @cyberrumor, author
 
 ## License
 
