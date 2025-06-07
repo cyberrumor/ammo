@@ -1,33 +1,31 @@
 # Almost Manual Mod Organizer (ammo)
 
-Say "No!" to _annoying bullshit_, like:
+Say "No!" to bullshit like:
 
 - Advertisements.
 - Auto-updates.
-- Overreaching integrations (screenshots, saves, socials, tracking of tax
-  deductions earned through donations).
 - Account-required-before-use fuckery.
+- EULAs, contracts with Satan, mailing lists with no unsubscribe button.
 - Uncensored BDSM hentai in the in-app news feed even though you've turned off
   adult content twice.
 - GUIs (and other bloat).
 
-Ammo is _purely_ a mod manager. This means it is concerned with exactly _one_
+Ammo is specifically designed to be bullshit-free. This revolutionary approach
+required a prodigious amount of IQ (exactly 100).
+
+Ammo is _purely_ a mod manager, meaning it's concerned with exactly _one_
 problem, and it solves it really fucking well:
 
 > **As a Linux gamer**,
 >
 > **I want** easy, safe, and transparent mod management,
 >
-> **so that** I never have to reinstall the game or verify files, and can audit
-> how mods are installed.
+> **so that** I never have to reinstall the game or verify files, I can audit
+> how mods are installed, and I can get up and running fast.
 
-Ammo's interface is an interactive shell designed to make you feel 27% cooler
-while modding (especially when you're installing the sword that one-shots God).
-Under the hood, it hooks mods up to a game by adding symlinks to the game
-directory which point at mod files.
-
-Ammo is forever free from _annoying bullshit_ (a decision by yours truly that
-required a whopping 100 IQ).
+Under the hood, ammo hooks mods up to a game by adding symlinks to the game
+directory which point at mod files. This is 100% guaranteed to change your life
+slightly.
 
 ## Supported Games
 
