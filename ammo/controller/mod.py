@@ -129,10 +129,9 @@ class ModController(DownloadController):
         result = ""
 
         if self.keywords:
-            result += (
-                "A filter is applied with `find`, so components might be hidden.\n"
-            )
-            result += "Commands which accept the `all` arg only operate on shown components.\n"
+            result += "A filter is applied with `find` which may hide components.\n"
+            result += "Running commands against `all` components will only affect\n"
+            result += "the ones you can see.\n"
             result += "Execute `find` without arguments to remove the filter.\n\n"
 
         result += super().__str__()
