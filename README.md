@@ -5,27 +5,19 @@ Say "No!" to bullshit like:
 - Advertisements.
 - Auto-updates.
 - Account-required-before-use fuckery.
-- EULAs, contracts with Satan, mailing lists with no unsubscribe button.
-- Uncensored BDSM hentai in the in-app news feed even though you've turned off
-  adult content twice.
+- EULAs or other contracts with Satan.
+- Uncensored BDSM hentai.
 - GUIs (and other bloat).
 
-Ammo is specifically designed to be bullshit-free. This revolutionary approach
-required a prodigious amount of IQ (exactly 100).
+Ammo is a mod manager specifically designed to be bullshit-free. This
+revolutionary approach required a _prodigious_ amount of IQ (100 IQ).
 
-Ammo is _purely_ a mod manager, meaning it's concerned with exactly _one_
-problem, and it solves it really fucking well:
+Under the hood, ammo works by installing symlinks in your game directory which
+point at your mod files. This is 100% guaranteed to be marginally better than
+nothing.
 
-> **As a Linux gamer**,
->
-> **I want** easy, safe, and transparent mod management,
->
-> **so that** I never have to reinstall the game or verify files, I can audit
-> how mods are installed, and I can get up and running fast.
-
-Under the hood, ammo hooks mods up to a game by adding symlinks to the game
-directory which point at mod files. This is 100% guaranteed to change your life
-slightly.
+*WARNING*: By virtue of being efficient, transparent, and respectful of your
+autonomy, Ammo is probably illegal in some countries.
 
 ## Supported Games
 
