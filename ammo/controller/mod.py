@@ -736,7 +736,7 @@ class ModController(DownloadController):
 
         assert mod.modconf is not None
 
-        self.do_deactivate_mod(index)
+        self.deactivate_mod(index)
         self.do_commit()
         self.do_refresh()
 
