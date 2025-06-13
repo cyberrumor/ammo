@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
-from typing import Union
+from typing import (
+    Callable,
+    Union,
+)
 from pathlib import Path
 from dataclasses import (
     dataclass,
@@ -8,6 +11,51 @@ from dataclasses import (
 )
 
 from .lib import casefold_path
+
+
+@dataclass(frozen=True, kw_only=True)
+class Game:
+    ammo_conf: Path
+    ammo_log: Path
+    ammo_mods_dir: Path
+    ammo_tools_dir: Path
+    name: str
+    directory: Path
+
+
+@dataclass(frozen=True, kw_only=True)
+class BethesdaGame(Game):
+    data: Path
+    dlc_file: Path
+    plugin_file: Path
+    enabled_formula: Callable[[str], bool] = field(
+        default=lambda line: line.strip().startswith("*")
+    )
+    # unreal engine 5 games expect a Paks directory:
+    # <ProjectName>/Content/Paks/ - This is the primary location for pak files specific to your project.
+    #                               For some games, this also includes a ~mods directory at the end.
+    # Engine/Content/Paks/        - This location contains pak files that are part of the Unreal Engine itself.
+    # Saved/Content/Paks/         - This location is typically for pak files related to game saves or other
+    #                               runtime-generated content.
+    # This variable refers to the <ProjectName>/Content/Paks/[~mods] directory.
+    # https://docs.mod.io/guides/ue-mod-loading
+    # Rust Traits would be a more correct solution than just putting this on every bethesda game -_-.
+    pak: Path = field(init=False, default_factory=Path)
+    dll: Path = field(init=False, default_factory=Path)
+
+    def __post_init__(self):
+        # Get past dataclasses.FrozenInstanceError produced by direct assignment via object.__setattr__.
+        object.__setattr__(
+            self,
+            "pak",
+            self.directory / self.name.replace(" ", "") / "Content" / "Paks" / "~mods",
+        )
+
+        object.__setattr__(
+            self,
+            "dll",
+            self.directory / self.name.replace(" ", "") / "Binaries" / "Win64",
+        )
 
 
 @dataclass(kw_only=True, slots=True)

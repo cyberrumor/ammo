@@ -4,12 +4,12 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch
 
-from ammo.controller.mod import (
-    ModController,
-    Game,
-)
+from ammo.controller.mod import ModController
 from ammo.controller.fomod import FomodController
-from ammo.component import Mod
+from ammo.component import (
+    Game,
+    Mod,
+)
 
 
 # Create a configuration for the mock controller to use.

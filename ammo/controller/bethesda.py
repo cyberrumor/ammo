@@ -11,19 +11,13 @@ from enum import (
     EnumMeta,
     StrEnum,
 )
-from dataclasses import (
-    dataclass,
-    field,
-)
 from ammo.component import (
     BethesdaMod,
     Plugin,
 )
 from ammo.lib import ignored
-from .mod import (
-    ModController,
-    Game,
-)
+from ammo.component import BethesdaGame
+from .mod import ModController
 
 log = logging.getLogger(__name__)
 
@@ -66,48 +60,13 @@ class ComponentMove(StrEnum):
     PLUGIN = auto()
 
 
-@dataclass(frozen=True, kw_only=True)
-class BethesdaGame(Game):
-    data: Path
-    dlc_file: Path
-    plugin_file: Path
-    enabled_formula: Callable[[str], bool] = field(
-        default=lambda line: line.strip().startswith("*")
-    )
-    # unreal engine 5 games expect a Paks directory:
-    # <ProjectName>/Content/Paks/ - This is the primary location for pak files specific to your project.
-    #                               For some games, this also includes a ~mods directory at the end.
-    # Engine/Content/Paks/        - This location contains pak files that are part of the Unreal Engine itself.
-    # Saved/Content/Paks/         - This location is typically for pak files related to game saves or other
-    #                               runtime-generated content.
-    # This variable refers to the <ProjectName>/Content/Paks/[~mods] directory.
-    # https://docs.mod.io/guides/ue-mod-loading
-    # Rust Traits would be a more correct solution than just putting this on every bethesda game -_-.
-    pak: Path = field(init=False, default_factory=Path)
-    dll: Path = field(init=False, default_factory=Path)
-
-    def __post_init__(self):
-        # Get past dataclasses.FrozenInstanceError produced by direct assignment via object.__setattr__.
-        object.__setattr__(
-            self,
-            "pak",
-            self.directory / self.name.replace(" ", "") / "Content" / "Paks" / "~mods",
-        )
-
-        object.__setattr__(
-            self,
-            "dll",
-            self.directory / self.name.replace(" ", "") / "Binaries" / "Win64",
-        )
-
-
 class BethesdaController(ModController):
     """
     ModController is responsible for managing mods. It exposes
     methods to the UI that allow the user to easily manage mods.
     """
 
-    def __init__(self, downloads_dir: Path, game: Game, *keywords):
+    def __init__(self, downloads_dir: Path, game: BethesdaGame, *keywords):
         # Bethesda attributes
         self.plugins: list[Plugin] = []
         self.dlc: list[Plugin] = []

@@ -3,12 +3,12 @@ import os
 import shutil
 from pathlib import Path
 
-from ammo.controller.bethesda import (
-    BethesdaController,
-    BethesdaGame,
-)
+from ammo.controller.bethesda import BethesdaController
 from ammo.controller.fomod import FomodController
-from ammo.component import BethesdaMod
+from ammo.component import (
+    BethesdaGame,
+    BethesdaMod,
+)
 
 
 # Create a configuration for the mock controller to use.

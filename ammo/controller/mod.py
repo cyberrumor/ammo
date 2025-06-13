@@ -8,7 +8,6 @@ import textwrap
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from dataclasses import dataclass
 import typing
 from typing import Union
 from enum import (
@@ -17,7 +16,10 @@ from enum import (
     auto,
 )
 from ammo.ui import UI
-from ammo.component import Mod
+from ammo.component import (
+    Game,
+    Mod,
+)
 from ammo.lib import ignored
 from .download import DownloadController
 from .tool import ToolController
@@ -42,16 +44,6 @@ class ComponentWrite(StrEnum):
 
 class ComponentMove(StrEnum):
     MOD = auto()
-
-
-@dataclass(frozen=True, kw_only=True)
-class Game:
-    ammo_conf: Path
-    ammo_log: Path
-    ammo_mods_dir: Path
-    ammo_tools_dir: Path
-    name: str
-    directory: Path
 
 
 class ModController(DownloadController):

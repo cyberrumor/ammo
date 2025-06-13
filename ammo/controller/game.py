@@ -10,14 +10,12 @@ from dataclasses import (
     field,
 )
 from pathlib import Path
-from .mod import (
+from ammo.component import (
     Game,
-    ModController,
-)
-from .bethesda import (
-    BethesdaController,
     BethesdaGame,
 )
+from .mod import ModController
+from .bethesda import BethesdaController
 from ammo.ui import (
     Controller,
     UI,
