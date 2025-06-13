@@ -631,7 +631,7 @@ class ModController(DownloadController):
                 continue
             for src, dest in mod.files:
                 if dest in target_mod_files:
-                    if conflicts.get(dest, None):
+                    if dest in conflicts:
                         conflicts[dest].append(mod.name)
                     else:
                         conflicts[dest] = [mod.name, target_mod.name]
