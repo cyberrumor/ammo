@@ -194,7 +194,9 @@ class TestAutocompleteModSingular:
         ],
         ids=ids_hook,
     )
-    def test_autocomplete_mods_absent(self, text: str, buf: str, expected: list[str]):
+    def test_autocomplete_mods_present_singular(
+        self, text: str, buf: str, expected: list[str]
+    ):
         with patch("readline.get_line_buffer", return_value=buf):
             results = []
             state = 0
