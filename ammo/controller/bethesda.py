@@ -518,21 +518,14 @@ class BethesdaController(ModController):
             if index != "all":
                 raise Warning(e)
 
-        warnings = []
-
         if index == "all":
             for i in range(len(self.plugins)):
                 if self.plugins[i].visible:
-                    try:
-                        self.set_plugin_state(i, True)
-                    except Warning as e:
-                        warnings.append(e)
+                    self.set_plugin_state(i, True)
         else:
             self.set_plugin_state(index, True)
 
         self.stage()
-        if warnings:
-            raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
     def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
