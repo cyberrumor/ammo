@@ -65,7 +65,7 @@ class AmmoToolController:
         Return an instance of ammo's controller for tests to
         interact with.
         """
-        return ToolController(self.downloads_dir, self.game.ammo_tools_dir)
+        return ToolController(self.downloads_dir, self.game)
 
     def __exit__(self, *args, **kwargs):
         """

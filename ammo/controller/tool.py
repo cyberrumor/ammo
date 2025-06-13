@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import os
 import shutil
-import subprocess
 import readline
 from pathlib import Path
 import textwrap
@@ -16,7 +14,11 @@ from ammo.ui import UI
 from ammo.controller.bool_prompt import BoolPromptController
 from ammo.controller.download import DownloadController
 from ammo.lib import ignored
-from ammo.component import Tool
+from ammo.component import (
+    Game,
+    BethesdaGame,
+    Tool,
+)
 
 
 class ComponentWrite(StrEnum):
@@ -30,19 +32,18 @@ class ToolController(DownloadController):
     don't want to have installed into your game directory.
     """
 
-    def __init__(self, downloads_dir: Path, tools_dir: Path):
-        super().__init__(downloads_dir)
-        self.tools_dir: Path = tools_dir
-
+    def __init__(self, downloads_dir: Path, game: Game | BethesdaGame):
+        super().__init__(downloads_dir, game)
+        self.game = game
         self.tools: list[Tool] = []
 
         self.exit: bool = False
 
         # Create required directories. Harmless if exists.
-        Path.mkdir(self.tools_dir, parents=True, exist_ok=True)
+        Path.mkdir(self.game.ammo_tools_dir, parents=True, exist_ok=True)
 
         # Instance a Tool class for each tool folder in the tool directory.
-        for path in self.tools_dir.iterdir():
+        for path in self.game.ammo_tools_dir.iterdir():
             if path.is_dir():
                 self.tools.append(Tool(path))
 
@@ -220,7 +221,7 @@ class ToolController(DownloadController):
             )
 
         forbidden_names = []
-        for i in self.tools_dir.parts:
+        for i in self.game.ammo_tools_dir.parts:
             forbidden_names.append(i.lower())
         if name.lower() in forbidden_names:
             raise Warning(
@@ -232,7 +233,7 @@ class ToolController(DownloadController):
         except IndexError as e:
             raise Warning(e)
 
-        new_location = self.tools_dir / name
+        new_location = self.game.ammo_tools_dir / name
         if new_location.exists():
             raise Warning(f"A tool named {str(new_location)} already exists!")
 
@@ -301,66 +302,7 @@ class ToolController(DownloadController):
         """
         Extract and manage an archive from ~/Downloads.
         """
-        try:
-            int(index)
-        except ValueError:
-            if index != "all":
-                raise Warning(f"Expected int, got '{index}'")
-
-        def install_download(index, download) -> None:
-            extract_to = "".join(
-                [
-                    i
-                    for i in download.location.stem.replace(" ", "_")
-                    if i.isalnum() or i == "_"
-                ]
-            ).strip()
-            extract_to = self.tools_dir / extract_to
-            if extract_to.exists():
-                raise Warning(
-                    f"Extraction of {index} failed since tool '{extract_to.name}' exists."
-                )
-
-            try:
-                print("Verifying archive integrity...")
-                subprocess.check_output(["7z", "t", f"{download.location}"])
-            except subprocess.CalledProcessError:
-                raise Warning(
-                    f"Extraction of {index} failed at integrity check. Incomplete download?"
-                )
-
-            os.system(f"7z x '{download.location}' -o'{extract_to}'")
-
-            if self.has_extra_folder(extract_to):
-                # The user concluded an extra directory can be eliminated.
-                # This is needed for several tools which have a version directory
-                # between the tool's base folder and the self.tools_dir.name folder.
-                for file in next(extract_to.iterdir()).iterdir():
-                    file.rename(extract_to / file.name)
-
-            # Add the freshly installed tool to self.tools so that an error doesn't prevent
-            # any successfully installed tools from appearing during 'install all'.
-            self.tools.append(Tool(extract_to))
-
-        if index == "all":
-            errors = []
-            for i, download in enumerate(self.downloads):
-                if download.visible:
-                    try:
-                        install_download(i, download)
-                    except Warning as e:
-                        errors.append(str(e))
-            if errors:
-                raise Warning("\n".join(errors))
-        else:
-            index = int(index)
-            try:
-                download = self.downloads[index]
-            except IndexError as e:
-                # Demote IndexErrors
-                raise Warning(e)
-
-            install_download(index, download)
+        return super().install(index, self.game.ammo_tools_dir)
 
     def do_mods(self) -> None:
         """
@@ -372,4 +314,4 @@ class ToolController(DownloadController):
         """
         Scan for tools in the tool folder.
         """
-        self.__init__(self.downloads_dir, self.tools_dir)
+        self.__init__(self.downloads_dir, self.game)

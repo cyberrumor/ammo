@@ -11,7 +11,7 @@ from ammo.controller.mod import ModController
 EXTRACT_CACHE = Path("/tmp/ammo_extract_cache/")
 
 
-def get_cached_archive(self, index: int, download: Path) -> Path:
+def get_cached_archive(self, index: int, download: Path, parent_dir: Path) -> Path:
     """
     See if an extracted archive is cached. If it is, copy it to
     /tmp/ammo_test/MockGame/mods/. If it's not, extract it, cache it,
@@ -23,7 +23,7 @@ def get_cached_archive(self, index: int, download: Path) -> Path:
         [i for i in download.location.stem.replace(" ", "_") if i.isalnum() or i == "_"]
     ).strip()
 
-    extract_to = self.game.ammo_mods_dir / extract_to_name
+    extract_to = parent_dir / extract_to_name
     if extract_to.exists():
         raise Warning(
             f"Extraction of {index} failed since mod '{extract_to.name}' exists."
