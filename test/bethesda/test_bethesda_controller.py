@@ -592,7 +592,6 @@ def test_dlc_order():
     If it's listed in plugins.txt, it should get loaded in that order
     as enabled/disabled according to plugins.txt enabled state.
     """
-    pass
 
     with AmmoController() as controller:
         install_mod(controller, "esm")
