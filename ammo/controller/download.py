@@ -41,6 +41,12 @@ class DownloadController(Controller):
                 downloads.append(download)
         self.downloads = sorted(downloads, key=lambda x: x.name)
 
+    def do_refresh(self) -> None:
+        """
+        Abandon pending changes.
+        """
+        self.__init__(self.downloads_dir, self.game)
+
     def __str__(self) -> str:
         """
         Output a string representing all Downloads.

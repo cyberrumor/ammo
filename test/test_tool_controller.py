@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import shutil
+import textwrap
 from pathlib import Path
 from unittest.mock import patch
 
@@ -156,7 +157,7 @@ def test_disambiguation_rename_download(mock_rename):
     """
     with AmmoToolController() as controller:
         controller.do_rename(ComponentWrite.DOWNLOAD, 0, "new_name")
-        mock_rename.assert_called_once()
+        mock_rename.assert_called_with(0, "new_name")
 
 
 def test_disambiguation_rename_garbage():
@@ -167,3 +168,43 @@ def test_disambiguation_rename_garbage():
     with AmmoToolController() as controller:
         with pytest.raises(Warning):
             controller.do_rename("bogus_string", 0, "new_name")
+
+
+def test_rename_tool(mock_tool_has_extra_folder):
+    """
+    Test that controller.rename_tool works.
+    """
+    with AmmoToolController() as controller:
+        original_path = Path(controller.game.ammo_tools_dir) / "normal_mod"
+        new_path = Path(controller.game.ammo_tools_dir) / "new_name"
+
+        extract_tool(controller, "normal_mod")
+
+        assert original_path.exists() is True
+        assert new_path.exists() is False
+
+        controller.rename_tool(0, "new_name")
+
+        assert original_path.exists() is False
+        assert new_path.exists() is True
+
+
+def test_tool_controller_str(mock_tool_has_extra_folder):
+    """
+    Test that the tool controller looks the way we expect it to.
+    """
+    expected = textwrap.dedent(
+        """
+         index | Tool
+        -------|----------
+        [0]     edit_scripts
+        [1]     normal_mod
+        """
+    )
+    with AmmoToolController() as controller:
+        # Tools get ordered alphabetically, not by install order.
+        # This ensures the same order persists through different sessions.
+        extract_tool(controller, "normal_mod")
+        extract_tool(controller, "edit_scripts")
+
+        assert str(controller).endswith(expected)

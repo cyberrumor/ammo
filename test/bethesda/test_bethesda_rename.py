@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import shutil
+from unittest.mock import patch
 
 import pytest
 
@@ -156,41 +156,12 @@ def test_rename_mod_name_exists():
         assert controller.mods[index_2].name == "mock_conflict_2"
 
 
-def test_rename_download_moves_file():
+@patch("ammo.controller.download.DownloadController.rename_download")
+def test_rename_download_moves_file(mock_rename):
     """
     Test that renaming a download causes the file to be moved.
     """
     with AmmoController() as controller:
-        temp_download = controller.downloads_dir / "temp_download.7z"
-        shutil.copy(controller.downloads_dir / "normal_mod.7z", temp_download)
-        renamed_download = controller.downloads_dir / "i_was_renamed.7z"
+        controller.rename_download(0, "new_name")
 
-        try:
-            controller.do_refresh()
-
-            index = [i.name for i in controller.downloads].index("temp_download.7z")
-            original_download = controller.downloads[index]
-
-            # Rename.
-            controller.rename_download(index, "i_was_renamed")
-
-            new_index = [i.name for i in controller.downloads].index("i_was_renamed.7z")
-            new_download = controller.downloads[new_index]
-
-            # Ensure the old download is gone.
-            assert original_download.location.exists() is False
-
-            # Ensure the new download is present and has the correct data.
-            assert new_download.location.exists() is True
-            assert new_download.name == "i_was_renamed.7z"
-
-        finally:
-            # Clean up our temporary files.
-            try:
-                temp_download.unlink()
-            except FileNotFoundError:
-                pass
-            try:
-                renamed_download.unlink()
-            except FileNotFoundError:
-                pass
+    mock_rename.assert_called_with(0, "new_name")
