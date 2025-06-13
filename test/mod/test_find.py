@@ -151,3 +151,19 @@ def test_find_deactivate_hidden_component(mock_has_extra_folder):
 
         with pytest.raises(Warning):
             controller.deactivate_mod(0)
+
+
+def test_find_delete_hidden_component(mock_has_extra_folder):
+    """
+    Test that the delete command raises a warning
+    when used against hidden components.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.do_find("no_match")
+
+        with pytest.raises(Warning):
+            controller.delete_mod(0)
+
+        with pytest.raises(Warning):
+            controller.delete_download(0)
