@@ -519,7 +519,7 @@ class ModController(DownloadController):
         """
         match component:
             case ComponentMove.MOD:
-                return self.activate_mod(index)
+                return self.deactivate_mod(index)
             case _:
                 raise Warning(
                     f"Expected one of {list(ComponentMove)} but got '{component}'"
@@ -896,6 +896,10 @@ class ModController(DownloadController):
                 self.delete_download(index)
             case ComponentWrite.MOD:
                 self.delete_mod(index)
+            case _:
+                raise Warning(
+                    f"Expected one of {list(ComponentWrite)}, got '{component}'"
+                )
 
     @requires_sync
     def do_install(self, index: Union[int, str]) -> None:
