@@ -47,7 +47,7 @@ jobs:
     - name: Test
       run: |
         . .venv/bin/activate
-        pytest -v
+        pytest --cov=.venv/lib/python3.12/site-packages/ammo
 
     - name: Install ammo with pipx
       run: pipx install .
