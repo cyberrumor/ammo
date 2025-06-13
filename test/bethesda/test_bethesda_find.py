@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
+import pytest
+
 from bethesda_common import (
     AmmoController,
     install_mod,
@@ -241,3 +243,35 @@ def test_find_dlc_no_crash():
             plugin.unlink()
         except FileNotFoundError:
             pass
+
+
+def test_find_activate_hidden_component():
+    """
+    Test that the activate commands raise a warning
+    when used against hidden components.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.do_find("no_match")
+
+        with pytest.raises(Warning):
+            controller.activate_mod(0)
+
+        with pytest.raises(Warning):
+            controller.activate_plugin(0)
+
+
+def test_find_deactivate_hidden_component():
+    """
+    Test that the deactivate commands raise a warning
+    when used against hidden components.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.do_find("no_match")
+
+        with pytest.raises(Warning):
+            controller.deactivate_plugin(0)
+
+        with pytest.raises(Warning):
+            controller.deactivate_mod(0)

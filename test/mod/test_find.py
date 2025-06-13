@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 from mod_common import (
     AmmoController,
     install_mod,
@@ -123,3 +125,29 @@ def test_find_fomods(mock_has_extra_folder):
                 assert i.visible
                 continue
             assert i.visible is False
+
+
+def test_find_activate_hidden_component(mock_has_extra_folder):
+    """
+    Test that the activate command raises a warning
+    when used against hidden components.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.do_find("no_match")
+
+        with pytest.raises(Warning):
+            controller.activate_mod(0)
+
+
+def test_find_deactivate_hidden_component(mock_has_extra_folder):
+    """
+    Test that the deactivate command raises a warning
+    when used against hidden components.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        controller.do_find("no_match")
+
+        with pytest.raises(Warning):
+            controller.deactivate_mod(0)
