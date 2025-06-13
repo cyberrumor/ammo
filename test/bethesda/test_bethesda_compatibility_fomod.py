@@ -1,11 +1,27 @@
 #!/usr/bin/env python3
+from unittest.mock import patch
 from pathlib import Path
+
+import pytest
+
 from bethesda_common import (
+    AmmoController,
     fomod_selections_choose_files,
     mod_extracts_files,
     mod_installs_files,
+    extract_mod,
 )
-import pytest
+
+
+def test_configure():
+    """
+    Test that the configure command is only calling methods that
+    actually exist.
+    """
+    with AmmoController() as controller:
+        with patch("ammo.ui.UI.repl", autospec=True):
+            extract_mod(controller, "mock_base_object_swapper")
+            controller.do_configure(0)
 
 
 def test_base_object_swapper():
