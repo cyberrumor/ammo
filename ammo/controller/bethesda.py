@@ -274,7 +274,7 @@ class BethesdaController(ModController):
             target_type = target_type.__args__
 
         if target_type == (int, str):
-            # handle completing int or 'all for functions that accept either.
+            # handle completing int or 'all' for functions that accept either.
             components = []
             if args[0] == "mod":
                 components = self.mods
@@ -310,14 +310,22 @@ class BethesdaController(ModController):
                 # that component. Take care not to switch a component a
                 # user has already typed though!
                 if len(args):
-                    if ComponentMove.MOD.value.startswith(args[0]):
+                    if ComponentMove.MOD.value.startswith(text):
                         completions.append(ComponentMove.MOD.value)
-                    if ComponentMove.PLUGIN.value.startswith(args[0]):
+                    if ComponentMove.PLUGIN.value.startswith(text):
                         completions.append(ComponentMove.PLUGIN.value)
                 else:
-                    if self.mods and not self.plugins:
+                    if (
+                        self.mods
+                        and not self.plugins
+                        and ComponentMove.MOD.value.startswith(text)
+                    ):
                         completions.append(ComponentMove.MOD.value)
-                    if self.plugins and not self.mods:
+                    if (
+                        self.plugins
+                        and not self.mods
+                        and ComponentMove.PLUGIN.value.startswith(text)
+                    ):
                         completions.append(ComponentMove.PLUGIN.value)
 
             if target_type == ComponentDelete:
@@ -325,18 +333,33 @@ class BethesdaController(ModController):
                 # available, only autocomplete that component. Take care not to
                 # switch a component a user has already typed though!
                 if len(args):
-                    if ComponentDelete.MOD.value.startswith(args[0]):
+                    if ComponentDelete.MOD.value.startswith(text):
                         completions.append(ComponentDelete.MOD.value)
-                    if ComponentDelete.DOWNLOAD.value.startswith(args[0]):
+                    if ComponentDelete.DOWNLOAD.value.startswith(text):
                         completions.append(ComponentDelete.DOWNLOAD.value)
-                    if ComponentDelete.PLUGIN.value.startswith(args[0]):
+                    if ComponentDelete.PLUGIN.value.startswith(text):
                         completions.append(ComponentDelete.PLUGIN.value)
                 else:
-                    if self.mods and not self.downloads and not self.plugins:
+                    if (
+                        self.mods
+                        and not self.downloads
+                        and not self.plugins
+                        and ComponentDelete.MOD.value.startswith(text)
+                    ):
                         completions.append(ComponentDelete.MOD.value)
-                    if self.plugins and not self.mods and not self.downloads:
+                    if (
+                        self.plugins
+                        and not self.mods
+                        and not self.downloads
+                        and ComponentDelete.PLUGIN.value.startswith(text)
+                    ):
                         completions.append(ComponentDelete.PLUGIN.value)
-                    if self.downloads and not self.mods and not self.plugins:
+                    if (
+                        self.downloads
+                        and not self.mods
+                        and not self.plugins
+                        and ComponentDelete.DOWNLOAD.value.startswith(text)
+                    ):
                         completions.append(ComponentDelete.DOWNLOAD.value)
 
             if not completions:

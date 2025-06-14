@@ -4,8 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ammo.controller.mod import ModController
-from mod_common import (
+from bethesda_common import (
     AmmoController,
     extract_mod,
     install_mod,
@@ -22,7 +21,14 @@ def ids_hook(param):
     return repr(param)
 
 
-class TestAutocomplete:
+class TestAutocompleteBethesda:
+    """
+    Test autocomplete with:
+        - Downloads (plural)
+        - Mods (absent)
+        - Plugins (absent)
+    """
+
     @pytest.fixture(scope="class", autouse=True)
     def setup_controller(self, request):
         with AmmoController() as controller:
@@ -54,19 +60,21 @@ class TestAutocomplete:
                 "",
                 [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
             ),
-            # "activate " with no mods instaled should still autocomplete "mod " since it's the only
-            # available component type for the generic ModController.
-            ("activate ", "", ["mod "]),
-            # "deactivate " with no mods installed should still autocomplete "mod " since it's the only
-            # available component type for the generic ModController.
-            ("deactivate ", "", ["mod "]),
-            # "delete " with no mods installed should autocomplete "download " since there's no mods
-            # available to select.
+            # "activate " with no mods instaled should still autocomplete valid component types.
+            ("activate ", "", ["mod ", "plugin "]),
+            ("activate ", "m", ["mod "]),
+            ("activate ", "p", ["plugin "]),
+            # "deactivate " with no mods installed should still autocomplete valid component types.
+            ("deactivate ", "", ["mod ", "plugin "]),
+            ("deactivate ", "m", ["mod "]),
+            ("deactivate ", "p", ["plugin "]),
+            # "delete " with no mods installed should autocomplete "download " since there's no
+            # mods or plugins available to select.
             ("delete ", "", ["download "]),
-            # "delete m" with no mods installed should autocomplete "mod ", not "download "!
-            # We don't want someone to expect to have "mod" autocompleted then they accidentally
-            # delete the wrong component type.
+            # "delete m" with no mods installed should autocomplete the only valid component.
             ("delete ", "m", ["mod "]),
+            # "delete p" should autocomplete "plugin " since it's a valid component for this controller.
+            ("delete ", "p", ["plugin "]),
             # "delete mod " with no mods installed should not autocomplete anything since there's
             # no valid targets.
             ("delete mod ", "", []),
@@ -82,12 +90,14 @@ class TestAutocomplete:
             # "configure " with no mods installed should not autocomplete anything since there's no
             # valid targets.
             ("configure ", "", []),
-            # "move " with no mods installed should still autocomplete "mod " for consistency.
-            ("move ", "", ["mod "]),
+            # "move " with no mods installed should still autocomplete valid component types.
+            ("move ", "", ["mod ", "plugin "]),
+            ("move ", "m", ["mod "]),
+            ("move ", "p", ["plugin "]),
             # "rename " with no mods installed should autcomplete "download " since there's no
             # valid mod targets.
-            ("rename ", "", ["download "]),
-            # "rename m" with mods installed should autocomplete the "mod " component.
+            ("rename ", "", ["mod ", "download "]),
+            # "rename m" with no mods installed should autocomplete the "mod " component.
             ("rename ", "m", ["mod "]),
             # "rename d" should autocomplete the "download " component.
             ("rename ", "d", ["download "]),
@@ -97,12 +107,12 @@ class TestAutocomplete:
                 "",
                 [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
             ),
-            # "delete p" should NOT autocomplete "plugin " since it's a bogus component type for this controller.
-            ("delete ", "p", []),
         ],
         ids=ids_hook,
     )
-    def test_autocomplete_mods_absent(self, buf: str, text: str, expected: list[str]):
+    def test_autocomplete_bethesda_mods_absent(
+        self, buf: str, text: str, expected: list[str]
+    ):
         with patch("readline.get_line_buffer", return_value=buf):
             results = []
             state = 0
@@ -113,15 +123,19 @@ class TestAutocomplete:
         assert results == expected
 
 
-class TestAutocompleteModSingular:
+class TestAutocompleteBethesdaModSingular:
+    """
+    Test autocomplete with:
+        - Downloads (plural)
+        - Mods (singular)
+        - Plugins (absent)
+    """
+
     @pytest.fixture(scope="class", autouse=True)
     def setup_controller(self, request):
         with AmmoController() as controller:
             request.cls.controller = controller
-            with patch.object(
-                ModController, "has_extra_folder", return_value=True
-            ) as _mock_has_extra_folder:
-                extract_mod(controller, "mock_relighting_skyrim")
+            extract_mod(controller, "normal_mod")
 
             def complete(self, text: str, state: int) -> Union[str, None]:
                 try:
@@ -150,20 +164,21 @@ class TestAutocompleteModSingular:
                 [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " with mods instaled autocomplete "mod " since it's the only available
-            # component type for the generic ModController (and it's going to have a valid target).
+            # component type for the generic BethesdaController (and it's going to have a valid target).
             ("activate ", "", ["mod "]),
             ("activate mod ", "", ["0 "]),
             # "deactivate " with mods installed should autocomplete "mod " since it's the only available
-            # component type for the generic ModController (and it's going to have a valid target).
+            # component type for the generic BethesdaController (and it's going to have a valid target).
             ("deactivate ", "", ["mod "]),
             ("deactivate mod ", "", ["0 "]),
-            # "delete " with mods installed should autocomplete "download " and "mod " since there's
-            # more than one component type with valid targets.
-            ("delete ", "", ["mod ", "download "]),
+            # "delete " with mods and plugins should autocomplete components with valid targets.
+            ("delete ", "", ["mod ", "plugin ", "download "]),
             # "delete m" with mods installed should autocomplete the "mod " component name.
             ("delete ", "m", ["mod "]),
             # "delete mod " with a single mod installed should autocomplete the only available mod index, "0 ".
             ("delete mod ", "", ["0 "]),
+            # "delete p" should autocomplete "plugin " since it's a valid component type for this controller.
+            ("delete ", "p", ["plugin "]),
             # "delete download " should autocomplete download indices and "all ".
             (
                 "delete download ",
@@ -174,9 +189,9 @@ class TestAutocompleteModSingular:
             # mods with collisions.
             ("collisions ", "", []),
             # "configure " with mods installed should only autocomplete the index if the mod is a fomod.
-            # In this scenario, it is.
-            ("configure ", "", ["0 "]),
-            # "move " with a mods installed should autocomplete the "mod " component.
+            # In this scenario, there are no fomods.
+            ("configure ", "", []),
+            # "move " should autocomplete components with valid targets.
             ("move ", "", ["mod "]),
             ("move mod ", "", ["0 "]),
             # "rename " with mods installed should autocomplete valid component names.
@@ -192,12 +207,10 @@ class TestAutocompleteModSingular:
                 "",
                 [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
             ),
-            # "delete p" should NOT autocomplete "plugin " since it's a bogus component type for this controller.
-            ("delete ", "p", []),
         ],
         ids=ids_hook,
     )
-    def test_autocomplete_mods_present_singular(
+    def test_autocomplete_bethesda_mods_present_singular(
         self, buf: str, text: str, expected: list[str]
     ):
         with patch("readline.get_line_buffer", return_value=buf):
@@ -210,17 +223,21 @@ class TestAutocompleteModSingular:
             assert results == expected
 
 
-class TestAutocompleteModPlural:
+class TestAutocompleteBethesdaModPlural:
+    """
+    Test autocomplete with:
+        - Downloads (plural)
+        - Mods (plural)
+        - Plugins (plural)
+    """
+
     @pytest.fixture(scope="class", autouse=True)
     def setup_controller(self, request):
         with AmmoController() as controller:
             request.cls.controller = controller
-            with patch.object(
-                ModController, "has_extra_folder", return_value=True
-            ) as _mock_has_extra_folder:
-                install_mod(controller, "mock_conflict_1")
-                install_mod(controller, "mock_conflict_2")
-                install_mod(controller, "normal_mod")
+            install_mod(controller, "mock_conflict_1")
+            install_mod(controller, "mock_conflict_2")
+            install_mod(controller, "normal_mod")
 
             def complete(self, text: str, state: int) -> Union[str, None]:
                 try:
@@ -248,19 +265,25 @@ class TestAutocompleteModPlural:
                 "",
                 [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
             ),
-            # "activate " with mods instaled autocomplete "mod " since it's the only available
-            # component type for the generic ModController (and it's going to have a valid target).
-            ("activate ", "", ["mod "]),
+            # "activate " autocompletes components with valid targets.
+            ("activate ", "", ["mod ", "plugin "]),
+            ("activate ", "m", ["mod "]),
+            ("activate ", "p", ["plugin "]),
+            # Don't autocomplete invalid components
+            ("activate ", "d", []),
             ("activate mod ", "", ["0 ", "1 ", "2 ", "all "]),
-            # "deactivate " with mods installed should autocomplete "mod " since it's the only available
-            # component type for the generic ModController (and it's going to have a valid target).
-            ("deactivate ", "", ["mod "]),
+            ("activate plugin ", "", ["0 ", "1 ", "all "]),
+            # "deactivate " autocompletes components with valid targets.
+            ("deactivate ", "", ["mod ", "plugin "]),
             ("deactivate mod ", "", ["0 ", "1 ", "2 ", "all "]),
-            # "delete " with mods installed should autocomplete "download " and "mod " since there's
-            # more than one component type with valid targets.
-            ("delete ", "", ["mod ", "download "]),
-            # "delete m" with mods installed should autocomplete the "mod " component name.
+            ("deactivate plugin ", "", ["0 ", "1 ", "all "]),
+            # "delete " autocompletes components with valid targets.
+            ("delete ", "", ["mod ", "plugin ", "download "]),
+            # "delete m" autocompletes "mod ".
             ("delete ", "m", ["mod "]),
+            # "delete p" autocompletes "plugin ".
+            ("delete ", "p", ["plugin "]),
+            ("delete ", "d", ["download "]),
             # "delete mod " with multiple mods installed should autocomplete all available indices and "all ".
             ("delete mod ", "", ["0 ", "1 ", "2 ", "all "]),
             # "delete download " should autocomplete download indices and "all ".
@@ -269,17 +292,22 @@ class TestAutocompleteModPlural:
                 "",
                 [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
             ),
+            # "delete plugin " should autocomplete plugin indices and "all ".
+            ("delete plugin ", "", ["0 ", "1 ", "all "]),
             # "collisions " with mods that have conflicts should autocomplete only indices with collisions.
             # E.g., don't complete the index for "normal_mod" here. Just collision_1 and collision_2.
             ("collisions ", "", ["0 ", "1 "]),
             # "configure " with mods installed should only autocomplete the index if the mod is a fomod.
             # In this scenario, there are no fomods.
             ("configure ", "", []),
-            # "move " with mods installed should autocomplete the "mod " component.
-            ("move ", "", ["mod "]),
+            # "move " with mods and plugins should autocomplete valid components.
+            ("move ", "", ["mod ", "plugin "]),
+            ("move ", "m", ["mod "]),
             ("move mod ", "", ["0 ", "1 ", "2 "]),
             ("move mod 1 ", "", ["0 ", "1 ", "2 "]),
+            ("move ", "p", ["plugin "]),
             # "rename " with mods installed should autocomplete valid component names.
+            # Note that renaming plugins is not allowed because it would break masters.
             ("rename ", "", ["mod ", "download "]),
             # "rename m" with mods installed should autocomplete the "mod " component.
             ("rename ", "m", ["mod "]),
@@ -292,12 +320,12 @@ class TestAutocompleteModPlural:
                 "",
                 [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
             ),
-            # "delete p" should NOT autocomplete "plugin " since it's a bogus component type for this controller.
-            ("delete ", "p", []),
+            # "rename p" should NOT autocomplete "plugin" since we can't rename plugins.
+            ("rename ", "p", []),
         ],
         ids=ids_hook,
     )
-    def test_autocomplete_mods_present_plural(
+    def test_autocomplete_bethesda_mods_present_plural(
         self, buf: str, text: str, expected: list[str]
     ):
         with patch("readline.get_line_buffer", return_value=buf):

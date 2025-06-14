@@ -215,7 +215,7 @@ class ModController(DownloadController):
                 completions.append("all")
 
         if target_type is int:
-            # handle rename and move.
+            # Find valid ints for the rename and move commands.
             components = []
             if args[0] == "mod":
                 components = self.mods
@@ -233,14 +233,22 @@ class ModController(DownloadController):
                 # only autocomplete that component. Take care not
                 # to switch a component a user has already typed though!
                 if len(args):
-                    if ComponentWrite.MOD.value.startswith(args[0]):
+                    if ComponentWrite.MOD.value.startswith(text):
                         completions.append(ComponentWrite.MOD.value)
-                    if ComponentWrite.DOWNLOAD.value.startswith(args[0]):
+                    if ComponentWrite.DOWNLOAD.value.startswith(text):
                         completions.append(ComponentWrite.DOWNLOAD.value)
                 else:
-                    if self.mods and not self.downloads:
+                    if (
+                        self.mods
+                        and not self.downloads
+                        and ComponentWrite.MOD.value.startswith(text)
+                    ):
                         completions.append(ComponentWrite.MOD.value)
-                    if self.downloads and not self.mods:
+                    if (
+                        self.downloads
+                        and not self.mods
+                        and ComponentWrite.DOWNLOAD.value.startswith(text)
+                    ):
                         completions.append(ComponentWrite.DOWNLOAD.value)
 
             if not completions:
