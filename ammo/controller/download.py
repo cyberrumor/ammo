@@ -57,8 +57,9 @@ class DownloadController(Controller):
             result += "-------|---------\n"
 
             for i, download in enumerate(self.downloads):
-                priority = f"[{i}]"
-                result += f"{priority:<7} {download.name}\n"
+                if download.visible:
+                    priority = f"[{i}]"
+                    result += f"{priority:<7} {download.name}\n"
             result += "\n"
 
         return result
