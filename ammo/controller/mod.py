@@ -232,12 +232,7 @@ class ModController(DownloadController):
                 # and there's only one type of component available,
                 # only autocomplete that component. Take care not
                 # to switch a component a user has already typed though!
-                if len(args):
-                    if ComponentWrite.MOD.value.startswith(text):
-                        completions.append(ComponentWrite.MOD.value)
-                    if ComponentWrite.DOWNLOAD.value.startswith(text):
-                        completions.append(ComponentWrite.DOWNLOAD.value)
-                else:
+                if not len(args):
                     if (
                         self.mods
                         and not self.downloads

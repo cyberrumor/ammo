@@ -94,9 +94,9 @@ class TestAutocompleteBethesda:
             ("move ", "", ["mod ", "plugin "]),
             ("move ", "m", ["mod "]),
             ("move ", "p", ["plugin "]),
-            # "rename " with no mods installed should autcomplete "download " since there's no
+            # "rename " with no mods installed should only autcomplete "download " since there's no
             # valid mod targets.
-            ("rename ", "", ["mod ", "download "]),
+            ("rename ", "", ["download "]),
             # "rename m" with no mods installed should autocomplete the "mod " component.
             ("rename ", "m", ["mod "]),
             # "rename d" should autocomplete the "download " component.
@@ -306,6 +306,7 @@ class TestAutocompleteBethesdaModPlural:
             ("move mod ", "", ["0 ", "1 ", "2 "]),
             ("move mod 1 ", "", ["0 ", "1 ", "2 "]),
             ("move ", "p", ["plugin "]),
+            ("move plugin ", "", ["0 ", "1 "]),
             # "rename " with mods installed should autocomplete valid component names.
             # Note that renaming plugins is not allowed because it would break masters.
             ("rename ", "", ["mod ", "download "]),

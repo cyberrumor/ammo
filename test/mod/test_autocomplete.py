@@ -84,7 +84,7 @@ class TestAutocomplete:
             ("configure ", "", []),
             # "move " with no mods installed should still autocomplete "mod " for consistency.
             ("move ", "", ["mod "]),
-            # "rename " with no mods installed should autcomplete "download " since there's no
+            # "rename " with no mods installed should only autcomplete "download " since there's no
             # valid mod targets.
             ("rename ", "", ["download "]),
             # "rename m" with mods installed should autocomplete the "mod " component.

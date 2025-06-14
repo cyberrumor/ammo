@@ -17,7 +17,10 @@ from ammo.component import (
 )
 from ammo.lib import ignored
 from ammo.component import BethesdaGame
-from .mod import ModController
+from .mod import (
+    ModController,
+    ComponentWrite,
+)
 
 log = logging.getLogger(__name__)
 
@@ -47,11 +50,6 @@ NO_EXTRACT_DIRS = [
 class ComponentDelete(StrEnum):
     MOD = auto()
     PLUGIN = auto()
-    DOWNLOAD = auto()
-
-
-class ComponentRename(StrEnum):
-    MOD = auto()
     DOWNLOAD = auto()
 
 
@@ -309,12 +307,7 @@ class BethesdaController(ModController):
                 # and there's only one type of component, only autocomplete
                 # that component. Take care not to switch a component a
                 # user has already typed though!
-                if len(args):
-                    if ComponentMove.MOD.value.startswith(text):
-                        completions.append(ComponentMove.MOD.value)
-                    if ComponentMove.PLUGIN.value.startswith(text):
-                        completions.append(ComponentMove.PLUGIN.value)
-                else:
+                if not len(args):
                     if (
                         self.mods
                         and not self.plugins
@@ -332,14 +325,7 @@ class BethesdaController(ModController):
                 # If we're deleting something and there's only one type of component
                 # available, only autocomplete that component. Take care not to
                 # switch a component a user has already typed though!
-                if len(args):
-                    if ComponentDelete.MOD.value.startswith(text):
-                        completions.append(ComponentDelete.MOD.value)
-                    if ComponentDelete.DOWNLOAD.value.startswith(text):
-                        completions.append(ComponentDelete.DOWNLOAD.value)
-                    if ComponentDelete.PLUGIN.value.startswith(text):
-                        completions.append(ComponentDelete.PLUGIN.value)
-                else:
+                if not len(args):
                     if (
                         self.mods
                         and not self.downloads
@@ -361,6 +347,24 @@ class BethesdaController(ModController):
                         and ComponentDelete.DOWNLOAD.value.startswith(text)
                     ):
                         completions.append(ComponentDelete.DOWNLOAD.value)
+
+            if target_type == ComponentWrite:
+                # If we're renaming something and there's only one type fo component
+                # available, only autocomplete that component. Take care not to
+                # switch a component a user has already typed though!
+                if not len(args):
+                    if (
+                        self.mods
+                        and not self.downloads
+                        and ComponentWrite.MOD.value.startswith(text)
+                    ):
+                        completions.append(ComponentWrite.MOD.value)
+                    if (
+                        self.downloads
+                        and not self.mods
+                        and ComponentWrite.DOWNLOAD.value.startswith(text)
+                    ):
+                        completions.append(ComponentWrite.DOWNLOAD.value)
 
             if not completions:
                 for i in list(target_type):

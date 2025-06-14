@@ -3,10 +3,10 @@ from unittest.mock import patch
 
 import pytest
 
+from ammo.controller.mod import ComponentWrite
 from ammo.controller.bethesda import (
     ComponentMove,
     ComponentDelete,
-    ComponentRename,
 )
 from bethesda_common import (
     AmmoController,
@@ -167,7 +167,7 @@ def test_disambiguation_rename_download(mock_rename):
     controller.rename_download when ti gets a download as an arg.
     """
     with AmmoController() as controller:
-        controller.do_rename(ComponentRename.DOWNLOAD, 0, "new_name")
+        controller.do_rename(ComponentWrite.DOWNLOAD, 0, "new_name")
         mock_rename.assert_called_once()
 
 
@@ -178,7 +178,7 @@ def test_disambiguation_rename_mod(mock_rename):
     controller.rename_download when it gets a download as an arg.
     """
     with AmmoController() as controller:
-        controller.do_rename(ComponentRename.MOD, 0, "new_name")
+        controller.do_rename(ComponentWrite.MOD, 0, "new_name")
         mock_rename.assert_called_once()
 
 
