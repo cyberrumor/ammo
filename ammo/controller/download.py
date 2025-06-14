@@ -2,7 +2,6 @@
 import os
 import logging
 import subprocess
-import readline
 import textwrap
 from pathlib import Path
 from typing import Union
@@ -71,28 +70,11 @@ class DownloadController(Controller):
         return False
 
     def autocomplete(self, text: str, state: int) -> Union[str, None]:
-        buf = readline.get_line_buffer()
-        name, *args = buf.split()
-        name = f"do_{name}"
-        completions = []
-
-        assert name in dir(self)
-
-        # Identify the method we're calling.
-        attribute = getattr(self, name)
-        if hasattr(attribute, "__func__"):
-            func = attribute.__func__
-        else:
-            func = attribute
-
-        if func == self.do_install.__func__:
-            for i in range(len(self.downloads)):
-                if str(i).startswith(text):
-                    completions.append(str(i))
-            if "all".startswith(text) and len(self.downloads) > 0:
-                completions.append("all")
-
-        return completions[state] + " "
+        """
+        This class is only ever used by stuff that will override this autocomplete
+        function, so just do nothing here.
+        """
+        return None
 
     def extract_archive(self, index: int, download: Path, target_dir: Path) -> Path:
         """

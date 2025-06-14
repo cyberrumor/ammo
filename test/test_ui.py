@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from unittest.mock import patch
 from typing import Union
 from enum import (
     Enum,
@@ -10,6 +11,9 @@ from ammo.ui import (
     Controller,
     UI,
 )
+from mod.mod_common import AmmoController as AmmoModController
+from bethesda.bethesda_common import AmmoController as AmmoBethesdaController
+from test_tool_controller import AmmoToolController
 
 
 class MockEnum(str, Enum):
@@ -101,3 +105,161 @@ def test_cast_to_str_union():
     assert ui.cast_to_type("10", Union[str, int]) == "10"
     assert ui.cast_to_type("True", Union[str, bool]) == "True"
     assert ui.cast_to_type("False", Union[str, bool]) == "False"
+
+
+class TestAutocompleteModUI:
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_ui(self, request):
+        with AmmoModController() as controller:
+            request.cls.ui = UI(controller)
+            request.cls.ui.populate_commands()
+
+            def complete(self, text: str, state: int) -> Union[str, None]:
+                try:
+                    return request.cls.ui.autocomplete(text, state)
+                except Exception:
+                    #  Any exception raised during the evaluation of the expression is caught,
+                    # silenced and None is returned.
+                    # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
+                    return None
+
+            request.cls.complete = complete
+
+            yield
+
+    @pytest.mark.parametrize(
+        "buf, text, expected",
+        [
+            ("i", "", ["install "]),
+            ("a", "", ["activate "]),
+            ("m", "", ["move "]),
+            ("c", "", ["collisions ", "commit ", "configure "]),
+            ("col", "", ["collisions "]),
+            ("com", "", ["commit "]),
+            ("con", "", ["configure "]),
+            ("r", "", ["refresh ", "rename "]),
+            ("ref", "", ["refresh "]),
+            ("ren", "", ["rename "]),
+            ("f", "", ["find "]),
+            ("l", "", ["log "]),
+            ("d", "", ["deactivate ", "delete "]),
+            ("del", "", ["delete "]),
+            ("dea", "", ["deactivate "]),
+            ("t", "", ["tools "]),
+            ("h", "", ["help ", "h "]),
+            ("he", "", ["help "]),
+            ("q", "", ["q "]),
+            ("e", "", ["exit "]),
+        ],
+    )
+    def test_autocomplete_mod_ui(self, buf: str, text: str, expected: list[str]):
+        with patch("readline.get_line_buffer", return_value=buf):
+            results = []
+            state = 0
+            while (result := self.complete(text, state)) is not None:
+                results.append(result)
+                state += 1
+
+            assert results == expected
+
+
+class TestAutocompleteBethesdaUI:
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_ui(self, request):
+        with AmmoBethesdaController() as controller:
+            request.cls.ui = UI(controller)
+            request.cls.ui.populate_commands()
+
+            def complete(self, text: str, state: int) -> Union[str, None]:
+                try:
+                    return request.cls.ui.autocomplete(text, state)
+                except Exception:
+                    #  Any exception raised during the evaluation of the expression is caught,
+                    # silenced and None is returned.
+                    # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
+                    return None
+
+            request.cls.complete = complete
+
+            yield
+
+    @pytest.mark.parametrize(
+        "buf, text, expected",
+        [
+            ("i", "", ["install "]),
+            ("a", "", ["activate "]),
+            ("m", "", ["move "]),
+            ("c", "", ["collisions ", "commit ", "configure "]),
+            ("col", "", ["collisions "]),
+            ("com", "", ["commit "]),
+            ("con", "", ["configure "]),
+            ("r", "", ["refresh ", "rename "]),
+            ("ref", "", ["refresh "]),
+            ("ren", "", ["rename "]),
+            ("f", "", ["find "]),
+            ("l", "", ["log "]),
+            ("d", "", ["deactivate ", "delete "]),
+            ("del", "", ["delete "]),
+            ("dea", "", ["deactivate "]),
+            ("t", "", ["tools "]),
+            ("h", "", ["help ", "h "]),
+            ("he", "", ["help "]),
+            ("q", "", ["q "]),
+            ("e", "", ["exit "]),
+        ],
+    )
+    def test_autocomplete_bethesda_ui(self, buf: str, text: str, expected: list[str]):
+        with patch("readline.get_line_buffer", return_value=buf):
+            results = []
+            state = 0
+            while (result := self.complete(text, state)) is not None:
+                results.append(result)
+                state += 1
+
+            assert results == expected
+
+
+class TestAutocompleteToolUI:
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_ui(self, request):
+        with AmmoToolController() as controller:
+            request.cls.ui = UI(controller)
+            request.cls.ui.populate_commands()
+
+            def complete(self, text: str, state: int) -> Union[str, None]:
+                try:
+                    return request.cls.ui.autocomplete(text, state)
+                except Exception:
+                    #  Any exception raised during the evaluation of the expression is caught,
+                    # silenced and None is returned.
+                    # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
+                    return None
+
+            request.cls.complete = complete
+
+            yield
+
+    @pytest.mark.parametrize(
+        "buf, text, expected",
+        [
+            ("i", "", ["install "]),
+            ("r", "", ["refresh ", "rename "]),
+            ("ref", "", ["refresh "]),
+            ("ren", "", ["rename "]),
+            ("d", "", ["delete "]),
+            ("m", "", ["mods "]),
+            ("h", "", ["help ", "h "]),
+            ("he", "", ["help "]),
+            ("q", "", ["q "]),
+            ("e", "", ["exit "]),
+        ],
+    )
+    def test_autocomplete_bethesda_ui(self, buf: str, text: str, expected: list[str]):
+        with patch("readline.get_line_buffer", return_value=buf):
+            results = []
+            state = 0
+            while (result := self.complete(text, state)) is not None:
+                results.append(result)
+                state += 1
+
+            assert results == expected

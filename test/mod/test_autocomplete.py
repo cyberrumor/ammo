@@ -110,7 +110,7 @@ class TestAutocomplete:
                 results.append(result)
                 state += 1
 
-        assert results == expected
+            assert results == expected
 
 
 class TestAutocompleteModSingular:

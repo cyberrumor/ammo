@@ -120,7 +120,7 @@ class TestAutocompleteBethesda:
                 results.append(result)
                 state += 1
 
-        assert results == expected
+            assert results == expected
 
 
 class TestAutocompleteBethesdaModSingular:
