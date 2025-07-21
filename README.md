@@ -1,27 +1,14 @@
-# Almost Manual Mod Organizer (ammo)
+# Almost Manual Mod Organizer
 
 <a href="https://discord.gg/V6qa82Spxw">
   <img src="discord_banner.gif" alt="The Discord" />
 </a>
 
-> [!TIP]
-> Say "No!" to bullshit like:
->
-> - Advertisements.
-> - Auto-updates.
-> - EULAs and contracts with Satan.
-> - In-app news feeds with uncensored BDSM hentai.
-> - GUIs (and other bloat).
+Ammo is a CLI mod manager for Linux.
 
-Ammo is a CLI mod manager specifically designed to be bullshit-free. This
-revolutionary approach required a _prodigious_ amount of IQ (defined as _around
-100 IQ_).
-
-Under the hood, ammo works by installing symlinks in your game directory which
-point at your mod files. This is 100% guaranteed to be marginally better than
-nothing [^1].
-
-[^1]: Except in countries where it is banned.
+Under the hood, Ammo works by installing symlinks in your game directory which
+point at your mod files. This is highly compatible and has zero runtime
+overhead.
 
 ## Supported Games
 
@@ -149,17 +136,6 @@ sort       :                                  : Arrange plugins by mod order.
 tools      :                                  : Manage tools.
 ............................................................................................
 ```
-
-## Praise for Ammo
-
-> "Surprisingly stable, given how little effort was involved."
-> - @crazycori
-
-> "Every time I opened it, a little part of me died."
-> - @NicexLoud
-
-> "I was finally able to close it with kill -9"
-> - @cyberrumor, author
 
 ## License
 
