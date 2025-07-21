@@ -1,5 +1,9 @@
 # Almost Manual Mod Organizer (ammo)
 
+<a href="https://discord.gg/V6qa82Spxw">
+  <img src="discord_banner.gif" alt="The Discord" />
+</a>
+
 > [!TIP]
 > Say "No!" to bullshit like:
 >
