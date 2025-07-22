@@ -1,9 +1,5 @@
 # Almost Manual Mod Organizer
 
-<a href="https://discord.gg/V6qa82Spxw">
-  <img src="discord_banner.gif" alt="The Discord" />
-</a>
-
 Ammo is a CLI mod manager for Linux.
 
 Under the hood, Ammo works by installing symlinks in your game directory which
@@ -136,6 +132,12 @@ sort       :                                  : Arrange plugins by mod order.
 tools      :                                  : Manage tools.
 ............................................................................................
 ```
+
+## Support
+
+<a href="https://discord.gg/V6qa82Spxw">
+  <img src="discord_banner.gif" alt="The Discord" />
+</a>
 
 ## License
 
