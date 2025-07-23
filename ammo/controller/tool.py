@@ -247,9 +247,10 @@ class ToolController(DownloadController):
         """
         match component:
             case ComponentWrite.TOOL:
-                return self.rename_tool(index, name)
+                self.rename_tool(index, name)
+                self.tools.sort(key=lambda x: x.path.name)
             case ComponentWrite.DOWNLOAD:
-                return self.rename_download(index, name)
+                self.rename_download(index, name)
             case _:
                 raise Warning(
                     f"Expected one of {list(ComponentWrite)} but got '{component}'"
@@ -290,9 +291,10 @@ class ToolController(DownloadController):
         """
         match component:
             case ComponentWrite.TOOL:
-                return self.delete_tool(index)
+                self.delete_tool(index)
+                self.tools.sort(key=lambda x: x.path.name)
             case ComponentWrite.DOWNLOAD:
-                return self.delete_download(index)
+                self.delete_download(index)
             case _:
                 raise Warning(
                     f"Expected one of {list(ComponentWrite)} but got '{component}'"
@@ -302,7 +304,8 @@ class ToolController(DownloadController):
         """
         Extract and manage an archive from ~/Downloads.
         """
-        return super().install(index, self.game.ammo_tools_dir)
+        super().install(index, self.game.ammo_tools_dir)
+        self.tools.sort(key=lambda x: x.path.name)
 
     def do_mods(self) -> None:
         """
