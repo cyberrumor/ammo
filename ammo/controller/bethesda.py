@@ -715,7 +715,7 @@ class BethesdaController(ModController):
             """
             Get the plugin file from the winning mod.
             """
-            for mod in self.mods[-1:]:
+            for mod in self.mods[::-1]:
                 if not mod.enabled:
                     continue
                 for file in mod.plugins:
