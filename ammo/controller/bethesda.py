@@ -174,6 +174,21 @@ class BethesdaController(ModController):
             if plugin.mod is None and plugin.name not in (i.name for i in self.plugins):
                 self.plugins.append(plugin)
 
+        # Add plugins that were in mod folders but weren't listed in plugins.txt
+        # or DLCList.txt.
+        for mod in self.mods[::-1]:
+            if not mod.enabled:
+                continue
+            for plugin in mod.plugins:
+                if plugin.name not in (p.name for p in self.plugins):
+                    self.plugins.append(
+                        Plugin(
+                            name=plugin.name,
+                            mod=mod,
+                            enabled=False,
+                        )
+                    )
+
         self.populate_downloads()
         self.changes = False
         self.do_find(*self.keywords)
