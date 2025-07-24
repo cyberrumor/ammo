@@ -169,6 +169,11 @@ class BethesdaMod(Mod):
             "skypatcher": "SkyPatcher",
             "source": "Source",
             "win64": "Win64",
+            "interface": "Interface",
+            "infinityui": "InfinityUI",
+            "map": "Map",
+            "worldmap": "WorldMap",
+            "localmapmenu": "LocalMapMenu",
         }
 
         # Explicitly set self.files to an empty list in case we're rereshing
