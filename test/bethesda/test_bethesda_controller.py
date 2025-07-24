@@ -96,6 +96,26 @@ def test_controller_subsequent_launch():
             )
 
 
+def test_controller_plugin_not_referenced():
+    """
+    Test that when a plugin is absent from plugins.txt and dlclist.txt
+    but present in a mod directory, it's still added to self.plugins.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+        assert len(controller.plugins) == 1
+        assert controller.plugins[0].name == "normal_plugin.esp"
+
+        new_plugin = (
+            controller.game.ammo_mods_dir / "normal_mod" / "Data" / "new_plugin.esp"
+        )
+        new_plugin.touch()
+
+        controller.do_refresh()
+        assert len(controller.plugins) == 2
+        assert controller.plugins[1].name == "new_plugin.esp"
+
+
 def test_controller_move():
     """
     Test that moving a mod or plugin to a new position causes the
