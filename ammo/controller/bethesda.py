@@ -47,6 +47,90 @@ NO_EXTRACT_DIRS = [
 ]
 
 
+SKYRIM_SE_IGNORELIST = [
+    "Dawnguard.esm",
+    "Dragonborn.esm",
+    "HearthFires.esm",
+    "_ResourcePack.esl",
+    "ccBGSSSE001-Fish.esm",
+    "ccBGSSSE025-AdvDSGS.esm",
+    "ccBGSSSE037-Curios.esl",
+    "ccQDRSSE001-SurvivalMode.esl",
+    "ccVSVSSE003-NecroArts.esl",
+    "ccafdsse001-dwesanctuary.esm",
+    "ccasvsse001-almsivi.esm",
+    "ccbgssse002-exoticarrows.esl",
+    "ccbgssse003-zombies.esl",
+    "ccbgssse004-ruinsedge.esl",
+    "ccbgssse005-goldbrand.esl",
+    "ccbgssse006-stendarshammer.esl",
+    "ccbgssse007-chrysamere.esl",
+    "ccbgssse008-wraithguard.esl",
+    "ccbgssse010-petdwarvenarmoredmudcrab.esl",
+    "ccbgssse011-hrsarmrelvn.esl",
+    "ccbgssse012-hrsarmrstl.esl",
+    "ccbgssse013-dawnfang.esl",
+    "ccbgssse014-spellpack01.esl",
+    "ccbgssse016-umbra.esm",
+    "ccbgssse018-shadowrend.esl",
+    "ccbgssse019-staffofsheogorath.esl",
+    "ccbgssse020-graycowl.esl",
+    "ccbgssse021-lordsmail.esl",
+    "ccbgssse025-advdsgs.esm",
+    "ccbgssse031-advcyrus.esm",
+    "ccbgssse034-mntuni.esl",
+    "ccbgssse035-petnhound.esl",
+    "ccbgssse036-petbwolf.esl",
+    "ccbgssse037-curios.esl",
+    "ccbgssse038-bowofshadows.esl",
+    "ccbgssse040-advobgobs.esl",
+    "ccbgssse041-netchleather.esl",
+    "ccbgssse043-crosselv.esl",
+    "ccbgssse045-hasedoki.esl",
+    "ccbgssse050-ba_daedric.esl",
+    "ccbgssse051-ba_daedricmail.esl",
+    "ccbgssse052-ba_iron.esl",
+    "ccbgssse053-ba_leather.esl",
+    "ccbgssse054-ba_orcish.esl",
+    "ccbgssse055-ba_orcishscaled.esl",
+    "ccbgssse056-ba_silver.esl",
+    "ccbgssse057-ba_stalhrim.esl",
+    "ccbgssse058-ba_steel.esl",
+    "ccbgssse059-ba_dragonplate.esl",
+    "ccbgssse060-ba_dragonscale.esl",
+    "ccbgssse061-ba_dwarven.esl",
+    "ccbgssse062-ba_dwarvenmail.esl",
+    "ccbgssse063-ba_ebony.esl",
+    "ccbgssse064-ba_elven.esl",
+    "ccbgssse066-staves.esl",
+    "ccbgssse067-daedinv.esm",
+    "ccbgssse068-bloodfall.esl",
+    "ccbgssse069-contest.esl",
+    "cccbhsse001-gaunt.esl",
+    "ccedhsse001-norjewel.esl",
+    "ccedhsse002-splkntset.esl",
+    "ccedhsse003-redguard.esl",
+    "cceejsse001-hstead.esm",
+    "cceejsse002-tower.esl",
+    "cceejsse003-hollow.esl",
+    "cceejsse004-hall.esl",
+    "cceejsse005-cave.esm",
+    "ccffbsse001-imperialdragon.esl",
+    "ccffbsse002-crossbowpack.esl",
+    "ccfsvsse001-backpacks.esl",
+    "cckrtsse001_altar.esl",
+    "ccmtysse001-knightsofthenine.esl",
+    "ccmtysse002-ve.esl",
+    "ccpewsse002-armsofchaos.esl",
+    "ccqdrsse002-firewood.esl",
+    "ccrmssse001-necrohouse.esl",
+    "cctwbsse001-puzzledungeon.esm",
+    "ccvsvsse001-winter.esl",
+    "ccvsvsse002-pets.esl",
+    "ccvsvsse004-beafarmer.esl",
+]
+
+
 class ComponentDelete(StrEnum):
     MOD = auto()
     PLUGIN = auto()
@@ -167,9 +251,9 @@ class BethesdaController(ModController):
                     )
                 )
 
-        # Finish adding DLC from DLCList.txt that was missing from Plugins.txt.
-        # These will be added as disabled. Since order is preserved in Plugins.txt and
-        # these were absent from it, their true order can't be preserved.
+        # Finish adding DLC plugins from DLCList.txt that were missing from Plugins.txt.
+        # These will be added as disabled and in an arbitrary order since they weren't
+        # in Plugins.txt.
         for plugin in self.dlc:
             if plugin.mod is None and plugin.name not in (i.name for i in self.plugins):
                 self.plugins.append(plugin)
@@ -188,6 +272,40 @@ class BethesdaController(ModController):
                             enabled=False,
                         )
                     )
+
+        # Add any remaining orphaned plugins.
+        for file in self.game.data.iterdir():
+            if file.is_symlink():
+                continue
+            if file.is_dir():
+                continue
+            if file.suffix.lower() not in (".esp", ".esm", ".esl"):
+                continue
+            if file.name in (plugin.name for plugin in self.plugins):
+                continue
+
+            # Neither Skyrim SE nor Skyrim LE supports having Skyrim.esm
+            # or Update.esm in Plugins.txt.
+            if file.name in (
+                "Skyrim.esm",
+                "Update.esm",
+            ):
+                continue
+
+            if self.game.name == "Skyrim Special Edition":
+                # Skyrim SE doesn't support disabling or reordering DLC. The game just
+                # overwrites Plugins.txt without these files every time it launches,
+                # which would cause ammo to append them as disabled to self.plugins.
+                if file.name in SKYRIM_SE_IGNORELIST:
+                    continue
+
+            self.plugins.append(
+                Plugin(
+                    name=file.name,
+                    mod=None,
+                    enabled=False,
+                )
+            )
 
         self.populate_downloads()
         self.changes = False
@@ -678,8 +796,9 @@ class BethesdaController(ModController):
 
     def do_sort(self) -> None:
         """
-        Arrange plugins by mod order.
+        Arrange plugins by mod-order.
         """
+        # Get mod-owned plugins in mod-order.
         plugins = []
         for mod in self.mods[::-1]:
             if not mod.enabled:
@@ -691,17 +810,34 @@ class BethesdaController(ModController):
                     ):
                         plugins.insert(0, plugin)
                         break
+
+        # Put DLC and orphaned plugins before mod-owned plugins. Ideally DLC would be
+        # sorted to the front and orphaned plugins would go wherever the user put them,
+        # but that would require distinguishing between DLC and orphaned plugins, which
+        # is not possible for every game.
+        for orphan in [plugin for plugin in self.plugins if plugin.mod is None][::-1]:
+            if orphan.name not in (plugin.name for plugin in plugins):
+                plugins.insert(0, orphan)
+
+        # Get a new list with .esm plugins at the front, pulling .esm plugins
+        # out of mod-added plugins list.
         result = []
         for plugin in list(plugins):
-            if any([plugin.name.lower().endswith(i) for i in [".esl", ".esm"]]):
+            if plugin.name.lower().endswith(".esm"):
                 result.append(plugins.pop(plugins.index(plugin)))
 
+        # Put .esl plugins next, pulling them out of mod-added plugins list.
+        for plugin in list(plugins):
+            if plugin.name.lower().endswith(".esl"):
+                result.append(plugins.pop(plugins.index(plugin)))
+
+        # Now the mod-added plugins list only contains .esp plugins.
+        # Combine DLC/orphans with mod-added plugins.
         result.extend(plugins)
-        for dlc in [plugin for plugin in self.plugins if plugin.mod is None][::-1]:
-            result.insert(0, dlc)
 
         if self.changes is False:
             self.changes = self.plugins != result
+
         self.plugins = result
 
     def requires_sync(func: Callable) -> Callable:
@@ -736,6 +872,11 @@ class BethesdaController(ModController):
                 for file in mod.plugins:
                     if file.name == plugin.name:
                         return file
+
+            # If we get this far, the plugin is DLC or an orphan.
+            # Just generate the filename from game.data in this case.
+            file = self.game.data / plugin.name
+            return file
 
         if index == "all":
             deleted_plugins = ""
