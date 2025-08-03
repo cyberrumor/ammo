@@ -212,3 +212,21 @@ def test_find_downloads(mock_has_extra_folder):
         # Confirm all mods are hidden
         for mod in controller.mods:
             assert mod.visible is False
+
+
+def test_find_mods(mock_has_extra_folder):
+    """
+    Test that `find mods` shows mods but nothing else.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+
+        controller.do_find("mods")
+
+        # Confirm all mods are visible
+        for mod in controller.mods:
+            assert mod.visible is True
+
+        # Confirm all downloads are hidden
+        for download in controller.downloads:
+            assert download.visible is False
