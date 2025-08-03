@@ -379,6 +379,6 @@ class GameController(Controller):
                 controller_class = ModController
 
         # Launch the appropriate mod organizer.
-        controller = controller_class(self.downloads, game)
+        controller = controller_class(self.downloads, game, reset_log=True)
         ui = UI(controller)
         ui.repl()

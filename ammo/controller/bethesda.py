@@ -148,13 +148,15 @@ class BethesdaController(ModController):
     methods to the UI that allow the user to easily manage mods.
     """
 
-    def __init__(self, downloads_dir: Path, game: BethesdaGame, *keywords):
+    def __init__(
+        self, downloads_dir: Path, game: BethesdaGame, *keywords, reset_log=False
+    ):
         # Bethesda attributes
         self.plugins: list[Plugin] = []
         self.dlc: list[Plugin] = []
 
         # Generic attributes
-        super().__init__(downloads_dir, game, *keywords)
+        super().__init__(downloads_dir, game, *keywords, reset_log=reset_log)
 
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.data, parents=True, exist_ok=True)

@@ -51,7 +51,7 @@ class ModController(DownloadController):
     methods to the UI that allow the user to easily manage mods.
     """
 
-    def __init__(self, downloads_dir: Path, game: Game, *keywords):
+    def __init__(self, downloads_dir: Path, game: Game, *keywords, reset_log=False):
         super().__init__(downloads_dir, game)
         self.game: Game = game
         self.keywords = [*keywords]
@@ -62,6 +62,10 @@ class ModController(DownloadController):
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
         Path.mkdir(self.game.ammo_log.parent, parents=True, exist_ok=True)
         Path.mkdir(self.game.directory, parents=True, exist_ok=True)
+
+        if reset_log:
+            with ignored(FileNotFoundError):
+                self.game.ammo_log.unlink()
 
         logging.basicConfig(filename=self.game.ammo_log, level=logging.INFO)
         log.info("initializing")
@@ -559,7 +563,7 @@ class ModController(DownloadController):
         """
         Abandon pending changes.
         """
-        self.__init__(self.downloads_dir, self.game, *self.keywords)
+        self.__init__(self.downloads_dir, self.game, *self.keywords, reset_log=False)
 
     def do_collisions(self, index: int) -> None:
         """
