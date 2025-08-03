@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import textwrap
 import pytest
 
 from mod_common import (
@@ -167,3 +168,47 @@ def test_find_delete_hidden_component(mock_has_extra_folder):
 
         with pytest.raises(Warning):
             controller.delete_download(0)
+
+
+def test_find_message():
+    """
+    Test that when a filter is applied with the find command,
+    there's a message indicating components are hidden.
+    """
+    expected = textwrap.dedent(
+        """\
+        A filter is applied with `find` which may hide components.
+        Running commands against `all` components will only affect
+        the ones you can see.
+        Execute `find` without arguments to remove the filter.
+        """
+    )
+    with AmmoController() as controller:
+        # We start with no message or filter by default.
+        assert str(controller).startswith(expected) is False
+
+        # Upon applying a filter, we should see the message.
+        controller.do_find("anything")
+        assert str(controller).startswith(expected) is True
+
+        # Removing the filter should remove the message.
+        controller.do_find()
+        assert str(controller).startswith(expected) is False
+
+
+def test_find_downloads(mock_has_extra_folder):
+    """
+    Test that `find downloads` shows downloads but nothing else.
+    """
+    with AmmoController() as controller:
+        install_mod(controller, "normal_mod")
+
+        controller.do_find("downloads")
+
+        # Confirm all downloads are visible
+        for download in controller.downloads:
+            assert download.visible is True
+
+        # Confirm all mods are hidden
+        for mod in controller.mods:
+            assert mod.visible is False

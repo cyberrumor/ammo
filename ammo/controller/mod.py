@@ -425,6 +425,7 @@ class ModController(DownloadController):
             for i in range(len(self.mods)):
                 if self.mods[i].visible:
                     try:
+                        # Activate the mod, unless it's an unconfigured fomod.
                         self.set_mod_state(i, True)
                     except Warning as e:
                         warnings.append(e)
