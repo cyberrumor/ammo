@@ -647,11 +647,9 @@ class ModController(DownloadController):
         Show debug log history.
         """
         _log = ""
-        n = 30
         if self.game.ammo_log.exists():
             with open(self.game.ammo_log, "r") as f:
-                lines = f.readlines()
-                _log = "".join(lines[-min(len(lines), n) :])
+                _log = f.read()
 
         raise Warning(_log)
 
