@@ -133,6 +133,11 @@ tools      :                                  : Manage tools.
 ............................................................................................
 ```
 
+## Documentation
+
+- <a href=https://github.com/cyberrumor/ammo/wiki>GitHub Wiki</a>
+- <a href=https://deepwiki.com/cyberrumor/ammo/1-overview>DeepWiki</a>
+
 ## Support
 
 <a href="https://discord.gg/V6qa82Spxw">
