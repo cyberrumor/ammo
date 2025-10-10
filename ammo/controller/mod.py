@@ -603,7 +603,7 @@ class ModController(DownloadController):
                 result += f"  {winner} {mod}\n"
 
         raise Warning(result)
-    
+
     def do_view_files(self, index: int) -> None:
         """
         View mod files
@@ -615,13 +615,13 @@ class ModController(DownloadController):
 
         target_mod_files = [i[1] for i in target_mod.files]
         result = ""
-        header = "Mod name: " + target_mod.name + '\n'
-        result = result + header + '\n'
+        header = "Mod name: " + target_mod.name + "\n"
+        result = result + header + "\n"
         for mod_file in target_mod_files:
-            result = result + str(mod_file) + '\n'
+            result = result + str(mod_file) + "\n"
 
         raise Warning(result)
-    
+
     def do_find(self, *keyword: str) -> None:
         """
         Show only components with any keyword. Execute without args to show all.
