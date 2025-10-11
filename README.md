@@ -127,9 +127,12 @@ rename     : (mod|download) <index> <name>    : Names may contain alphanumerics,
            :                                  : - `rename download 1 some_text`
            :                                  : - `rename mod 1 some_text`
 ............................................................................................
-sort       :                                  : Arrange plugins by mod order.
+sort       :                                  : Arrange plugins by mod-order.
 ............................................................................................
 tools      :                                  : Manage tools.
+............................................................................................
+view_files : <index>                          : View mod files
+           :                                  : - `view_files 0`
 ............................................................................................
 ```
 
