@@ -826,7 +826,10 @@ class ModController(DownloadController):
                 self.mods.remove(target_mod)
                 with ignored(FileNotFoundError):
                     log.info(f"Deleting MOD: {target_mod.name}")
-                    shutil.rmtree(target_mod.location)
+                    if target_mod.location.is_symlink():
+                        target_mod.location.unlink()
+                    else:
+                        shutil.rmtree(target_mod.location)
                 deleted_mods += f"{target_mod.name}\n"
             self.do_commit()
         else:
@@ -846,7 +849,10 @@ class ModController(DownloadController):
             self.mods.pop(index)
             with ignored(FileNotFoundError):
                 log.info(f"Deleting MOD: {target_mod.name}")
-                shutil.rmtree(target_mod.location)
+                if target_mod.location.is_symlink():
+                    target_mod.location.unlink()
+                else:
+                    shutil.rmtree(target_mod.location)
 
             if originally_active:
                 self.do_commit()
