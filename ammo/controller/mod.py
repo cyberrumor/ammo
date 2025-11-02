@@ -180,7 +180,7 @@ class ModController(DownloadController):
                 result += "view with `display list`.\n\n"
 
                 tags = set()
-                for mod in self.mods:
+                for mod in [mod for mod in self.mods if mod.visible]:
                     for tag in mod.tags:
                         tags.add(tag)
                 tags = sorted(list(tags))
@@ -650,6 +650,9 @@ class ModController(DownloadController):
                 mod = self.mods[index]
             except ValueError as e:
                 raise Warning(e)
+
+            if not mod.visible:
+                raise Warning("You can only tag against visible mods.")
 
             match command:
                 case TagOperation.ADD:
