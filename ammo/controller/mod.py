@@ -153,6 +153,12 @@ class ModController(DownloadController):
             result += "the ones you can see.\n"
             result += "Execute `find` without arguments to remove the filter.\n\n"
 
+        if self.interface_mode == InterfaceMode.TAGS:
+            result += "The display mode is set to `tags` which organizes\n"
+            result += "mods via category. Add and remove tags from mods\n"
+            result += "with the `tag` command. Return to the default list\n"
+            result += "view with `display list`.\n\n"
+
         result += super().__str__()
 
         match self.interface_mode:
@@ -174,11 +180,6 @@ class ModController(DownloadController):
                             )
 
             case InterfaceMode.TAGS:
-                result += "The display mode is set to `tags` which organizes\n"
-                result += "mods via category. Add and remove tags from mods\n"
-                result += "with the `tag` command. Return to the default list\n"
-                result += "view with `display list`.\n\n"
-
                 tags = set()
                 for mod in [mod for mod in self.mods if mod.visible]:
                     for tag in mod.tags:
