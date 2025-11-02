@@ -36,6 +36,16 @@ IGNORE_COLLISIONS = {
 }
 
 
+class InterfaceMode(StrEnum):
+    LIST = auto()
+    TAGS = auto()
+
+
+class TagOperation(StrEnum):
+    ADD = auto()
+    REMOVE = auto()
+
+
 class ComponentWrite(StrEnum):
     MOD = auto()
     DOWNLOAD = auto()
@@ -51,12 +61,20 @@ class ModController(DownloadController):
     methods to the UI that allow the user to easily manage mods.
     """
 
-    def __init__(self, downloads_dir: Path, game: Game, *keywords, reset_log=False):
+    def __init__(
+        self,
+        downloads_dir: Path,
+        game: Game,
+        *keywords,
+        interface_mode=InterfaceMode.LIST,
+        reset_log=False,
+    ):
         super().__init__(downloads_dir, game)
         self.game: Game = game
         self.keywords = [*keywords]
         self.changes: bool = False
         self.mods: list[Mod] = []
+        self.interface_mode: InterfaceMode = interface_mode
 
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.ammo_mods_dir, parents=True, exist_ok=True)
@@ -100,7 +118,12 @@ class ModController(DownloadController):
                 for line in file:
                     if not line.strip() or line.strip().startswith("#"):
                         continue
-                    name = line.strip().strip("*").strip()
+                    sections = line.strip().strip("*").strip().split()
+                    name = sections[0]
+                    tags = []
+                    if len(sections) > 1:
+                        tags = sections[1:]
+
                     enabled = line.strip().startswith("*")
 
                     for mod in mods:
@@ -108,6 +131,7 @@ class ModController(DownloadController):
                             continue
 
                         mod.enabled = enabled
+                        mod.tags = tags
                         self.mods.append(mod)
                         break
 
@@ -131,11 +155,63 @@ class ModController(DownloadController):
 
         result += super().__str__()
 
-        if len([i for i in self.mods if i.visible]):
-            result += " index | Active | Mod name\n"
-            result += "-------|--------|------------\n"
-            for i, mod in enumerate(self.mods):
-                if mod.visible:
+        match self.interface_mode:
+            case InterfaceMode.LIST:
+                if len([i for i in self.mods if i.visible]):
+                    result += " index | Active | Mod name\n"
+                    result += "-------|--------|------------\n"
+                    for i, mod in enumerate(self.mods):
+                        if mod.visible:
+                            priority = f"[{i}]"
+                            enabled = f"[{mod.enabled}]"
+                            conflict = (
+                                "x"
+                                if mod.enabled and mod.obsolete
+                                else ("*" if mod.conflict else " ")
+                            )
+                            result += (
+                                f"{priority:<7} {enabled:<7} {conflict:<1} {mod.name}\n"
+                            )
+
+            case InterfaceMode.TAGS:
+                result += "The display mode is set to `tags` which organizes\n"
+                result += "mods via category. Add and remove tags from mods\n"
+                result += "with the `tag` command. Return to the default list\n"
+                result += "view with `display list`.\n\n"
+
+                tags = set()
+                for mod in self.mods:
+                    for tag in mod.tags:
+                        tags.add(tag)
+                tags = sorted(list(tags))
+
+                for tag in tags:
+                    result += f" index | Active | Tag: {tag}\n"
+                    result += "-------|--------|------------\n"
+                    for i, mod in enumerate(self.mods):
+                        if mod.visible and tag in mod.tags:
+                            priority = f"[{i}]"
+                            enabled = f"[{mod.enabled}]"
+                            conflict = (
+                                "x"
+                                if mod.enabled and mod.obsolete
+                                else ("*" if mod.conflict else " ")
+                            )
+                            result += (
+                                f"{priority:<7} {enabled:<7} {conflict:<1} {mod.name}\n"
+                            )
+                    result += "\n"
+
+                untagged_mods = [mod for mod in self.mods if not mod.tags]
+                if untagged_mods:
+                    result += " index | Active | Tag: (None)\n"
+                    result += "-------|--------|------------\n"
+                for i, mod in enumerate(self.mods):
+                    if not mod.visible:
+                        continue
+                    if mod.tags:
+                        continue
+
                     priority = f"[{i}]"
                     enabled = f"[{mod.enabled}]"
                     conflict = (
@@ -263,7 +339,9 @@ class ModController(DownloadController):
         """
         with open(self.game.ammo_conf, "w") as file:
             for mod in self.mods:
-                file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
+                file.write(
+                    f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
+                )
 
     def set_mod_state(self, index: int, desired_state: bool):
         """
@@ -523,6 +601,69 @@ class ModController(DownloadController):
                     f"Expected one of {list(ComponentMove)}, got '{component}'"
                 )
 
+    def add_tag(self, mod: Mod, tag: str) -> None:
+        """
+        Associate a tag with a mod.
+        """
+        if tag != "".join([i for i in tag if i.isalnum() or i in ("_", ".")]):
+            raise Warning(
+                "Tags can only contain alphanumeric characters, periods, or underscores"
+            )
+        original_tags = list(mod.tags)
+        tags = set(mod.tags)
+        tags.add(tag.lower())
+        mod.tags = sorted(list(tags))
+        if mod.tags != original_tags:
+            self.changes = True
+
+    def remove_tag(self, mod: Mod, tag: str) -> None:
+        """
+        Remove a tag association from a mod.
+        """
+        original_tags = list(mod.tags)
+        tags = set(mod.tags)
+        if tag.lower() in tags:
+            tags.remove(tag.lower())
+        mod.tags = sorted(list(tags))
+        if mod.tags != original_tags:
+            self.changes = True
+
+    def do_tag(
+        self, command: TagOperation, index: Union[int, str], tag_name: str
+    ) -> None:
+        """
+        Add or remove tags from mods.
+        """
+        self.interface_mode = InterfaceMode.TAGS
+
+        if index == "all":
+            for mod in self.mods:
+                if not mod.visible:
+                    continue
+                match command:
+                    case TagOperation.ADD:
+                        self.add_tag(mod, tag_name)
+                    case TagOperation.REMOVE:
+                        self.remove_tag(mod, tag_name)
+        else:
+            try:
+                mod = self.mods[index]
+            except ValueError as e:
+                raise Warning(e)
+
+            match command:
+                case TagOperation.ADD:
+                    self.add_tag(mod, tag_name)
+
+                case TagOperation.REMOVE:
+                    self.remove_tag(mod, tag_name)
+
+    def do_display(self, interface_mode: InterfaceMode) -> None:
+        """
+        Change UI mode.
+        """
+        self.interface_mode = interface_mode
+
     def do_commit(self) -> None:
         """
         Apply pending changes.
@@ -555,6 +696,7 @@ class ModController(DownloadController):
 
         # Don't leave empty folders lying around
         self.remove_empty_dirs()
+
         self.changes = False
         if warn:
             raise Warning(warn)
@@ -563,7 +705,13 @@ class ModController(DownloadController):
         """
         Abandon pending changes.
         """
-        self.__init__(self.downloads_dir, self.game, *self.keywords, reset_log=False)
+        self.__init__(
+            self.downloads_dir,
+            self.game,
+            *self.keywords,
+            interface_mode=self.interface_mode,
+            reset_log=False,
+        )
 
     def do_collisions(self, index: int) -> None:
         """
@@ -606,7 +754,7 @@ class ModController(DownloadController):
 
     def do_view_files(self, index: int) -> None:
         """
-        View mod files
+        Show mod files relative to the game directory.
         """
         try:
             target_mod = self.mods[index]

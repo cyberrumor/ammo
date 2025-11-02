@@ -99,6 +99,10 @@ delete     : (mod|plugin|download) <index>    : Removes the specified file from 
            :                                  : - `delete plugin 1`
            :                                  : - `delete plugin all`
 ............................................................................................
+display    : (list|tags)                      : Change UI mode.
+           :                                  : - `display list`
+           :                                  : - `display tags`
+............................................................................................
 exit       :                                  : Quit.
 ............................................................................................
 find       : [<keyword> ... ]                 : Show only components with any keyword.
@@ -129,9 +133,16 @@ rename     : (mod|download) <index> <name>    : Names may contain alphanumerics,
 ............................................................................................
 sort       :                                  : Arrange plugins by mod-order.
 ............................................................................................
+tag        : (add|remove) <index> <tag_name>  : Add or remove tags from mods.
+           :                                  : - `tag add 1 some_text`
+           :                                  : - `tag add all some_text`
+           :                                  : - `tag remove 1 some_text`
+           :                                  : - `tag remove all some_text`
+............................................................................................
 tools      :                                  : Manage tools.
 ............................................................................................
-view_files : <index>                          : View mod files
+view_files : <index>                          : Show mod files relative to the game
+           :                                  : directory.
            :                                  : - `view_files 0`
 ............................................................................................
 ```

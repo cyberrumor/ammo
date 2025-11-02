@@ -73,6 +73,7 @@ class Mod:
     fomod: bool = field(init=False, default=False)
     fomod_target: Union[None, Path] = field(init=False, default=None)
     replacements: dict[str, str] = field(init=False, default_factory=dict)
+    tags: list[str] = field(init=False, default_factory=list)
 
     def find_module_conf(self, location) -> Path | None:
         """

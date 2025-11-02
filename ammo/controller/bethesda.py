@@ -20,6 +20,7 @@ from ammo.component import BethesdaGame
 from .mod import (
     ModController,
     ComponentWrite,
+    InterfaceMode,
 )
 
 log = logging.getLogger(__name__)
@@ -149,14 +150,25 @@ class BethesdaController(ModController):
     """
 
     def __init__(
-        self, downloads_dir: Path, game: BethesdaGame, *keywords, reset_log=False
+        self,
+        downloads_dir: Path,
+        game: BethesdaGame,
+        *keywords,
+        interface_mode=InterfaceMode.LIST,
+        reset_log=False,
     ):
         # Bethesda attributes
         self.plugins: list[Plugin] = []
         self.dlc: list[Plugin] = []
 
         # Generic attributes
-        super().__init__(downloads_dir, game, *keywords, reset_log=reset_log)
+        super().__init__(
+            downloads_dir,
+            game,
+            *keywords,
+            interface_mode=interface_mode,
+            reset_log=reset_log,
+        )
 
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.data, parents=True, exist_ok=True)
@@ -518,9 +530,12 @@ class BethesdaController(ModController):
                     file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
                 else:
                     file.write(f"{'' if plugin.enabled else '*'}{plugin.name}\n")
+
         with open(self.game.ammo_conf, "w") as file:
             for mod in self.mods:
-                file.write(f"{'*' if mod.enabled else ''}{mod.name}\n")
+                file.write(
+                    f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
+                )
 
     def has_extra_folder(self, path) -> bool:
         """
