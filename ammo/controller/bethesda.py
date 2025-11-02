@@ -762,6 +762,11 @@ class BethesdaController(ModController):
             component.visible = True
             name = component.name.lower()
 
+            if hasattr(component, "tags"):
+                if set(component.tags).intersection(self.keywords):
+                    component.visible = True
+                    continue
+
             for kw in self.keywords:
                 component.visible = False
 

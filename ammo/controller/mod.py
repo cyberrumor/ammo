@@ -794,6 +794,10 @@ class ModController(DownloadController):
                 if name.count(kw.lower()):
                     component.visible = True
 
+                if hasattr(component, "tags"):
+                    if set(component.tags).intersection(self.keywords):
+                        component.visible = True
+
                 if component.visible:
                     break
 
