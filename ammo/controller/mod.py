@@ -203,7 +203,9 @@ class ModController(DownloadController):
                             )
                     result += "\n"
 
-                untagged_mods = [mod for mod in self.mods if not mod.tags]
+                untagged_mods = [
+                    mod for mod in self.mods if not mod.tags and mod.visible
+                ]
                 if untagged_mods:
                     result += " index | Active | Tag: (None)\n"
                     result += "-------|--------|------------\n"
