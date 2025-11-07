@@ -217,6 +217,14 @@ class BethesdaMod(Mod):
                     if file.suffix.lower() == ".pak":
                         self.install_dir = self.game_pak
 
+                    # handle creation kit platform extended, which is not
+                    # packaged as a fomod. Otherwise it goes to self.game_pak,
+                    # which is incorrect. We don't need to check other
+                    # conditions if we hit this.
+                    if file.name.lower() == "ckpe_loader.exe":
+                        self.install_dir = self.game_root
+                        break
+
         # Determine which folder to populate self.files from. For fomods, only
         # care about files inside of an ammo_fomod folder
         # which may or may not exist.
