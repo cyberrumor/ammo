@@ -762,13 +762,12 @@ class BethesdaController(ModController):
             component.visible = True
             name = component.name.lower()
 
-            if hasattr(component, "tags"):
-                if set(component.tags).intersection(self.keywords):
-                    component.visible = True
-                    continue
-
             for kw in self.keywords:
                 component.visible = False
+
+                if hasattr(component, "tags"):
+                    if kw in component.tags:
+                        component.visible = True
 
                 # Hack to filter by fomods
                 if kw.lower() == "fomods" and isinstance(component, BethesdaMod):
@@ -781,7 +780,7 @@ class BethesdaController(ModController):
                 # Show plugins of visible mods.
                 if isinstance(component, Plugin):
                     if component.mod is not None:
-                        if component.mod.name.lower().count(kw.lower()):
+                        if component.mod.visible:
                             component.visible = True
 
                 if component.visible:
