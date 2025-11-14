@@ -337,7 +337,7 @@ class BethesdaController(ModController):
         for path in self.game.ammo_mods_dir.iterdir():
             if path.is_dir():
                 mod = BethesdaMod(
-                    location=self.game.ammo_mods_dir / path.name,
+                    location=path,
                     game_root=self.game.directory,
                     game_data=self.game.data,
                     game_pak=self.game.pak,
