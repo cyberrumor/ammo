@@ -121,7 +121,9 @@ class Mod:
         self.populate_files(location)
 
     def populate_files(self, location):
-        # Populate self.files
+        """
+        Populate self.files
+        """
         for parent_dir, _, files in os.walk(location):
             parent_path = Path(parent_dir).relative_to(location)
             for file in files:
@@ -193,13 +195,16 @@ class BethesdaMod(Mod):
                             | "edit scripts"
                             | "oblivionremastered"
                         ):
+                            # We can't break early here in case we later detect fomod,
+                            # in which case self.modconf wouldn't be assigned.
                             self.install_dir = self.game_root
 
                         case "~mods":
                             # This will only be true for Oblivion Remastered, and potentially
                             # also future UE5 Bethesda games. It's unlikely that this directory
                             # will be used by mods for non-UE5 games, so no need to hide this
-                            # behind a game name condition.
+                            # behind a game name condition. We can't break early here in case
+                            # the mod is ckpe_loader.exe.
                             self.install_dir = self.game_pak.parent
 
                         case "fomod":
@@ -213,9 +218,11 @@ class BethesdaMod(Mod):
                 case False:
                     if file.suffix.lower() == ".dll":
                         self.install_dir = self.game_dll
+                        break
 
                     if file.suffix.lower() == ".pak":
                         self.install_dir = self.game_pak
+                        break
 
                     # handle creation kit platform extended, which is not
                     # packaged as a fomod. Otherwise it goes to self.game_pak,
