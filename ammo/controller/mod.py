@@ -391,17 +391,15 @@ class ModController(DownloadController):
                 if set(relative_dest.parts).intersection(IGNORE_COLLISIONS):
                     continue
 
-                case_corrected_absolute_path = mod.install_dir / relative_dest
-                if case_corrected_absolute_path in result:
+                dest = self.game.directory / relative_dest
+                if dest in result:
                     conflicting_mod = [
-                        i
-                        for i in enabled_mods[:index]
-                        if i.name == result[case_corrected_absolute_path][0]
+                        i for i in enabled_mods[:index] if i.name == result[dest][0]
                     ]
                     if conflicting_mod and conflicting_mod[0].enabled:
                         mod.conflict = True
                         conflicting_mod[0].conflict = True
-                result[case_corrected_absolute_path] = (mod.name, src)
+                result[dest] = (mod.name, src)
 
         # Record whether a mod is obsolete (all files are overwritten by other mods).
         for mod in enabled_mods:

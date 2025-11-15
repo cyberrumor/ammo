@@ -64,7 +64,6 @@ class Mod:
     game_root: Path
     name: str = field(default_factory=str, init=False)
     visible: bool = field(init=False, default=True, compare=False)
-    install_dir: Path = field(init=False)
     enabled: bool = field(init=False, default=False)
     conflict: bool = field(init=False, default=False)
     obsolete: bool = field(init=False, default=True)
@@ -91,7 +90,6 @@ class Mod:
 
     def __post_init__(self) -> None:
         self.name = self.location.name
-        self.install_dir = self.game_root
         self.fomod_target = Path("ammo_fomod")
         self.replacements = {}
 
@@ -118,9 +116,9 @@ class Mod:
             # No files to populate
             return
 
-        self.populate_files(location)
+        self.populate_files(location, self.game_root)
 
-    def populate_files(self, location):
+    def populate_files(self, location, install_dir):
         """
         Populate self.files
         """
@@ -132,8 +130,12 @@ class Mod:
                 )
                 self.files.append(
                     (
-                        Path(parent_dir) / file,  # absolute
-                        case_corrected_destination,  # relative
+                        # absolute path to src file
+                        Path(parent_dir) / file,
+                        # path to file relative to game directory
+                        (install_dir / case_corrected_destination).relative_to(
+                            self.game_root
+                        ),
                     )
                 )
 
@@ -147,7 +149,6 @@ class BethesdaMod(Mod):
 
     def __post_init__(self) -> None:
         self.name = self.location.name
-        self.install_dir = self.game_data
         self.fomod_target = Path("ammo_fomod") / self.game_data.name
 
         self.replacements = {
@@ -185,6 +186,7 @@ class BethesdaMod(Mod):
         # Scan the surface level of the mod to determine whether this mod will
         # need to be installed in game.directory, game.data, or game.pak.
         # Also determine whether this is a fomod.
+        install_dir = self.game_data
         for file in self.location.iterdir():
             match file.is_dir():
                 case True:
@@ -197,7 +199,7 @@ class BethesdaMod(Mod):
                         ):
                             # We can't break early here in case we later detect fomod,
                             # in which case self.modconf wouldn't be assigned.
-                            self.install_dir = self.game_root
+                            install_dir = self.game_root
 
                         case "~mods":
                             # This will only be true for Oblivion Remastered, and potentially
@@ -205,7 +207,7 @@ class BethesdaMod(Mod):
                             # will be used by mods for non-UE5 games, so no need to hide this
                             # behind a game name condition. We can't break early here in case
                             # the mod is ckpe_loader.exe.
-                            self.install_dir = self.game_pak.parent
+                            install_dir = self.game_pak.parent
 
                         case "fomod":
                             # Assign ModuleConfig.xml. Only check surface of fomod folder.
@@ -213,15 +215,15 @@ class BethesdaMod(Mod):
                                 if f.name.lower() == "moduleconfig.xml" and f.is_file():
                                     self.modconf = f
                                     self.fomod = True
-                                    self.install_dir = self.game_root
+                                    install_dir = self.game_root
                                     break
                 case False:
                     if file.suffix.lower() == ".dll":
-                        self.install_dir = self.game_dll
+                        install_dir = self.game_dll
                         break
 
                     if file.suffix.lower() == ".pak":
-                        self.install_dir = self.game_pak
+                        install_dir = self.game_pak
                         break
 
                     # handle creation kit platform extended, which is not
@@ -229,7 +231,7 @@ class BethesdaMod(Mod):
                     # which is incorrect. We don't need to check other
                     # conditions if we hit this.
                     if file.name.lower() == "ckpe_loader.exe":
-                        self.install_dir = self.game_root
+                        install_dir = self.game_root
                         break
 
         # Determine which folder to populate self.files from. For fomods, only
@@ -243,7 +245,7 @@ class BethesdaMod(Mod):
             # No files to populate
             return
 
-        self.populate_files(location)
+        self.populate_files(location, install_dir)
 
         # Find the folder that plugins should be populated from.
         # Start from the game directory or the ammo_fomod directory.

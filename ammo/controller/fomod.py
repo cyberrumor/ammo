@@ -460,7 +460,8 @@ class FomodController(Controller):
             )
             shutil.copy(v, k)
 
-        self.mod.install_dir = self.mod.game_root
+        self.mod.files.clear()
+        self.mod.populate_files(self.mod.location / "ammo_fomod", self.mod.game_root)
 
     def do_b(self) -> None:
         """
