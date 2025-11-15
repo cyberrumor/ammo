@@ -200,9 +200,9 @@ def test_conflicting_plugins_mult_delete_plugin():
         controller.delete_plugin(0)
         files = (
             src
-            for src, dest in controller.mods[
+            for src in controller.mods[
                 [i.name for i in controller.mods].index("plugin_wrong_spot")
-            ].files
+            ].files.values()
         )
         file = controller.game.ammo_mods_dir / "plugin_wrong_spot/Data/test/plugin.esp"
         # Check that we didn't delete a plugin that wasn't in Data
@@ -210,9 +210,9 @@ def test_conflicting_plugins_mult_delete_plugin():
 
         files = [
             src
-            for src, dest in controller.mods[
+            for src in controller.mods[
                 [i.name for i in controller.mods].index("mult_plugins_same_name")
-            ].files
+            ].files.values()
         ]
         file = controller.game.ammo_mods_dir / "mult_plugins_same_name/Data/plugin.esp"
         # Check that we deleted what we intended to

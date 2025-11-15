@@ -67,7 +67,7 @@ class Mod:
     enabled: bool = field(init=False, default=False)
     conflict: bool = field(init=False, default=False)
     obsolete: bool = field(init=False, default=True)
-    files: list[Path] = field(default_factory=list, init=False)
+    files: dict[Path, Path] = field(default_factory=dict, init=False)
     modconf: Union[None, Path] = field(init=False, default=None)
     fomod: bool = field(init=False, default=False)
     fomod_target: Union[None, Path] = field(init=False, default=None)
@@ -93,9 +93,9 @@ class Mod:
         self.fomod_target = Path("ammo_fomod")
         self.replacements = {}
 
-        # Explicitly set self.files to an empty list in case we're rereshing
+        # Explicitly set self.files to an empty dict in case we're rereshing
         # files via manually calling __post_init__.
-        self.files = []
+        self.files = {}
         # Scan the surface level of the mod to determine whether this is a fomod.
         self.modconf = self.find_module_conf(self.location)
 
@@ -131,15 +131,7 @@ class Mod:
                 relative_dest = casefold_path(
                     self.replacements, Path("."), relative_parent / file
                 )
-
-                self.files.append(
-                    (
-                        # absolute path to src file
-                        p / file,
-                        # path to file relative to game directory
-                        relative_dest,
-                    )
-                )
+                self.files[relative_dest] = p / file
 
 
 @dataclass(kw_only=True, slots=True)
@@ -182,9 +174,9 @@ class BethesdaMod(Mod):
             "localmapmenu": "LocalMapMenu",
         }
 
-        # Explicitly set self.files to an empty list in case we're rereshing
+        # Explicitly set self.files to an empty dict in case we're rereshing
         # files via manually calling __post_init__.
-        self.files = []
+        self.files = {}
         # Scan the surface level of the mod to determine whether this mod will
         # need to be installed in game.directory, game.data, or game.pak.
         # Also determine whether this is a fomod.
@@ -254,7 +246,7 @@ class BethesdaMod(Mod):
         plugin_dir = location
 
         # See if there's a Data folder nested in here anywhere.
-        for src, dest in self.files:
+        for dest, src in self.files.items():
             if dest.parent.name == self.game_data.name:
                 plugin_dir = src.parent
                 break

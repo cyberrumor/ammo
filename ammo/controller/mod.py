@@ -386,7 +386,7 @@ class ModController(DownloadController):
         enabled_mods = [i for i in self.mods if i.enabled]
         for index, mod in enumerate(enabled_mods):
             # Iterate through the source files of the mod
-            for src, relative_dest in mod.files:
+            for relative_dest, src in mod.files.items():
                 if relative_dest.name in IGNORE_COLLISIONS:
                     continue
                 if set(relative_dest.parts).intersection(IGNORE_COLLISIONS):
@@ -733,15 +733,14 @@ class ModController(DownloadController):
 
         enabled_mods = [i for i in self.mods if i.enabled and i.conflict]
         enabled_mod_names = [i.name for i in enabled_mods]
-        target_mod_files = [i[1] for i in target_mod.files]
 
         conflicts = {}
 
         for mod in enabled_mods:
             if mod.name == target_mod.name:
                 continue
-            for src, dest in mod.files:
-                if dest in target_mod_files:
+            for dest in mod.files:
+                if dest in target_mod.files:
                     if dest in conflicts:
                         conflicts[dest].append(mod.name)
                     else:
@@ -766,11 +765,10 @@ class ModController(DownloadController):
         except (TypeError, IndexError) as e:
             raise Warning(e)
 
-        target_mod_files = [i[1] for i in target_mod.files]
         result = ""
         header = "Mod name: " + target_mod.name + "\n"
         result = result + header + "\n"
-        for mod_file in target_mod_files:
+        for mod_file in target_mod.files:
             result = result + str(mod_file) + "\n"
 
         raise Warning(result)
