@@ -747,7 +747,7 @@ class ModController(DownloadController):
                         conflicts[dest] = [mod.name, target_mod.name]
 
         result = ""
-        for file, mods in conflicts.items():
+        for file, mods in sorted(conflicts.items(), key=lambda x: x[0]):
             result += f"{file}\n"
             sorted_mods = sorted(mods, key=lambda x: enabled_mod_names.index(x))
             for index, mod in enumerate(sorted_mods):

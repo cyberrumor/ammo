@@ -285,13 +285,13 @@ def test_collisions():
 
             expected = textwrap.dedent(
                 """\
-                file.dll
-                    mock_conflict_1
-                  * mock_conflict_2
                 data/mock_plugin.esp
                     mock_conflict_1
                   * mock_conflict_2
                 data/textures/mock_texture.nif
+                    mock_conflict_1
+                  * mock_conflict_2
+                file.dll
                     mock_conflict_1
                   * mock_conflict_2
             """
