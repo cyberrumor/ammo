@@ -123,19 +123,21 @@ class Mod:
         Populate self.files
         """
         for parent_dir, _, files in os.walk(location):
-            parent_path = Path(parent_dir).relative_to(location)
+            p = Path(parent_dir)
+            relative_parent = (install_dir / p.relative_to(location)).relative_to(
+                self.game_root
+            )
             for file in files:
-                case_corrected_destination = casefold_path(
-                    self.replacements, Path("."), parent_path / file
+                relative_dest = casefold_path(
+                    self.replacements, Path("."), relative_parent / file
                 )
+
                 self.files.append(
                     (
                         # absolute path to src file
-                        Path(parent_dir) / file,
+                        p / file,
                         # path to file relative to game directory
-                        (install_dir / case_corrected_destination).relative_to(
-                            self.game_root
-                        ),
+                        relative_dest,
                     )
                 )
 
