@@ -32,6 +32,7 @@ IGNORE_COLLISIONS = {
     ".git",
     "LICENSE",
     "README.md",
+    "README.txt",
     "fomod",
 }
 
