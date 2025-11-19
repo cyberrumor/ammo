@@ -31,6 +31,7 @@ log = logging.getLogger(__name__)
 IGNORE_COLLISIONS = {
     ".git",
     "license",
+    "readme",
     "readme.md",
     "readme.txt",
     "fomod",
