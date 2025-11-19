@@ -30,9 +30,9 @@ log = logging.getLogger(__name__)
 # Filenames which won't contribute to collision detection.
 IGNORE_COLLISIONS = {
     ".git",
-    "LICENSE",
-    "README.md",
-    "README.txt",
+    "license",
+    "readme.md",
+    "readme.txt",
     "fomod",
 }
 
@@ -387,9 +387,9 @@ class ModController(DownloadController):
         for index, mod in enumerate(enabled_mods):
             # Iterate through the source files of the mod
             for relative_dest, src in mod.files.items():
-                if relative_dest.name in IGNORE_COLLISIONS:
+                if relative_dest.name.lower() in IGNORE_COLLISIONS:
                     continue
-                if set(relative_dest.parts).intersection(IGNORE_COLLISIONS):
+                if set([i.lower() for i in relative_dest.parts]).intersection(IGNORE_COLLISIONS):
                     continue
 
                 dest = self.game.directory / relative_dest
