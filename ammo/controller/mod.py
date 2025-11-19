@@ -390,7 +390,9 @@ class ModController(DownloadController):
             for relative_dest, src in mod.files.items():
                 if relative_dest.name.lower() in IGNORE_COLLISIONS:
                     continue
-                if set([i.lower() for i in relative_dest.parts]).intersection(IGNORE_COLLISIONS):
+                if set([i.lower() for i in relative_dest.parts]).intersection(
+                    IGNORE_COLLISIONS
+                ):
                     continue
 
                 dest = self.game.directory / relative_dest
