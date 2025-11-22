@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     AmmoController,
     fomod_selections_choose_files,
     mod_extracts_files,

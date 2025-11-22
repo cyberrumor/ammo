@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from ammo.controller.mod import ModController
-from mod_common import (
+from test.mod.mod_common import (
     AmmoController,
     extract_mod,
     install_mod,

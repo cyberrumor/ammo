@@ -8,7 +8,7 @@ from ammo.controller.bethesda import (
     ComponentMove,
     ComponentDelete,
 )
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     AmmoController,
     extract_mod,
     install_mod,

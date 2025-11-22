@@ -3,7 +3,7 @@ import os
 import textwrap
 from pathlib import Path
 
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     AmmoController,
     install_mod,
     extract_mod,

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     AmmoController,
     extract_mod,
     install_mod,

@@ -11,7 +11,7 @@ from ammo.controller.tool import (
     ToolController,
     ComponentWrite,
 )
-from mod.mod_common import (
+from test.mod.mod_common import (
     AMMO_DIR,
     GAME,
 )

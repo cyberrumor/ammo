@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from mod.mod_common import (
+from test.mod.mod_common import (
     fomod_selections_choose_files,
 )
 

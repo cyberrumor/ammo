@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import pytest
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     AmmoController,
     install_mod,
     extract_mod,

@@ -11,9 +11,9 @@ from ammo.ui import (
     Controller,
     UI,
 )
-from mod.mod_common import AmmoController as AmmoModController
-from bethesda.bethesda_common import AmmoController as AmmoBethesdaController
-from test_tool_controller import AmmoToolController
+from test.mod.mod_common import AmmoController as AmmoModController
+from test.bethesda.bethesda_common import AmmoController as AmmoBethesdaController
+from test.test_tool_controller import AmmoToolController
 
 
 class MockEnum(str, Enum):

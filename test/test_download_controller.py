@@ -5,7 +5,7 @@ import textwrap
 from pathlib import Path
 
 from ammo.controller.download import DownloadController
-from mod.mod_common import (
+from test.mod.mod_common import (
     AMMO_DIR,
     GAME,
 )

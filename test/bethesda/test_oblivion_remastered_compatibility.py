@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     mod_extracts_files,
     mod_installs_files,
 )

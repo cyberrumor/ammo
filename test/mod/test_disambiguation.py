@@ -7,7 +7,7 @@ from ammo.controller.mod import (
     ComponentMove,
     ComponentWrite,
 )
-from mod_common import (
+from test.mod.mod_common import (
     AmmoController,
     extract_mod,
 )

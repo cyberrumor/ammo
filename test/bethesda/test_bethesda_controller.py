@@ -6,7 +6,7 @@ import textwrap
 
 import pytest
 
-from bethesda_common import (
+from test.bethesda.bethesda_common import (
     AmmoController,
     extract_mod,
     install_everything,

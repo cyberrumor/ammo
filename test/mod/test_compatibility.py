@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from mod_common import (
+from test.mod.mod_common import (
     mod_extracts_files,
     mod_installs_files,
 )
