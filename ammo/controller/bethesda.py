@@ -644,24 +644,24 @@ class BethesdaController(ModController):
         if not self.changes:
             self.changes = starting_state != target_plugin.enabled
 
+    def activate_plugin_all(self) -> None:
+        for i, plugin in enumerate(self.plugins):
+            if plugin.visible:
+                self.set_plugin_state(i, True)
+        self.stage()
+
     def activate_plugin(self, index: Union[int, str]) -> None:
         """
         Enabled plugins will be loaded by the game.
         """
-        try:
-            int(index)
-        except ValueError as e:
-            if index != "all":
-                raise Warning(e)
-
         if index == "all":
-            for i in range(len(self.plugins)):
-                if self.plugins[i].visible:
-                    self.set_plugin_state(i, True)
-        else:
-            self.set_plugin_state(int(index), True)
+            return self.activate_plugin_all()
 
-        self.stage()
+        try:
+            self.set_plugin_state(int(index), True)
+            self.stage()
+        except ValueError as e:
+            raise Warning(e)
 
     def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
@@ -677,24 +677,24 @@ class BethesdaController(ModController):
                     f"Expected one of {list(ComponentMove)} but got '{component}'"
                 )
 
+    def deactivate_plugin_all(self) -> None:
+        for i, plugin in enumerate(self.plugins):
+            if plugin.visible:
+                self.set_plugin_state(i, False)
+        self.stage()
+
     def deactivate_plugin(self, index: Union[int, str]) -> None:
         """
         Disabled plugins will not be loaded by the game.
         """
-        try:
-            int(index)
-        except ValueError as e:
-            if index != "all":
-                raise Warning(e)
-
         if index == "all":
-            for i in range(len(self.plugins)):
-                if self.plugins[i].visible:
-                    self.set_plugin_state(i, False)
-        else:
-            self.set_plugin_state(int(index), False)
+            return self.deactivate_plugin_all()
 
-        self.stage()
+        try:
+            self.set_plugin_state(int(index), False)
+            self.stage()
+        except ValueError as e:
+            raise Warning(e)
 
     def do_deactivate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
