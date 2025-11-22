@@ -659,7 +659,7 @@ class BethesdaController(ModController):
                 if self.plugins[i].visible:
                     self.set_plugin_state(i, True)
         else:
-            self.set_plugin_state(index, True)
+            self.set_plugin_state(int(index), True)
 
         self.stage()
 
@@ -692,7 +692,7 @@ class BethesdaController(ModController):
                 if self.plugins[i].visible:
                     self.set_plugin_state(i, False)
         else:
-            self.set_plugin_state(index, False)
+            self.set_plugin_state(int(index), False)
 
         self.stage()
 
