@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Union,
 )
+from types import UnionType
 import inspect
 import textwrap
 import readline
@@ -381,7 +382,7 @@ class UI:
         """
         raise UserExit("exit command detected.")
 
-    def cast_to_type(self, arg: str, target_type: typing.Type):
+    def cast_to_type(self, arg: str, target_type: typing.Type | UnionType):
         """
         This method is responsible for casting user input into
         the type that the command expects.
