@@ -379,7 +379,7 @@ class ModController(DownloadController):
         Returns a dict containing the final symlinks that would be installed.
         """
         # { destination: (mod_name, source), ... }
-        result: dict[str, tuple[str, Path]] = {}
+        result: dict[Path, tuple[str, Path]] = {}
         # Iterate through enabled mods in order.
         for mod in self.mods:
             mod.conflict = False
@@ -496,32 +496,32 @@ class ModController(DownloadController):
         ui = UI(prompt_controller)
         return ui.repl()
 
+    def activate_mod_all(self) -> None:
+        warnings = []
+        for i, mod in enumerate(self.mods):
+            if not mod.visible:
+                continue
+            try:
+                # Activate the mod, unless it's an unconfigured fomod.
+                self.set_mod_state(i, True)
+            except Warning as e:
+                warnings.append(e)
+        self.stage()
+        if warnings:
+            raise Warning("\n".join(set([i.args[0] for i in warnings])))
+
     def activate_mod(self, index: Union[int, str]) -> None:
         """
         Enabled mods will be loaded by game.
         """
-        try:
-            int(index)
-        except ValueError as e:
-            if index != "all":
-                raise Warning(e)
-
-        warnings = []
-
         if index == "all":
-            for i in range(len(self.mods)):
-                if self.mods[i].visible:
-                    try:
-                        # Activate the mod, unless it's an unconfigured fomod.
-                        self.set_mod_state(i, True)
-                    except Warning as e:
-                        warnings.append(e)
-        else:
-            self.set_mod_state(index, True)
+            return self.activate_mod_all()
 
-        self.stage()
-        if warnings:
-            raise Warning("\n".join(set([i.args[0] for i in warnings])))
+        try:
+            self.set_mod_state(int(index), True)
+            self.stage()
+        except ValueError as e:
+            raise Warning(e)
 
     def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
@@ -535,24 +535,25 @@ class ModController(DownloadController):
                     f"Expected one of {list(ComponentMove)} but got '{component}'"
                 )
 
+    def deactivate_mod_all(self) -> None:
+        for i, mod in enumerate(self.mods):
+            if not mod.visible:
+                continue
+            self.set_mod_state(i, False)
+        self.stage()
+
     def deactivate_mod(self, index: Union[int, str]) -> None:
         """
         Diabled mods will not be loaded by the game.
         """
-        try:
-            int(index)
-        except ValueError as e:
-            if index != "all":
-                raise Warning(e)
-
         if index == "all":
-            for i in range(len(self.mods)):
-                if self.mods[i].visible:
-                    self.set_mod_state(i, False)
-        else:
-            self.set_mod_state(index, False)
+            return self.deactivate_mod_all()
 
-        self.stage()
+        try:
+            self.set_mod_state(int(index), False)
+            self.stage()
+        except ValueError as e:
+            raise Warning(e)
 
     def do_deactivate(self, component: ComponentMove, index: Union[int, str]) -> None:
         """
@@ -633,6 +634,16 @@ class ModController(DownloadController):
         if mod.tags != original_tags:
             self.changes = True
 
+    def tag_all(self, command: TagOperation, tag_name: str) -> None:
+        for mod in self.mods:
+            if not mod.visible:
+                continue
+            match command:
+                case TagOperation.ADD:
+                    self.add_tag(mod, tag_name)
+                case TagOperation.REMOVE:
+                    self.remove_tag(mod, tag_name)
+
     def do_tag(
         self, command: TagOperation, index: Union[int, str], tag_name: str
     ) -> None:
@@ -642,29 +653,22 @@ class ModController(DownloadController):
         self.interface_mode = InterfaceMode.TAGS
 
         if index == "all":
-            for mod in self.mods:
-                if not mod.visible:
-                    continue
-                match command:
-                    case TagOperation.ADD:
-                        self.add_tag(mod, tag_name)
-                    case TagOperation.REMOVE:
-                        self.remove_tag(mod, tag_name)
-        else:
-            try:
-                mod = self.mods[index]
-            except ValueError as e:
-                raise Warning(e)
+            return self.tag_all(command, tag_name)
 
-            if not mod.visible:
-                raise Warning("You can only tag against visible mods.")
+        try:
+            mod = self.mods[int(index)]
+        except (ValueError, IndexError) as e:
+            raise Warning(e)
 
-            match command:
-                case TagOperation.ADD:
-                    self.add_tag(mod, tag_name)
+        if not mod.visible:
+            raise Warning("You can only tag against visible mods.")
 
-                case TagOperation.REMOVE:
-                    self.remove_tag(mod, tag_name)
+        match command:
+            case TagOperation.ADD:
+                self.add_tag(mod, tag_name)
+
+            case TagOperation.REMOVE:
+                self.remove_tag(mod, tag_name)
 
     def do_display(self, interface_mode: InterfaceMode) -> None:
         """
@@ -956,64 +960,66 @@ class ModController(DownloadController):
                     f"Expected one of {list(ComponentWrite)}, got '{component}'"
                 )
 
-    @requires_sync
-    def delete_mod(self, index: Union[int, str]) -> None:
-        """
-        Removes specified mod from the filesystem.
-        """
-        try:
-            index = int(index)
-        except ValueError as e:
-            if index != "all":
-                raise Warning(e)
-
-        if index == "all":
-            deleted_mods = ""
-            visible_mods = [i for i in self.mods if i.visible]
-            # Don't allow deleting mods with "all" unless they're inactive.
-            for mod in visible_mods:
-                if mod.enabled:
-                    raise Warning(
-                        "You can only delete all visible components if they are all deactivated."
-                    )
-            for target_mod in visible_mods:
-                # Deactivate the mod here in case set_mod_state is overridden and
-                # provides any cleanup to the child (like removing plugins).
-                # Then we don't have to override this in children which use plugins.
-                self.set_mod_state(self.mods.index(target_mod), False)
-                self.mods.remove(target_mod)
-                with ignored(FileNotFoundError):
-                    log.info(f"Deleting MOD: {target_mod.name}")
-                    if target_mod.location.is_symlink():
-                        target_mod.location.unlink()
-                    else:
-                        shutil.rmtree(target_mod.location)
-                deleted_mods += f"{target_mod.name}\n"
-            self.do_commit()
-        else:
-            try:
-                target_mod = self.mods[index]
-
-            except IndexError as e:
-                raise Warning(e)
-
-            if not target_mod.visible:
-                raise Warning("You can only delete visible components.")
-
-            originally_active = target_mod.enabled
-
-            # Remove the mod from the controller then delete it.
+    def delete_mod_all(self) -> None:
+        deleted_mods = ""
+        visible_mods = [i for i in self.mods if i.visible]
+        # Don't allow deleting mods with "all" unless they're inactive.
+        for mod in visible_mods:
+            if mod.enabled:
+                raise Warning(
+                    "You can only delete all visible components if they are all deactivated."
+                )
+        for target_mod in visible_mods:
+            # Deactivate the mod here in case set_mod_state is overridden and
+            # provides any cleanup to the child (like removing plugins).
+            # Then we don't have to override this in children which use plugins.
             self.set_mod_state(self.mods.index(target_mod), False)
-            self.mods.pop(index)
+            self.mods.remove(target_mod)
             with ignored(FileNotFoundError):
                 log.info(f"Deleting MOD: {target_mod.name}")
                 if target_mod.location.is_symlink():
                     target_mod.location.unlink()
                 else:
                     shutil.rmtree(target_mod.location)
+            deleted_mods += f"{target_mod.name}\n"
+        self.do_commit()
 
-            if originally_active:
-                self.do_commit()
+    @requires_sync
+    def delete_mod(self, index: Union[int, str]) -> None:
+        """
+        Removes specified mod from the filesystem.
+        """
+        try:
+            int(index)
+        except ValueError as e:
+            if index != "all":
+                raise Warning(e)
+
+        if index == "all":
+            return self.delete_mod_all()
+
+        try:
+            target_mod = self.mods[int(index)]
+        except (ValueError, IndexError) as e:
+            raise Warning(e)
+
+        if not target_mod.visible:
+            raise Warning("You can only delete visible components.")
+
+        originally_active = target_mod.enabled
+
+        # Remove the mod from the controller then delete it.
+        self.set_mod_state(self.mods.index(target_mod), False)
+        self.mods.pop(int(index))
+        with ignored(FileNotFoundError):
+            log.info(f"Deleting MOD: {target_mod.name}")
+            if target_mod.location.is_symlink():
+                target_mod.location.unlink()
+            else:
+                shutil.rmtree(target_mod.location)
+
+        if originally_active:
+            self.do_commit()
 
     @requires_sync
     def delete_download(self, index: Union[int, str]) -> None:
