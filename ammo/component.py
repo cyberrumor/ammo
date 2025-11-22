@@ -139,7 +139,7 @@ class BethesdaMod(Mod):
     game_data: Path
     game_pak: Path
     game_dll: Path
-    plugins: list[str] = field(default_factory=list, init=False)
+    plugins: list[Path] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
         self.name = self.location.name
