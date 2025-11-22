@@ -118,7 +118,7 @@ class Mod:
 
         self.populate_files(location, self.game_root)
 
-    def populate_files(self, location, install_dir):
+    def populate_files(self, location: Path, install_dir: Path):
         """
         Populate self.files
         """
