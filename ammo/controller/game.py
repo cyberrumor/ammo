@@ -230,14 +230,24 @@ class GameController(Controller):
                                 plugin_file=data / "Plugins.txt",
                             )
                         else:
+                            plugin_file = (
+                                app_data
+                                / f"{game.name.replace('t 4', 't4')}/Plugins.txt"
+                            )
+                            if game.name == "Enderal Special Edition":
+                                plugin_file = Path(
+                                    str(plugin_file).replace(
+                                        "Plugins.txt", "plugins.txt"
+                                    )
+                                )
+
                             game_selection = BethesdaGameSelection(
                                 name=game.name,
                                 directory=library / f"common/{game.name}",
                                 data=library / f"common/{game.name}/Data",
                                 dlc_file=app_data
                                 / f"{game.name.replace('t 4', 't4')}/DLCList.txt",
-                                plugin_file=app_data
-                                / f"{game.name.replace('t 4', 't4')}/Plugins.txt",
+                                plugin_file=plugin_file,
                             )
 
                     if game_selection not in self.games:
