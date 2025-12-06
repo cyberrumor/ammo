@@ -48,7 +48,7 @@ NO_EXTRACT_DIRS = [
 ]
 
 
-SKYRIM_SE_IGNORELIST = [
+SE_IGNORELIST = [
     "Dawnguard.esm",
     "Dragonborn.esm",
     "HearthFires.esm",
@@ -306,11 +306,12 @@ class BethesdaController(ModController):
             ):
                 continue
 
-            if self.game.name == "Skyrim Special Edition":
-                # Skyrim SE doesn't support disabling or reordering DLC. The game just
-                # overwrites Plugins.txt without these files every time it launches,
-                # which would cause ammo to append them as disabled to self.plugins.
-                if file.name in SKYRIM_SE_IGNORELIST:
+            if self.game.name.endswith("Special Edition"):
+                # Skyrim SE / Enderal SE don't support disabling or reordering
+                # DLC. The games just overwrite their plugins.txt file without
+                # these files every time it launches, which would cause ammo to
+                # append them as disabled to self.plugins.
+                if file.name in SE_IGNORELIST:
                     continue
 
             self.plugins.append(
