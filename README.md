@@ -45,6 +45,11 @@ git clone https://github.com/cyberrumor/ammo
 cd ammo
 pipx install . --force
 ```
+or if you don't want to contribute, just run
+
+```
+pipx install git+https://github.com/cyberrumor/ammo
+```
 
 ## Usage
 
