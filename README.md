@@ -38,17 +38,10 @@ overhead.
 - [p7z](https://github.com/p7zip-project/p7zip) from official repos.
 - [pipx](https://github.com/pypa/pipx) from official repos.
 
-## Installation
+## Install / Update
 
 ```
-git clone https://github.com/cyberrumor/ammo
-cd ammo
-pipx install . --force
-```
-or if you don't want to contribute, just run
-
-```
-pipx install git+https://github.com/cyberrumor/ammo
+pipx install git+https://github.com/cyberrumor/ammo --force
 ```
 
 ## Usage
