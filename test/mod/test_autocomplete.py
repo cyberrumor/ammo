@@ -308,3 +308,97 @@ class TestAutocompleteModPlural:
                 state += 1
 
             assert results == expected
+
+
+class TestAutocompleteTagVisibility:
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_controller(self, request):
+        with AmmoController() as controller:
+            request.cls.controller = controller
+            with patch.object(
+                ModController, "has_extra_folder", return_value=True
+            ) as _mock_has_extra_folder:
+                install_mod(controller, "mock_conflict_1")
+                install_mod(controller, "mock_conflict_2")
+                install_mod(controller, "normal_mod")
+
+            def complete(self, text: str, state: int) -> Union[str, None]:
+                try:
+                    return request.cls.controller.autocomplete(text, state)
+                except Exception:
+                    return None
+
+            request.cls.complete = complete
+
+            yield
+
+    @pytest.mark.parametrize(
+        "buf, text, expected",
+        [
+            # "tag add " with all mods visible should autocomplete all indices and "all".
+            ("tag add ", "", ["0 ", "1 ", "2 ", "all "]),
+            # "tag remove " with all mods visible should autocomplete all indices and "all".
+            ("tag remove ", "", ["0 ", "1 ", "2 ", "all "]),
+        ],
+        ids=ids_hook,
+    )
+    def test_autocomplete_tag_all_visible(
+        self, buf: str, text: str, expected: list[str]
+    ):
+        with patch("readline.get_line_buffer", return_value=buf):
+            results = []
+            state = 0
+            while (result := self.complete(text, state)) is not None:
+                results.append(result)
+                state += 1
+
+            assert results == expected
+
+    def test_autocomplete_tag_hidden_mods(self):
+        """
+        After hiding some mods with find, tag autocomplete should
+        only show visible mod indices.
+        """
+        # Hide all mods except "normal_mod" (index 2).
+        self.controller.do_find("normal_mod")
+        assert self.controller.mods[0].visible is False
+        assert self.controller.mods[1].visible is False
+        assert self.controller.mods[2].visible is True
+
+        with patch("readline.get_line_buffer", return_value="tag add "):
+            results = []
+            state = 0
+            while (result := self.complete("", state)) is not None:
+                results.append(result)
+                state += 1
+            # Only index 2 is visible, so no "all" (need >1 visible for "all").
+            assert results == ["2 "]
+
+        with patch("readline.get_line_buffer", return_value="tag remove "):
+            results = []
+            state = 0
+            while (result := self.complete("", state)) is not None:
+                results.append(result)
+                state += 1
+            assert results == ["2 "]
+
+        # Restore visibility.
+        self.controller.do_find()
+
+    def test_autocomplete_tag_no_visible_mods(self):
+        """
+        When no mods are visible, tag autocomplete should return nothing.
+        """
+        for mod in self.controller.mods:
+            mod.visible = False
+
+        with patch("readline.get_line_buffer", return_value="tag add "):
+            results = []
+            state = 0
+            while (result := self.complete("", state)) is not None:
+                results.append(result)
+                state += 1
+            assert results == []
+
+        # Restore visibility.
+        self.controller.do_find()

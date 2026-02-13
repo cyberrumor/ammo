@@ -407,6 +407,17 @@ class BethesdaController(ModController):
                         if self.mods[i].conflict:
                             completions.append(str(i))
 
+            case self.do_tag.__func__:
+                if len(args) >= 1 and (buf.endswith(" ") or len(args) >= 2):
+                    for i in range(len(self.mods)):
+                        if str(i).startswith(text) and self.mods[i].visible:
+                            completions.append(str(i))
+                    if (
+                        "all".startswith(text)
+                        and len([m for m in self.mods if m.visible]) > 1
+                    ):
+                        completions.append("all")
+
         if completions:
             return completions[state] + " "
 
