@@ -190,6 +190,7 @@ class BethesdaMod(Mod):
                             | "data files"
                             | "edit scripts"
                             | "oblivionremastered"
+                            | "enbseries"
                         ):
                             # We can't break early here in case we later detect fomod,
                             # in which case self.modconf wouldn't be assigned.
