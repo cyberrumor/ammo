@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -34,7 +33,7 @@ class TestAutocompleteBethesda:
         with AmmoController() as controller:
             request.cls.controller = controller
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:
@@ -58,7 +57,7 @@ class TestAutocompleteBethesda:
             (
                 "install ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " with no mods instaled should still autocomplete valid component types.
             ("activate ", "", ["mod ", "plugin "]),
@@ -82,7 +81,7 @@ class TestAutocompleteBethesda:
             (
                 "delete download ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "collisions " with no mods installed should not autocomplete anything since there's no
             # valid targets.
@@ -105,7 +104,7 @@ class TestAutocompleteBethesda:
             (
                 "rename download ",
                 "",
-                [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
+                [str(i) + " " for i in range(NUM_DOWNLOADS + 1)],
             ),
         ],
         ids=ids_hook,
@@ -137,7 +136,7 @@ class TestAutocompleteBethesdaModSingular:
             request.cls.controller = controller
             extract_mod(controller, "normal_mod")
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:
@@ -161,7 +160,7 @@ class TestAutocompleteBethesdaModSingular:
             (
                 "install ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " with mods instaled autocomplete "mod " since it's the only available
             # component type for the generic BethesdaController (and it's going to have a valid target).
@@ -183,7 +182,7 @@ class TestAutocompleteBethesdaModSingular:
             (
                 "delete download ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "collisions " with a single mod installed should not autocomplete anything since there's no
             # mods with collisions.
@@ -205,7 +204,7 @@ class TestAutocompleteBethesdaModSingular:
             (
                 "rename download ",
                 "",
-                [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
+                [str(i) + " " for i in range(NUM_DOWNLOADS + 1)],
             ),
         ],
         ids=ids_hook,
@@ -239,7 +238,7 @@ class TestAutocompleteBethesdaModPlural:
             install_mod(controller, "mock_conflict_2")
             install_mod(controller, "normal_mod")
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:
@@ -263,7 +262,7 @@ class TestAutocompleteBethesdaModPlural:
             (
                 "install ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " autocompletes components with valid targets.
             ("activate ", "", ["mod ", "plugin "]),
@@ -290,7 +289,7 @@ class TestAutocompleteBethesdaModPlural:
             (
                 "delete download ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "delete plugin " should autocomplete plugin indices and "all ".
             ("delete plugin ", "", ["0 ", "1 ", "all "]),
@@ -319,7 +318,7 @@ class TestAutocompleteBethesdaModPlural:
             (
                 "rename download ",
                 "",
-                [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
+                [str(i) + " " for i in range(NUM_DOWNLOADS + 1)],
             ),
             # "rename p" should NOT autocomplete "plugin" since we can't rename plugins.
             ("rename ", "p", []),
@@ -352,7 +351,7 @@ class TestAutocompleteTagVisibility:
             install_mod(controller, "mock_conflict_2")
             install_mod(controller, "normal_mod")
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:

@@ -4,12 +4,11 @@ from unittest.mock import patch
 import pytest
 
 from ammo.controller.mod import ModController
-
 from test.mod.mod_common import (
     AmmoController,
     extract_mod,
-    install_mod,
     install_everything,
+    install_mod,
 )
 
 
@@ -44,30 +43,32 @@ def test_rename_mod_fomod():
     like where the ModuleConfig.txt is located.
     """
     has_extra_folder = True
-    with patch.object(
-        ModController, "has_extra_folder", return_value=has_extra_folder
-    ) as mock_has_extra_folder:
-        with AmmoController() as controller:
-            original_index = extract_mod(controller, "mock_base_object_swapper")
-            # Verify original ModuleConfig.xml exists
-            original_mod = controller.mods[original_index]
-            original_modconf = original_mod.modconf
-            assert original_modconf.exists() is True
+    with (
+        patch.object(
+            ModController, "has_extra_folder", return_value=has_extra_folder
+        ) as mock_has_extra_folder,
+        AmmoController() as controller,
+    ):
+        original_index = extract_mod(controller, "mock_base_object_swapper")
+        # Verify original ModuleConfig.xml exists
+        original_mod = controller.mods[original_index]
+        original_modconf = original_mod.modconf
+        assert original_modconf.exists() is True
 
-            # Rename.
-            controller.rename_mod(original_index, "bos")
+        # Rename.
+        controller.rename_mod(original_index, "bos")
 
-            # Verify the original modconf doesn't exist
-            assert original_modconf.exists() is False
+        # Verify the original modconf doesn't exist
+        assert original_modconf.exists() is False
 
-            # Verify that the new modconf isn't the old modconf
-            new_index = [i.name for i in controller.mods].index("bos")
-            new_mod = controller.mods[new_index]
-            new_modconf = new_mod.modconf
-            assert original_modconf != new_modconf
+        # Verify that the new modconf isn't the old modconf
+        new_index = [i.name for i in controller.mods].index("bos")
+        new_mod = controller.mods[new_index]
+        new_modconf = new_mod.modconf
+        assert original_modconf != new_modconf
 
-            # Verify new modconf exists
-            assert new_modconf.exists() is True
+        # Verify new modconf exists
+        assert new_modconf.exists() is True
 
     mock_has_extra_folder.assert_called_once()
 

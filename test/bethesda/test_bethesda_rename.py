@@ -6,8 +6,8 @@ import pytest
 from test.bethesda.bethesda_common import (
     AmmoController,
     extract_mod,
-    install_mod,
     install_everything,
+    install_mod,
 )
 
 

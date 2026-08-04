@@ -5,8 +5,8 @@ import pytest
 
 from test.mod.mod_common import (
     AmmoController,
-    install_mod,
     extract_mod,
+    install_mod,
 )
 
 

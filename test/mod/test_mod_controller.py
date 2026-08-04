@@ -106,14 +106,13 @@ def test_controller_missing_mod(mock_has_extra_folder):
     found (because it was deleted from ammo's mod dir) isn't added
     to mods.
     """
-    with pytest.raises(AssertionError):
-        with AmmoController() as first_launch:
-            index = install_mod(first_launch, "normal_mod")
-            mod = first_launch.mods[index]
-            shutil.rmtree(mod.location)
+    with pytest.raises(AssertionError), AmmoController() as first_launch:
+        index = install_mod(first_launch, "normal_mod")
+        mod = first_launch.mods[index]
+        shutil.rmtree(mod.location)
 
-            with AmmoController() as controller:
-                assert len(controller.mods) == 0
+        with AmmoController() as controller:
+            assert len(controller.mods) == 0
 
 
 def test_no_delete_all_if_mod_active(mock_has_extra_folder):

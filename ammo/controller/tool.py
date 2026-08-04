@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-import shutil
 import readline
-from pathlib import Path
+import shutil
 import textwrap
 import typing
-from typing import Union
 from enum import (
-    auto,
-    StrEnum,
     EnumMeta,
+    StrEnum,
+    auto,
 )
-from ammo.ui import UI
+from pathlib import Path
+
+from ammo.component import (
+    BethesdaGame,
+    Game,
+    Tool,
+)
 from ammo.controller.bool_prompt import BoolPromptController
 from ammo.controller.download import DownloadController
 from ammo.lib import ignored
-from ammo.component import (
-    Game,
-    BethesdaGame,
-    Tool,
-)
+from ammo.ui import UI
 
 
 class ComponentWrite(StrEnum):
@@ -72,7 +72,7 @@ class ToolController(DownloadController):
         self.do_refresh()
         return self.exit
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
         name = f"do_{name}"
@@ -236,7 +236,7 @@ class ToolController(DownloadController):
 
         new_location = self.game.ammo_tools_dir / name
         if new_location.exists():
-            raise Warning(f"A tool named {str(new_location)} already exists!")
+            raise Warning(f"A tool named {new_location!s} already exists!")
 
         # Move the folder, update the tool.
         tool.path.rename(new_location)
@@ -257,7 +257,7 @@ class ToolController(DownloadController):
                     f"Expected one of {list(ComponentWrite)} but got '{component}'"
                 )
 
-    def delete_tool(self, index: Union[int, str]) -> None:
+    def delete_tool(self, index: int | str) -> None:
         """
         Removes specified file from the filesystem.
         """
@@ -286,7 +286,7 @@ class ToolController(DownloadController):
             with ignored(FileNotFoundError):
                 shutil.rmtree(tool.path)
 
-    def do_delete(self, component: ComponentWrite, index: Union[int, str]) -> None:
+    def do_delete(self, component: ComponentWrite, index: int | str) -> None:
         """
         Removes specified file from the filesystem.
         """
@@ -301,7 +301,7 @@ class ToolController(DownloadController):
                     f"Expected one of {list(ComponentWrite)} but got '{component}'"
                 )
 
-    def do_install(self, index: Union[int, str]) -> None:
+    def do_install(self, index: int | str) -> None:
         """
         Extract and manage an archive from ~/Downloads.
         """

@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 import os
-from typing import (
-    Callable,
-    Union,
-)
-from pathlib import Path
+from collections.abc import Callable
 from dataclasses import (
     dataclass,
     field,
 )
+from pathlib import Path
 
 from .lib import casefold_path
 
@@ -68,9 +65,9 @@ class Mod:
     conflict: bool = field(init=False, default=False)
     obsolete: bool = field(init=False, default=True)
     files: dict[Path, Path] = field(default_factory=dict, init=False)
-    modconf: Union[None, Path] = field(init=False, default=None)
+    modconf: None | Path = field(init=False, default=None)
     fomod: bool = field(init=False, default=False)
-    fomod_target: Union[None, Path] = field(init=False, default=None)
+    fomod_target: None | Path = field(init=False, default=None)
     replacements: dict[str, str] = field(init=False, default_factory=dict)
     tags: list[str] = field(init=False, default_factory=list)
 
@@ -261,7 +258,7 @@ class BethesdaMod(Mod):
 @dataclass(kw_only=True, slots=True)
 class Plugin:
     name: str
-    mod: Union[None, Mod]
+    mod: None | Mod
     enabled: bool
     visible: bool = field(init=False, default=True)
     conflict: bool = field(init=False, default=False)

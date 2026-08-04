@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
-import readline
+import copy
 import logging
-from collections.abc import Callable
-from functools import wraps
-from pathlib import Path
+import readline
 import typing
-from typing import Union
+from collections.abc import Callable
 from enum import (
-    auto,
     EnumMeta,
     StrEnum,
+    auto,
 )
+from functools import wraps
+from pathlib import Path
+
 from ammo.component import (
+    BethesdaGame,
     BethesdaMod,
     Plugin,
 )
 from ammo.lib import ignored
-from ammo.component import BethesdaGame
+
 from .mod import (
-    ModController,
     ComponentWrite,
     InterfaceMode,
+    ModController,
 )
 
 log = logging.getLogger(__name__)
@@ -252,9 +254,7 @@ class BethesdaController(ModController):
                 # Disqualify plugins that aren't installed correctly
                 # from starting as enabled.
                 plugin_file = self.game.data / name
-                if not plugin_file.exists():
-                    enabled = False
-                elif not plugin_file.resolve().exists():
+                if not plugin_file.exists() or not plugin_file.resolve().exists():
                     enabled = False
 
                 self.plugins.append(
@@ -372,7 +372,7 @@ class BethesdaController(ModController):
 
         return result
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
         name = f"do_{name}"
@@ -544,10 +544,10 @@ class BethesdaController(ModController):
                     file.write(f"{'' if plugin.enabled else '*'}{plugin.name}\n")
 
         with open(self.game.ammo_conf, "w") as file:
-            for mod in self.mods:
-                file.write(
-                    f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
-                )
+            file.writelines(
+                f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
+                for mod in self.mods
+            )
 
     def has_extra_folder(self, path) -> bool:
         """
@@ -662,7 +662,7 @@ class BethesdaController(ModController):
                 self.set_plugin_state(i, True)
         self.stage()
 
-    def activate_plugin(self, index: Union[int, str]) -> None:
+    def activate_plugin(self, index: int | str) -> None:
         """
         Enabled plugins will be loaded by the game.
         """
@@ -675,7 +675,7 @@ class BethesdaController(ModController):
         except ValueError as e:
             raise Warning(e)
 
-    def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
+    def do_activate(self, component: ComponentMove, index: int | str) -> None:
         """
         Enabled components will be loaded by the game.
         """
@@ -695,7 +695,7 @@ class BethesdaController(ModController):
                 self.set_plugin_state(i, False)
         self.stage()
 
-    def deactivate_plugin(self, index: Union[int, str]) -> None:
+    def deactivate_plugin(self, index: int | str) -> None:
         """
         Disabled plugins will not be loaded by the game.
         """
@@ -708,7 +708,7 @@ class BethesdaController(ModController):
         except ValueError as e:
             raise Warning(e)
 
-    def do_deactivate(self, component: ComponentMove, index: Union[int, str]) -> None:
+    def do_deactivate(self, component: ComponentMove, index: int | str) -> None:
         """
         Disabled components will not be loaded by the game.
         """
@@ -855,12 +855,12 @@ class BethesdaController(ModController):
         # Get a new list with .esm plugins at the front, pulling .esm plugins
         # out of mod-added plugins list.
         result = []
-        for plugin in list(plugins):
+        for plugin in copy.copy(plugins):
             if plugin.name.lower().endswith(".esm"):
                 result.append(plugins.pop(plugins.index(plugin)))
 
         # Put .esl plugins next, pulling them out of mod-added plugins list.
-        for plugin in list(plugins):
+        for plugin in copy.copy(plugins):
             if plugin.name.lower().endswith(".esl"):
                 result.append(plugins.pop(plugins.index(plugin)))
 
@@ -890,7 +890,7 @@ class BethesdaController(ModController):
         return wrapper
 
     @requires_sync
-    def delete_plugin(self, index: Union[int, str]) -> None:
+    def delete_plugin(self, index: int | str) -> None:
         """
         Removes specified plugin from the filesystem.
         """
@@ -949,7 +949,7 @@ class BethesdaController(ModController):
             self.do_refresh()
             self.do_commit()
 
-    def do_delete(self, component: ComponentDelete, index: Union[int, str]) -> None:
+    def do_delete(self, component: ComponentDelete, index: int | str) -> None:
         """
         Removes the specified file from the filesystem.
         """

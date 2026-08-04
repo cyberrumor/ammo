@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
-import os
-import shutil
-import readline
 import logging
+import os
+import readline
+import shutil
 import textwrap
-from collections.abc import Callable
-from functools import wraps
-from pathlib import Path
 import typing
-from typing import Union
+from collections.abc import Callable
 from enum import (
     EnumMeta,
     StrEnum,
     auto,
 )
-from ammo.ui import UI
+from functools import wraps
+from pathlib import Path
+
 from ammo.component import (
     Game,
     Mod,
 )
 from ammo.lib import ignored
-from .download import DownloadController
-from .tool import ToolController
-from .fomod import FomodController
+from ammo.ui import UI
+
 from .bool_prompt import BoolPromptController
+from .download import DownloadController
+from .fomod import FomodController
+from .tool import ToolController
 
 log = logging.getLogger(__name__)
 
@@ -239,7 +240,7 @@ class ModController(DownloadController):
     def postcmd(self) -> bool:
         return False
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         buf = readline.get_line_buffer()
         name, *args = buf.split()
         name = f"do_{name}"
@@ -354,10 +355,10 @@ class ModController(DownloadController):
         Writes ammo.conf.
         """
         with open(self.game.ammo_conf, "w") as file:
-            for mod in self.mods:
-                file.write(
-                    f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
-                )
+            file.writelines(
+                f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
+                for mod in self.mods
+            )
 
     def set_mod_state(self, index: int, desired_state: bool):
         """
@@ -521,7 +522,7 @@ class ModController(DownloadController):
         if warnings:
             raise Warning("\n".join(set([i.args[0] for i in warnings])))
 
-    def activate_mod(self, index: Union[int, str]) -> None:
+    def activate_mod(self, index: int | str) -> None:
         """
         Enabled mods will be loaded by game.
         """
@@ -534,7 +535,7 @@ class ModController(DownloadController):
         except ValueError as e:
             raise Warning(e)
 
-    def do_activate(self, component: ComponentMove, index: Union[int, str]) -> None:
+    def do_activate(self, component: ComponentMove, index: int | str) -> None:
         """
         Enabled mods will be loaded by the game.
         """
@@ -553,7 +554,7 @@ class ModController(DownloadController):
             self.set_mod_state(i, False)
         self.stage()
 
-    def deactivate_mod(self, index: Union[int, str]) -> None:
+    def deactivate_mod(self, index: int | str) -> None:
         """
         Diabled mods will not be loaded by the game.
         """
@@ -566,7 +567,7 @@ class ModController(DownloadController):
         except ValueError as e:
             raise Warning(e)
 
-    def do_deactivate(self, component: ComponentMove, index: Union[int, str]) -> None:
+    def do_deactivate(self, component: ComponentMove, index: int | str) -> None:
         """
         Disabled mods will not be loaded by the game.
         """
@@ -655,9 +656,7 @@ class ModController(DownloadController):
                 case TagOperation.REMOVE:
                     self.remove_tag(mod, tag_name)
 
-    def do_tag(
-        self, command: TagOperation, index: Union[int, str], tag_name: str
-    ) -> None:
+    def do_tag(self, command: TagOperation, index: int | str, tag_name: str) -> None:
         """
         Add or remove tags from mods.
         """
@@ -936,7 +935,7 @@ class ModController(DownloadController):
 
         new_location = self.game.ammo_mods_dir / name
         if new_location.exists():
-            raise Warning(f"A mod named {str(new_location)} already exists!")
+            raise Warning(f"A mod named {new_location!s} already exists!")
 
         if mod.enabled:
             # Remove symlinks instead of breaking them in case something goes
@@ -996,7 +995,7 @@ class ModController(DownloadController):
         self.do_commit()
 
     @requires_sync
-    def delete_mod(self, index: Union[int, str]) -> None:
+    def delete_mod(self, index: int | str) -> None:
         """
         Removes specified mod from the filesystem.
         """
@@ -1033,7 +1032,7 @@ class ModController(DownloadController):
             self.do_commit()
 
     @requires_sync
-    def delete_download(self, index: Union[int, str]) -> None:
+    def delete_download(self, index: int | str) -> None:
         """
         Removes specified download from the filesystem.
         """
@@ -1042,7 +1041,7 @@ class ModController(DownloadController):
         return super().delete_download(index)
 
     @requires_sync
-    def do_delete(self, component: ComponentWrite, index: Union[int, str]):
+    def do_delete(self, component: ComponentWrite, index: int | str):
         """
         Removes specified component from the filesystem.
         """
@@ -1057,7 +1056,7 @@ class ModController(DownloadController):
                 )
 
     @requires_sync
-    def do_install(self, index: Union[int, str]) -> None:
+    def do_install(self, index: int | str) -> None:
         """
         Extract and manage an archive from ~/Downloads.
         """

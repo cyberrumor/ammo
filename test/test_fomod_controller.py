@@ -48,7 +48,7 @@ def test_missing_data_fomod():
     # other options have various self terminating tags.
     # Make sure we can make it to the end of the
     # fomod installer before finally crashing at "nothing to install".
-    for option in range(0, 3):
+    for option in range(3):
         with pytest.raises(AssertionError) as error:
             fomod_selections_choose_files(
                 "missing_data",

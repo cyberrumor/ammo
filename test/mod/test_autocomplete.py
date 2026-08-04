@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -28,7 +27,7 @@ class TestAutocomplete:
         with AmmoController() as controller:
             request.cls.controller = controller
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:
@@ -52,7 +51,7 @@ class TestAutocomplete:
             (
                 "install ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " with no mods instaled should still autocomplete "mod " since it's the only
             # available component type for the generic ModController.
@@ -74,7 +73,7 @@ class TestAutocomplete:
             (
                 "delete download ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "collisions " with no mods installed should not autocomplete anything since there's no
             # valid targets.
@@ -95,7 +94,7 @@ class TestAutocomplete:
             (
                 "rename download ",
                 "",
-                [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
+                [str(i) + " " for i in range(NUM_DOWNLOADS + 1)],
             ),
             # "delete p" should NOT autocomplete "plugin " since it's a bogus component type for this controller.
             ("delete ", "p", []),
@@ -123,7 +122,7 @@ class TestAutocompleteModSingular:
             ) as _mock_has_extra_folder:
                 extract_mod(controller, "mock_relighting_skyrim")
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:
@@ -147,7 +146,7 @@ class TestAutocompleteModSingular:
             (
                 "install ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " with mods instaled autocomplete "mod " since it's the only available
             # component type for the generic ModController (and it's going to have a valid target).
@@ -168,7 +167,7 @@ class TestAutocompleteModSingular:
             (
                 "delete download ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "collisions " with a single mod installed should not autocomplete anything since there's no
             # mods with collisions.
@@ -190,7 +189,7 @@ class TestAutocompleteModSingular:
             (
                 "rename download ",
                 "",
-                [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
+                [str(i) + " " for i in range(NUM_DOWNLOADS + 1)],
             ),
             # "delete p" should NOT autocomplete "plugin " since it's a bogus component type for this controller.
             ("delete ", "p", []),
@@ -222,7 +221,7 @@ class TestAutocompleteModPlural:
                 install_mod(controller, "mock_conflict_2")
                 install_mod(controller, "normal_mod")
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:
@@ -246,7 +245,7 @@ class TestAutocompleteModPlural:
             (
                 "install ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "activate " with mods instaled autocomplete "mod " since it's the only available
             # component type for the generic ModController (and it's going to have a valid target).
@@ -267,7 +266,7 @@ class TestAutocompleteModPlural:
             (
                 "delete download ",
                 "",
-                [*(str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)), "all "],
+                [*(str(i) + " " for i in range(NUM_DOWNLOADS + 1)), "all "],
             ),
             # "collisions " with mods that have conflicts should autocomplete only indices with collisions.
             # E.g., don't complete the index for "normal_mod" here. Just collision_1 and collision_2.
@@ -290,7 +289,7 @@ class TestAutocompleteModPlural:
             (
                 "rename download ",
                 "",
-                [str(i) + " " for i in range(0, NUM_DOWNLOADS + 1)],
+                [str(i) + " " for i in range(NUM_DOWNLOADS + 1)],
             ),
             # "delete p" should NOT autocomplete "plugin " since it's a bogus component type for this controller.
             ("delete ", "p", []),
@@ -322,7 +321,7 @@ class TestAutocompleteTagVisibility:
                 install_mod(controller, "mock_conflict_2")
                 install_mod(controller, "normal_mod")
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
                 except Exception:

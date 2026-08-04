@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import readline
-from typing import Union
 
 from ammo.ui import Controller
 
@@ -40,7 +39,7 @@ class BoolPromptController(Controller):
         """
         return f"{self.question}"
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         """
         Returns the next possible autocompletion beginning with text.
         This should only be used for arguments of existing functions.

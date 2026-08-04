@@ -3,11 +3,11 @@ from unittest.mock import patch
 
 import pytest
 
-from ammo.controller.mod import ComponentWrite
 from ammo.controller.bethesda import (
-    ComponentMove,
     ComponentDelete,
+    ComponentMove,
 )
+from ammo.controller.mod import ComponentWrite
 from test.bethesda.bethesda_common import (
     AmmoController,
     extract_mod,
@@ -44,9 +44,8 @@ def test_disambiguation_activate_garbage():
     Test that the controller.do_activate command raises
     a warning if it doesn't get an expected component type.
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_activate("bogus_string", 0)
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_activate("bogus_string", 0)
 
 
 @patch("ammo.controller.bethesda.BethesdaController.deactivate_mod")
@@ -76,9 +75,8 @@ def test_disambiguation_deactivate_plugin(mock_deactivate):
 
 
 def test_disambiguation_deactivate_garbage():
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_deactivate("bogus_string", 0)
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_deactivate("bogus_string", 0)
 
 
 @patch("ammo.controller.bethesda.BethesdaController.delete_mod")
@@ -121,9 +119,8 @@ def test_disambiguation_delete_garbage():
     Test that the controller.do_delete command raises a warning
     when it doesn't get an expected component type.
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_delete("bogus_string", 0)
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_delete("bogus_string", 0)
 
 
 @patch("ammo.controller.bethesda.BethesdaController.move_mod")
@@ -155,9 +152,8 @@ def test_disambiguation_move_garbage():
     Test that the controller.do_move command raises
     a warning when it gets an unexpected component type.
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_move("bogus_string", 0, 1)
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_move("bogus_string", 0, 1)
 
 
 @patch("ammo.controller.bethesda.BethesdaController.rename_download")
@@ -187,6 +183,5 @@ def test_disambiguation_rename_garbage():
     Test that the controller.do_rename command raises a warning
     when it gets an unexpected component.
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_rename("bogus_string", 0, "new_name")
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_rename("bogus_string", 0, "new_name")

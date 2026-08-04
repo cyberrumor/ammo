@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 import argparse
+import shutil
 import textwrap
 from pathlib import Path
-import shutil
 from unittest.mock import patch
 
 import pytest
 
 from ammo.controller.game import (
+    BethesdaGameSelection,
     GameController,
     GameSelection,
-    BethesdaGameSelection,
 )
 
 

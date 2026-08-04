@@ -2,23 +2,23 @@
 import os
 import shutil
 import textwrap
-from typing import Union
 from dataclasses import (
     dataclass,
     field,
 )
+from functools import reduce
 from pathlib import Path
 from xml.etree import ElementTree
-from functools import reduce
-from ammo.ui import Controller
+
 from ammo.component import (
-    Mod,
     BethesdaMod,
+    Mod,
 )
 from ammo.lib import (
     casefold_path,
     ignored,
 )
+from ammo.ui import Controller
 
 
 @dataclass
@@ -142,7 +142,7 @@ class FomodController(Controller):
         self.populate_index_commands()
         return False
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         return super().autocomplete(text, state)
 
     def populate_index_commands(self) -> None:

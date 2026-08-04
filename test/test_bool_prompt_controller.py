@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from ammo.ui import UI
 from ammo.controller.bool_prompt import BoolPromptController
+from ammo.ui import UI
 
 
 @pytest.mark.parametrize(

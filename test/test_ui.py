@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-from unittest.mock import patch
-from typing import Union
 from enum import (
     Enum,
 )
+from typing import Union
+from unittest.mock import patch
 
 import pytest
 
 from ammo.ui import (
-    Controller,
     UI,
+    Controller,
 )
-from test.mod.mod_common import AmmoController as AmmoModController
 from test.bethesda.bethesda_common import AmmoController as AmmoBethesdaController
+from test.mod.mod_common import AmmoController as AmmoModController
 from test.test_tool_controller import AmmoToolController
 
 
@@ -34,7 +34,7 @@ class MockController(Controller):
     def __str__(self) -> str:
         return super().__str__()
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         return super().autocomplete(text, state)
 
 
@@ -114,7 +114,7 @@ class TestAutocompleteModUI:
             request.cls.ui = UI(controller)
             request.cls.ui.populate_commands()
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.ui.autocomplete(text, state)
                 except Exception:
@@ -172,7 +172,7 @@ class TestAutocompleteBethesdaUI:
             request.cls.ui = UI(controller)
             request.cls.ui.populate_commands()
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.ui.autocomplete(text, state)
                 except Exception:
@@ -230,7 +230,7 @@ class TestAutocompleteToolUI:
             request.cls.ui = UI(controller)
             request.cls.ui.populate_commands()
 
-            def complete(self, text: str, state: int) -> Union[str, None]:
+            def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.ui.autocomplete(text, state)
                 except Exception:

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import os
+
 import pytest
+
 from test.mod.mod_common import (
     AmmoController,
-    install_mod,
     extract_mod,
+    install_mod,
 )
 
 
@@ -174,9 +176,8 @@ def test_install_nan():
     """
     Don't allow installing non-ints
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_install("nan")
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_install("nan")
 
 
 def test_invisible_delete_mod(mock_has_extra_folder):
@@ -247,18 +248,16 @@ def test_configure_high_index():
     """
     Don't crash when configuring an index out of range.
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_configure(0)
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_configure(0)
 
 
 def test_configure_nan():
     """
     Don't crash when configuring nan
     """
-    with AmmoController() as controller:
-        with pytest.raises(Warning):
-            controller.do_configure("nan")
+    with AmmoController() as controller, pytest.raises(Warning):
+        controller.do_configure("nan")
 
 
 def test_collisions():

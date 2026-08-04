@@ -8,8 +8,8 @@ from unittest.mock import patch
 import pytest
 
 from ammo.controller.tool import (
-    ToolController,
     ComponentWrite,
+    ToolController,
 )
 from test.mod.mod_common import (
     AMMO_DIR,
@@ -132,9 +132,8 @@ def test_disambiguation_delete_garbage():
     Test that controller.do_delete raises a warning when it gets
     an unexpected component.
     """
-    with AmmoToolController() as controller:
-        with pytest.raises(Warning):
-            controller.do_delete("bogus_string", 0)
+    with AmmoToolController() as controller, pytest.raises(Warning):
+        controller.do_delete("bogus_string", 0)
 
 
 @patch("ammo.controller.tool.ToolController.rename_tool")
@@ -165,9 +164,8 @@ def test_disambiguation_rename_garbage():
     Test that controller.rename raises a warning when it gets
     an unexpected component.
     """
-    with AmmoToolController() as controller:
-        with pytest.raises(Warning):
-            controller.do_rename("bogus_string", 0, "new_name")
+    with AmmoToolController() as controller, pytest.raises(Warning):
+        controller.do_rename("bogus_string", 0, "new_name")
 
 
 def test_rename_tool(mock_tool_has_extra_folder):

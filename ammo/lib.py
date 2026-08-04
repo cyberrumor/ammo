@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-from pathlib import Path
 from contextlib import contextmanager
+from pathlib import Path
 
 
 class UserExit(Exception):

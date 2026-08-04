@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import textwrap
+
 import pytest
 
 from test.mod.mod_common import (
     AmmoController,
-    install_mod,
     extract_mod,
     install_everything,
+    install_mod,
 )
 
 

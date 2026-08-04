@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 import json
 import re
-from typing import (
-    Iterator,
-    Union,
-)
+from collections.abc import Iterator
 from dataclasses import (
     dataclass,
     field,
 )
 from pathlib import Path
+
 from ammo.component import (
-    Game,
     BethesdaGame,
+    Game,
 )
-from .mod import ModController
-from .bethesda import BethesdaController
 from ammo.ui import (
-    Controller,
     UI,
+    Controller,
 )
+
+from .bethesda import BethesdaController
+from .mod import ModController
 
 BETHESDA_TITLES = [
     "Enderal Special Edition",
@@ -315,7 +314,7 @@ class GameController(Controller):
             result += f"{index:<7} {game.name} ({game.directory})\n"
         return result
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         return super().autocomplete(text, state)
 
     def populate_index_commands(self) -> None:

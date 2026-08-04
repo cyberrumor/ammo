@@ -3,13 +3,13 @@ import os
 import textwrap
 from pathlib import Path
 
+import pytest
+
 from test.bethesda.bethesda_common import (
     AmmoController,
-    install_mod,
     extract_mod,
+    install_mod,
 )
-
-import pytest
 
 
 def test_duplicate_plugin():

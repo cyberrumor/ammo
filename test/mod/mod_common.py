@@ -4,13 +4,12 @@ import shutil
 from pathlib import Path
 from unittest.mock import patch
 
-from ammo.controller.mod import ModController
-from ammo.controller.fomod import FomodController
 from ammo.component import (
     Game,
     Mod,
 )
-
+from ammo.controller.fomod import FomodController
+from ammo.controller.mod import ModController
 
 # Create a configuration for the mock controller to use.
 AMMO_DIR = Path("/tmp/ammo_test")
@@ -101,39 +100,41 @@ def mod_extracts_files(mod_name, files, has_extra_folder=False):
     Expects the name of a file in Downloads, and a list of file paths that should
     exist, relative to the mod's installation directory.
     """
-    with patch.object(
-        ModController, "has_extra_folder", return_value=has_extra_folder
-    ) as mock_has_extra_folder:
-        with AmmoController() as controller:
-            # install the mod
-            mod_index_download = [i.name for i in controller.downloads].index(
-                mod_name + ".7z"
-            )
-            controller.do_install(mod_index_download)
+    with (
+        patch.object(
+            ModController, "has_extra_folder", return_value=has_extra_folder
+        ) as mock_has_extra_folder,
+        AmmoController() as controller,
+    ):
+        # install the mod
+        mod_index_download = [i.name for i in controller.downloads].index(
+            mod_name + ".7z"
+        )
+        controller.do_install(mod_index_download)
 
-            # Assert the mod extracted to the expected place
-            assert mod_name == controller.mods[0].name
-            assert (controller.game.ammo_mods_dir / mod_name).exists()
+        # Assert the mod extracted to the expected place
+        assert mod_name == controller.mods[0].name
+        assert (controller.game.ammo_mods_dir / mod_name).exists()
 
-            for file in files:
-                if controller.mods[0].modconf:
-                    location = controller.mods[0].modconf.parent.parent
-                else:
-                    location = controller.mods[0].location
-                expected_file = location / file
+        for file in files:
+            if controller.mods[0].modconf:
+                location = controller.mods[0].modconf.parent.parent
+            else:
+                location = controller.mods[0].location
+            expected_file = location / file
 
-                if not expected_file.exists():
-                    # print the files that _do_ exist to show where things ended up
-                    print(f"in {controller.game.ammo_mods_dir}:")
-                    for parent_dir, folders, actual_files in os.walk(
-                        controller.game.ammo_mods_dir
-                    ):
-                        print(f"{parent_dir} folders: {folders}")
-                        print(f"{parent_dir} files: {actual_files}")
+            if not expected_file.exists():
+                # print the files that _do_ exist to show where things ended up
+                print(f"in {controller.game.ammo_mods_dir}:")
+                for parent_dir, folders, actual_files in os.walk(
+                    controller.game.ammo_mods_dir
+                ):
+                    print(f"{parent_dir} folders: {folders}")
+                    print(f"{parent_dir} files: {actual_files}")
 
-                    print(f"expected: {expected_file}")
+                print(f"expected: {expected_file}")
 
-                    raise FileNotFoundError(expected_file)
+                raise FileNotFoundError(expected_file)
 
     mock_has_extra_folder.assert_called_once()
 
@@ -175,20 +176,22 @@ def mod_installs_files(mod_name, files, has_extra_folder=False):
     Expects the name of a file in Downloads, and a list of file paths that should
     exist after installation and commit, relative to the game's directory.
     """
-    with patch.object(
-        ModController, "has_extra_folder", return_value=has_extra_folder
-    ) as mock_has_extra_folder:
-        with AmmoController() as controller:
-            # install the mod
-            mod_index_download = [i.name for i in controller.downloads].index(
-                mod_name + ".7z"
-            )
-            controller.do_install(mod_index_download)
-            mod_index = [i.name for i in controller.mods].index(mod_name)
-            controller.activate_mod(mod_index)
+    with (
+        patch.object(
+            ModController, "has_extra_folder", return_value=has_extra_folder
+        ) as mock_has_extra_folder,
+        AmmoController() as controller,
+    ):
+        # install the mod
+        mod_index_download = [i.name for i in controller.downloads].index(
+            mod_name + ".7z"
+        )
+        controller.do_install(mod_index_download)
+        mod_index = [i.name for i in controller.mods].index(mod_name)
+        controller.activate_mod(mod_index)
 
-            controller.do_commit()
-            expect_files(controller.game.directory, files)
+        controller.do_commit()
+        expect_files(controller.game.directory, files)
 
     mock_has_extra_folder.assert_called_once()
 
@@ -204,63 +207,65 @@ def fomod_selections_choose_files(
 
     selections is a list of {"page": <page_number>, "option": <selection index>}
     """
-    with patch.object(
-        ModController, "has_extra_folder", return_value=has_extra_folder
-    ) as mock_has_extra_folder:
-        with AmmoController() as controller:
-            mod_index_download = [i.name for i in controller.downloads].index(
-                mod_name + ".7z"
-            )
-            controller.do_install(mod_index_download)
+    with (
+        patch.object(
+            ModController, "has_extra_folder", return_value=has_extra_folder
+        ) as mock_has_extra_folder,
+        AmmoController() as controller,
+    ):
+        mod_index_download = [i.name for i in controller.downloads].index(
+            mod_name + ".7z"
+        )
+        controller.do_install(mod_index_download)
 
-            mod_index = [i.name for i in controller.mods].index(mod_name)
-            mod = controller.mods[mod_index]
+        mod_index = [i.name for i in controller.mods].index(mod_name)
+        mod = controller.mods[mod_index]
 
-            try:
-                shutil.rmtree(mod.modconf.parent.parent / mod.fomod_target)
-            except FileNotFoundError:
-                pass
+        try:
+            shutil.rmtree(mod.modconf.parent.parent / mod.fomod_target)
+        except FileNotFoundError:
+            pass
 
-            with FomodContextManager(mod) as fomod_controller:
-                for selection in selections:
-                    fomod_controller.page = fomod_controller.steps[
-                        fomod_controller.steps.index(
-                            fomod_controller.visible_pages[selection["page"]]
-                        )
-                    ]
-                    fomod_controller.select(selection["option"])
-
-                fomod_controller.flags = fomod_controller.get_flags()
-                install_nodes = fomod_controller.get_nodes()
-                fomod_controller.install_files(install_nodes)
-
-            # Check that all the expected files exist.
-            for file in files:
-                expected_file = mod.modconf.parent.parent / mod.fomod_target / file
-                if not expected_file.exists():
-                    # print the files that _do_ exist to show where things ended up
-                    print(f"in {mod.modconf.parent.parent / 'ammo_fomod'}:")
-                    for parent_dir, folders, actual_files in os.walk(
-                        mod.modconf.parent.parent / "ammo_fomod"
-                    ):
-                        print(f"{parent_dir} folders: {folders}")
-                        print(f"{parent_dir} files: {actual_files}")
-
-                    print(f"expected: {expected_file}")
-                    raise FileNotFoundError(expected_file)
-
-            # Check that no unexpected files exist.
-            for path, folders, filenames in os.walk(
-                mod.modconf.parent.parent / mod.fomod_target
-            ):
-                for file in filenames:
-                    exists = os.path.join(path, file)
-                    local_exists = exists.split(
-                        str(mod.modconf.parent.parent / mod.fomod_target)
-                    )[-1].lstrip("/")
-                    assert local_exists in [str(i) for i in files], (
-                        f"Got an extra file: {local_exists}\nExpected only: {files}"
+        with FomodContextManager(mod) as fomod_controller:
+            for selection in selections:
+                fomod_controller.page = fomod_controller.steps[
+                    fomod_controller.steps.index(
+                        fomod_controller.visible_pages[selection["page"]]
                     )
+                ]
+                fomod_controller.select(selection["option"])
+
+            fomod_controller.flags = fomod_controller.get_flags()
+            install_nodes = fomod_controller.get_nodes()
+            fomod_controller.install_files(install_nodes)
+
+        # Check that all the expected files exist.
+        for file in files:
+            expected_file = mod.modconf.parent.parent / mod.fomod_target / file
+            if not expected_file.exists():
+                # print the files that _do_ exist to show where things ended up
+                print(f"in {mod.modconf.parent.parent / 'ammo_fomod'}:")
+                for parent_dir, folders, actual_files in os.walk(
+                    mod.modconf.parent.parent / "ammo_fomod"
+                ):
+                    print(f"{parent_dir} folders: {folders}")
+                    print(f"{parent_dir} files: {actual_files}")
+
+                print(f"expected: {expected_file}")
+                raise FileNotFoundError(expected_file)
+
+        # Check that no unexpected files exist.
+        for path, folders, filenames in os.walk(
+            mod.modconf.parent.parent / mod.fomod_target
+        ):
+            for file in filenames:
+                exists = os.path.join(path, file)
+                local_exists = exists.split(
+                    str(mod.modconf.parent.parent / mod.fomod_target)
+                )[-1].lstrip("/")
+                assert local_exists in [str(i) for i in files], (
+                    f"Got an extra file: {local_exists}\nExpected only: {files}"
+                )
     mock_has_extra_folder.assert_called_once()
 
 

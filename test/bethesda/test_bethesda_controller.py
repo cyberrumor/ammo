@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
-from pathlib import Path
 import shutil
 import textwrap
+from pathlib import Path
 
 import pytest
 
@@ -171,21 +171,18 @@ def test_controller_enabled_plugin_is_broken_symlink():
     Test that when an enabled plugin's symlink points at a non-existing file,
     the plugin is not shown.
     """
-    with pytest.raises(AssertionError):
-        with AmmoController() as first_launch:
-            index = install_mod(first_launch, "mock_conflict_1")
-            mod = first_launch.mods[index]
-            plugin = first_launch.plugins[0]
+    with pytest.raises(AssertionError), AmmoController() as first_launch:
+        index = install_mod(first_launch, "mock_conflict_1")
+        mod = first_launch.mods[index]
+        plugin = first_launch.plugins[0]
 
-            file = [src for dest, src in mod.files.items() if src.name == plugin.name][
-                0
-            ]
-            file.unlink()
+        file = [src for dest, src in mod.files.items() if src.name == plugin.name][0]
+        file.unlink()
 
-            with AmmoController() as controller:
-                mod = controller.mods[index]
-                assert mod.enabled is True
-                assert len(controller.plugins) == 0
+        with AmmoController() as controller:
+            mod = controller.mods[index]
+            assert mod.enabled is True
+            assert len(controller.plugins) == 0
 
 
 def test_controller_disabled_broken_mod_enabled_plugin():
@@ -197,14 +194,15 @@ def test_controller_disabled_broken_mod_enabled_plugin():
     """
     with AmmoController() as first_launch:
         install_mod(first_launch, "mock_conflict_1")
-        index = install_mod(first_launch, "mock_conflict_2")
+        install_mod(first_launch, "mock_conflict_2")
 
         with open(first_launch.game.ammo_conf, "w") as file:
             # mock_conflict_2 is the conflict winner, but it is set disabled.
-            for enabled, mod in zip(["*", ""], first_launch.mods):
-                file.write(f"{enabled}{mod.name}\n")
+            file.writelines(
+                f"{enabled}{mod.name}\n"
+                for enabled, mod in zip(["*", ""], first_launch.mods)
+            )
 
-        mod = first_launch.mods[index]
         file = first_launch.game.directory / "Data/textures/mock_texture.nif"
         file.unlink()
 
@@ -228,14 +226,13 @@ def test_controller_missing_mod():
     found (because it was deleted from ammo's mod dir) isn't added
     to mods.
     """
-    with pytest.raises(AssertionError):
-        with AmmoController() as first_launch:
-            index = install_mod(first_launch, "normal_mod")
-            mod = first_launch.mods[index]
-            shutil.rmtree(mod.location)
+    with pytest.raises(AssertionError), AmmoController() as first_launch:
+        index = install_mod(first_launch, "normal_mod")
+        mod = first_launch.mods[index]
+        shutil.rmtree(mod.location)
 
-            with AmmoController() as controller:
-                assert len(controller.mods) == 0
+        with AmmoController() as controller:
+            assert len(controller.mods) == 0
 
 
 def test_controller_plugin_without_mod():

@@ -1,32 +1,30 @@
 #!/usr/bin/env python3
-import os
-import typing
-from typing import (
-    Callable,
-    Union,
-)
-from types import UnionType
 import inspect
-import textwrap
+import os
 import readline
-
-from copy import deepcopy
-from enum import (
-    Enum,
-    EnumMeta,
-)
+import textwrap
+import typing
 from abc import (
     ABC,
     abstractmethod,
 )
+from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass
+from enum import (
+    Enum,
+    EnumMeta,
+)
 from itertools import product
-
-from ammo.lib import (
-    ignored,
-    UserExit,
+from types import UnionType
+from typing import (
+    Union,
 )
 
+from ammo.lib import (
+    UserExit,
+    ignored,
+)
 
 SEPARATOR_ROW = "."
 SEPARATOR_COL = ":"
@@ -77,7 +75,7 @@ class Controller(ABC):
         return ""
 
     @abstractmethod
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         """
         Returns the next possible autocompletion beginning with text.
         This should only be used for arguments of existing functions.
@@ -101,7 +99,7 @@ class Command:
     func: Callable[..., None]
     args: list[Arg]
     doc: str
-    instance: Union[Controller, None]
+    instance: Controller | None
     visible: bool
     examples: list[str]
 
@@ -123,7 +121,7 @@ class UI:
         readline.parse_and_bind("tab: complete")
         readline.set_completer(self.autocomplete)
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         """
         Autocomplete function desired by the readline interface.
         If we can complete a command, do it. Otherwise, attempt to
@@ -382,13 +380,13 @@ class UI:
         """
         raise UserExit("exit command detected.")
 
-    def cast_to_type(self, arg: str, target_type: typing.Type | UnionType):
+    def cast_to_type(self, arg: str, target_type: type | UnionType):
         """
         This method is responsible for casting user input into
         the type that the command expects.
         """
 
-        def _cast(argument: str, T: typing.Type):
+        def _cast(argument: str, T: type):
             # Attention to bools
             if T is bool:
                 if argument.lower() in ("true", "false"):

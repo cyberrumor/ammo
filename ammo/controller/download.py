@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-import os
 import logging
+import os
 import subprocess
 import textwrap
 from pathlib import Path
-from typing import Union
-from ammo.ui import Controller
+
 from ammo.component import (
+    BethesdaGame,
     Download,
     Game,
-    BethesdaGame,
 )
+from ammo.ui import Controller
 
 log = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class DownloadController(Controller):
     def postcmd(self) -> bool:
         return False
 
-    def autocomplete(self, text: str, state: int) -> Union[str, None]:
+    def autocomplete(self, text: str, state: int) -> str | None:
         """
         This class is only ever used by stuff that will override this autocomplete
         function, so just do nothing here.
@@ -117,7 +117,7 @@ class DownloadController(Controller):
 
         return extract_to
 
-    def install(self, index: Union[int, str], target_dir: Path) -> None:
+    def install(self, index: int | str, target_dir: Path) -> None:
         """
         Common logic for do_install to rely on. This should be able to install
         tools, mods, etc.
@@ -246,7 +246,7 @@ class DownloadController(Controller):
         download.location.rename(new_location)
         self.do_refresh()
 
-    def delete_download(self, index: Union[int, str]) -> None:
+    def delete_download(self, index: int | str) -> None:
         """
         Removes specified download from the filesystem.
         """

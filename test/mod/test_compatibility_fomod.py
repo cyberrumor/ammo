@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-from unittest.mock import patch
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from test.mod.mod_common import (
     AmmoController,
+    extract_mod,
     fomod_selections_choose_files,
     mod_extracts_files,
     mod_installs_files,
-    extract_mod,
 )
 
 
@@ -18,10 +18,9 @@ def test_configure():
     Test that the configure command is only calling methods that
     actually exist.
     """
-    with AmmoController() as controller:
-        with patch("ammo.ui.UI.repl", autospec=True):
-            extract_mod(controller, "mock_base_object_swapper")
-            controller.do_configure(0)
+    with AmmoController() as controller, patch("ammo.ui.UI.repl", autospec=True):
+        extract_mod(controller, "mock_base_object_swapper")
+        controller.do_configure(0)
 
 
 def test_base_object_swapper():
