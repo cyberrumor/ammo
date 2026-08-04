@@ -107,8 +107,9 @@ def test_cast_to_str_union():
 
 
 class TestAutocompleteModUI:
+    @classmethod
     @pytest.fixture(scope="class", autouse=True)
-    def setup_ui(self, request):
+    def setup_ui(cls, request):
         with AmmoModController() as controller:
             request.cls.ui = UI(controller)
             request.cls.ui.populate_commands()
@@ -165,8 +166,9 @@ class TestAutocompleteModUI:
 
 
 class TestAutocompleteBethesdaUI:
+    @classmethod
     @pytest.fixture(scope="class", autouse=True)
-    def setup_ui(self, request):
+    def setup_ui(cls, request):
         with AmmoBethesdaController() as controller:
             request.cls.ui = UI(controller)
             request.cls.ui.populate_commands()
@@ -223,8 +225,9 @@ class TestAutocompleteBethesdaUI:
 
 
 class TestAutocompleteToolUI:
+    @classmethod
     @pytest.fixture(scope="class", autouse=True)
-    def setup_ui(self, request):
+    def setup_ui(cls, request):
         with AmmoToolController() as controller:
             request.cls.ui = UI(controller)
             request.cls.ui.populate_commands()

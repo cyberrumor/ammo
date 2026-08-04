@@ -15,9 +15,9 @@ Homepage = "https://github.com/cyberrumor/ammo"
 
 [project.optional-dependencies]
 test = [
-    "pytest==8.3.5",
-    "pytest-cov==6.2.1",
-    "setuptools==80.7.1",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "setuptools==83.0.0",
 ]
 
 [tool.setuptools]
