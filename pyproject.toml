@@ -7,7 +7,7 @@ name = "ammo"
 version = "0.1"
 description = "A simple terminal based mod organizer for Linux."
 readme = "README.md"
-requires-python = "==3.12.*"
+requires-python = ">=3.12"
 authors = [{ name = "cyberrumor" }]
 
 [project.urls]
