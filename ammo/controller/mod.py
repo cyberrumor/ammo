@@ -187,7 +187,7 @@ class ModController(DownloadController):
                 for mod in [mod for mod in self.mods if mod.visible]:
                     for tag in mod.tags:
                         tags.add(tag)
-                tags = sorted(list(tags))
+                tags = sorted(tags)
 
                 for tag in tags:
                     result += f" index | Active | Tag: {tag}\n"
@@ -402,7 +402,7 @@ class ModController(DownloadController):
             for relative_dest, src in mod.files.items():
                 if relative_dest.name.lower() in IGNORE_COLLISIONS:
                     continue
-                if set([i.lower() for i in relative_dest.parts]).intersection(
+                if {i.lower() for i in relative_dest.parts}.intersection(
                     IGNORE_COLLISIONS
                 ):
                     continue
@@ -520,7 +520,7 @@ class ModController(DownloadController):
                 warnings.append(e)
         self.stage()
         if warnings:
-            raise Warning("\n".join(set([i.args[0] for i in warnings])))
+            raise Warning("\n".join({i.args[0] for i in warnings}))
 
     def activate_mod(self, index: int | str) -> None:
         """
@@ -597,9 +597,7 @@ class ModController(DownloadController):
         if index == new_index:
             return
 
-        if new_index > len(self.mods) - 1:
-            # Auto correct astronomical <to index> to max.
-            new_index = len(self.mods) - 1
+        new_index = min(new_index, len(self.mods) - 1)
 
         log.info(f"moving MOD {comp.name} from {index=} to {new_index=}")
         self.mods.pop(index)
@@ -630,7 +628,7 @@ class ModController(DownloadController):
         original_tags = list(mod.tags)
         tags = set(mod.tags)
         tags.add(tag.lower())
-        mod.tags = sorted(list(tags))
+        mod.tags = sorted(tags)
         if mod.tags != original_tags:
             self.changes = True
 
@@ -642,7 +640,7 @@ class ModController(DownloadController):
         tags = set(mod.tags)
         if tag.lower() in tags:
             tags.remove(tag.lower())
-        mod.tags = sorted(list(tags))
+        mod.tags = sorted(tags)
         if mod.tags != original_tags:
             self.changes = True
 

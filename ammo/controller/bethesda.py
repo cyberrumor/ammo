@@ -740,9 +740,7 @@ class BethesdaController(ModController):
         if index == new_index:
             return
 
-        if new_index > len(self.plugins) - 1:
-            # Auto correct astronomical <to index> to max.
-            new_index = len(self.plugins) - 1
+        new_index = min(new_index, len(self.plugins) - 1)
 
         log.info(f"moving PLUGIN {comp.name} from {index=} to {new_index=}")
         self.plugins.pop(index)
@@ -777,9 +775,8 @@ class BethesdaController(ModController):
             for kw in self.keywords:
                 component.visible = False
 
-                if hasattr(component, "tags"):
-                    if kw in component.tags:
-                        component.visible = True
+                if hasattr(component, "tags") and kw in component.tags:
+                    component.visible = True
 
                 # Hack to filter by fomods
                 if kw.lower() == "fomods" and isinstance(component, BethesdaMod):

@@ -292,7 +292,7 @@ class UI:
                 examples.add(
                     f"{name.replace('do_', '')} {' '.join(combination)}".strip()
                 )
-            examples = sorted(list(examples))
+            examples = sorted(examples)
 
             # Get rid of examples that are just the command name alone.
             if len(examples) == 1 and examples[0] == name.replace("do_", ""):

@@ -182,7 +182,7 @@ def mod_installs_files(mod_name, files):
         expect_files(controller.game.directory, files)
 
 
-def fomod_selections_choose_files(mod_name, files, selections=[]):
+def fomod_selections_choose_files(mod_name, files, selections=None):
     """
     Configure a fomod with flags, using default flags if unspecified.
 
@@ -191,6 +191,8 @@ def fomod_selections_choose_files(mod_name, files, selections=[]):
 
     selections is a list of {"page": <page_number>, "option": <selection index>}
     """
+    if selections is None:
+        selections = []
     with AmmoController() as controller:
         mod_index_download = [i.name for i in controller.downloads].index(
             mod_name + ".7z"

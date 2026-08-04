@@ -192,12 +192,11 @@ class DownloadController(Controller):
 
                 else:
                     requires_unique = next(extract_to.iterdir())
-                    if requires_unique.is_dir():
-                        if any(
-                            file.name == requires_unique.name
-                            for file in requires_unique.iterdir()
-                        ):
-                            raise Warning(packaging_error.format(extract_to))
+                    if requires_unique.is_dir() and any(
+                        file.name == requires_unique.name
+                        for file in requires_unique.iterdir()
+                    ):
+                        raise Warning(packaging_error.format(extract_to))
         finally:
             # Add freshly installed mods to self.mods so that an error doesn't prevent
             # any successfully installed mods from appearing during 'install all'.

@@ -37,9 +37,10 @@ def test_find_install_all(mock_has_extra_folder):
     with AmmoController() as controller:
         controller.do_find("conflict")
         controller.do_install("all")
-        assert set([i.name for i in controller.mods]) == set(
-            ["mock_conflict_2", "mock_conflict_1"]
-        )
+        assert {i.name for i in controller.mods} == {
+            "mock_conflict_2",
+            "mock_conflict_1",
+        }
 
 
 def test_find_activate_all_mods(mock_has_extra_folder):
@@ -56,12 +57,10 @@ def test_find_activate_all_mods(mock_has_extra_folder):
         controller.do_find("conflict")
         controller.activate_mod("all")
 
-        assert set([i.name for i in controller.mods if i.enabled]) == set(
-            [
-                "mock_conflict_2",
-                "mock_conflict_1",
-            ]
-        )
+        assert {i.name for i in controller.mods if i.enabled} == {
+            "mock_conflict_2",
+            "mock_conflict_1",
+        }
 
 
 def test_find_deactivate_all_mods(mock_has_extra_folder):
@@ -78,9 +77,7 @@ def test_find_deactivate_all_mods(mock_has_extra_folder):
         controller.do_find("conflict")
         controller.deactivate_mod("all")
 
-        assert set([i.name for i in controller.mods if i.enabled]) == set(
-            ["normal_mod"]
-        )
+        assert {i.name for i in controller.mods if i.enabled} == {"normal_mod"}
 
 
 def test_find_delete_all_mods(mock_has_extra_folder):
@@ -96,7 +93,7 @@ def test_find_delete_all_mods(mock_has_extra_folder):
         controller.do_find("normal", "conflict")
         controller.delete_mod("all")
 
-        assert set([i.name for i in controller.mods]) == set(["no_data_folder_plugin"])
+        assert {i.name for i in controller.mods} == {"no_data_folder_plugin"}
 
 
 def test_find_filter_persists_after_refresh(mock_has_extra_folder):
@@ -108,9 +105,10 @@ def test_find_filter_persists_after_refresh(mock_has_extra_folder):
         controller.do_find("conflict")
         controller.do_install("all")
 
-        assert set([m.name for m in controller.mods if m.visible]) == set(
-            ["mock_conflict_1", "mock_conflict_2"]
-        )
+        assert {m.name for m in controller.mods if m.visible} == {
+            "mock_conflict_1",
+            "mock_conflict_2",
+        }
 
 
 def test_find_fomods(mock_has_extra_folder):

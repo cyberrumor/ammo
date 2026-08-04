@@ -197,7 +197,7 @@ def mod_installs_files(mod_name, files, has_extra_folder=False):
 
 
 def fomod_selections_choose_files(
-    mod_name, files, has_extra_folder=False, selections=[]
+    mod_name, files, has_extra_folder=False, selections=None
 ):
     """
     Configure a fomod with flags, using default flags if unspecified.
@@ -207,6 +207,8 @@ def fomod_selections_choose_files(
 
     selections is a list of {"page": <page_number>, "option": <selection index>}
     """
+    if selections is None:
+        selections = []
     with (
         patch.object(
             ModController, "has_extra_folder", return_value=has_extra_folder

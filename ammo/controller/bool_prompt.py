@@ -26,10 +26,7 @@ class BoolPromptController(Controller):
         This function is executed after every command.
         It returns whether the UI should break from repl.
         """
-        if self.exit:
-            return True
-
-        return False
+        return bool(self.exit)
 
     def __str__(self) -> str:
         """
