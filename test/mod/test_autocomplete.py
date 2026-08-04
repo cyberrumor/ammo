@@ -22,8 +22,8 @@ def ids_hook(param):
 
 
 class TestAutocomplete:
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
@@ -114,8 +114,8 @@ class TestAutocomplete:
 
 
 class TestAutocompleteModSingular:
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
@@ -212,8 +212,8 @@ class TestAutocompleteModSingular:
 
 
 class TestAutocompleteModPlural:
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
@@ -313,8 +313,8 @@ class TestAutocompleteModPlural:
 
 
 class TestAutocompleteTagVisibility:
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller

@@ -28,8 +28,8 @@ class TestAutocompleteBethesda:
         - Plugins (absent)
     """
 
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
@@ -131,8 +131,8 @@ class TestAutocompleteBethesdaModSingular:
         - Plugins (absent)
     """
 
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
@@ -232,8 +232,8 @@ class TestAutocompleteBethesdaModPlural:
         - Plugins (plural)
     """
 
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
@@ -346,8 +346,8 @@ class TestAutocompleteTagVisibility:
     Test that tag autocomplete only shows visible mods.
     """
 
-    @classmethod
     @pytest.fixture(scope="class", autouse=True)
+    @classmethod
     def setup_controller(cls, request):
         with AmmoController() as controller:
             request.cls.controller = controller
