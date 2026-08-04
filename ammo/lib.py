@@ -24,7 +24,10 @@ def ignored(*exceptions):
     try:
         yield
     except exceptions:
-        pass
+        # Ignore exceptions, but print a newline if one of them was
+        # ctrl+c.
+        if UserExit in exceptions:
+            print()
 
 
 def casefold_path(
