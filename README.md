@@ -33,7 +33,7 @@ overhead.
 
 ## Dependencies
 
-- Python 3.12 or later
+- Python 3.12
 - Steam from [Flatpak](https://flathub.org/apps/com.valvesoftware.Steam) or official repos.
 - [p7z](https://github.com/p7zip-project/p7zip) from official repos.
 - [pipx](https://github.com/pypa/pipx) from official repos.

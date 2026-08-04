@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ammo"
+version = "0.1"
+description = "A simple terminal based mod organizer for Linux."
+readme = "README.md"
+requires-python = "==3.12.*"
+authors = [{ name = "cyberrumor" }]
+
+[project.urls]
+Homepage = "https://github.com/cyberrumor/ammo"
+
+[project.optional-dependencies]
+test = [
+    "pytest==8.3.5",
+    "pytest-cov==6.2.1",
+    "setuptools==80.7.1",
+]
+
+[tool.setuptools]
+packages = ["ammo", "ammo.controller"]
+script-files = ["ammo/bin/ammo"]
+include-package-data = false

@@ -27,19 +27,14 @@ test/
 
 - **pre-commit**: `pre-commit install` - Install pre-commit hooks which handle
   linting and formatting.
-- **Create .venv**: `python3 -m venv .venv` - Create an environment to install
-  dependencies into.
-- **Activate .venv**: `. .venv/bin/activate` - Use the .venv.
-- **Install dependencies**: `pip3 install -r requirements.txt` - Install
-  dependencies. Make sure the .venv is active first.
-- **Install ammo**: `pip3 install . --force-reinstall` - Install ammo from the
-  local codebase. Make sure the .venv is active first. Install ammo before
-  running tests.
 - **Lint**: `ruff check --fix` — Fixes linter issues automatically
 - **Format**: `ruff format` — Formats code to ruff standards
-- **Test**: `pytest --cov=.` — Runs tests with coverage reporting. Make sure the
-  .venv is active first and that ammo and its dependencies are installed into
-  the .venv.
+- **Test**: `uv run --extra test pytest --cov=.` — Runs tests with coverage
+  reporting. `uv run` creates and syncs an isolated environment from
+  `pyproject.toml`, installing ammo alongside its test dependencies (pytest,
+  pytest-cov). The install is editable, so you don't need to reinstall ammo
+  after changing its source, and no manual venv creation or activation is
+  required.
 
 ## Coding Style and Naming Conventions
 
@@ -78,7 +73,7 @@ test/
 - **Fixtures**: Use `@pytest.fixture` for setup; `autouse=True` for global
   fixtures
 - **Mocks**: Use `unittest.mock.patch` for external dependencies
-- **Run**: `pytest test/bethesda/` for game-specific tests
+- **Run**: `uv run --extra test pytest test/bethesda/` for game-specific tests
 
 ## Commit and Pull Request Guidelines
 

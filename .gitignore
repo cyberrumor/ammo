@@ -3,3 +3,4 @@ __pycache__/
 ammo.egg-info/
 build/
 .coverage
+uv.lock
