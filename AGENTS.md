@@ -45,8 +45,8 @@ test/
 
 - **Indentation**: 4 spaces
 - **Imports**: Group standard library, then third-party, then local
-- **Type Hints**: Use `py.typed` compatible hints; prefer `Optional[T]` over
-  `T | None` for readability
+- **Type Hints**: Use `py.typed` compatible hints; prefer PEP 604 union
+  syntax (`X | Y`, `T | None`) over `typing.Union` / `Optional`
 - **Functions**: `snake_case` for functions, `CamelCase` for classes.
 - **Constants**: UPPERCASE with underscores.
 - **File Naming**: Use snake_case for modules (e.g., `bethesda.py`).

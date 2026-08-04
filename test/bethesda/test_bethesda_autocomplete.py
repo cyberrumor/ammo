@@ -36,7 +36,7 @@ class TestAutocompleteBethesda:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     #  Any exception raised during the evaluation of the expression is caught,
                     # silenced and None is returned.
                     # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
@@ -139,7 +139,7 @@ class TestAutocompleteBethesdaModSingular:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     #  Any exception raised during the evaluation of the expression is caught,
                     # silenced and None is returned.
                     # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
@@ -241,7 +241,7 @@ class TestAutocompleteBethesdaModPlural:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     #  Any exception raised during the evaluation of the expression is caught,
                     # silenced and None is returned.
                     # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
@@ -354,7 +354,7 @@ class TestAutocompleteTagVisibility:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.controller.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     return None
 
             request.cls.complete = complete

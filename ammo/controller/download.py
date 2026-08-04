@@ -153,14 +153,11 @@ class DownloadController(Controller):
 
                             else:
                                 requires_unique = next(extract_to.iterdir())
-                                if requires_unique.is_dir():
-                                    if any(
-                                        file.name == requires_unique.name
-                                        for file in requires_unique.iterdir()
-                                    ):
-                                        raise Warning(
-                                            packaging_error.format(extract_to)
-                                        )
+                                if requires_unique.is_dir() and any(
+                                    file.name == requires_unique.name
+                                    for file in requires_unique.iterdir()
+                                ):
+                                    raise Warning(packaging_error.format(extract_to))
 
                         except Warning as e:
                             errors.append(str(e))

@@ -2,7 +2,6 @@
 from enum import (
     Enum,
 )
-from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -47,9 +46,9 @@ def test_cast_to_int():
 def test_cast_to_int_union():
     test = MockController()
     ui = UI(test)
-    assert ui.cast_to_type("10", Union[int, str]) == 10
-    assert ui.cast_to_type("1", Union[int, MockEnum]) == 1
-    assert ui.cast_to_type("1", Union[MockEnum, int]) == 1
+    assert ui.cast_to_type("10", int | str) == 10
+    assert ui.cast_to_type("1", int | MockEnum) == 1
+    assert ui.cast_to_type("1", MockEnum | int) == 1
 
 
 def test_cast_to_enum():
@@ -65,8 +64,8 @@ def test_cast_to_enum():
 def test_cast_to_enum_union():
     test = MockController()
     ui = UI(test)
-    assert ui.cast_to_type("a", Union[int, MockEnum]) == MockEnum["A"]
-    assert ui.cast_to_type("a", Union[MockEnum, int]) == MockEnum["A"]
+    assert ui.cast_to_type("a", int | MockEnum) == MockEnum["A"]
+    assert ui.cast_to_type("a", MockEnum | int) == MockEnum["A"]
 
 
 def test_cast_to_bool():
@@ -85,10 +84,10 @@ def test_cast_to_bool():
 def test_cast_to_bool_union():
     test = MockController()
     ui = UI(test)
-    assert ui.cast_to_type("True", Union[bool, str]) is True
-    assert ui.cast_to_type("False", Union[bool, str]) is False
-    assert ui.cast_to_type("True", Union[bool, int]) is True
-    assert ui.cast_to_type("False", Union[bool, int]) is False
+    assert ui.cast_to_type("True", bool | str) is True
+    assert ui.cast_to_type("False", bool | str) is False
+    assert ui.cast_to_type("True", bool | int) is True
+    assert ui.cast_to_type("False", bool | int) is False
 
 
 def test_cast_to_str():
@@ -101,10 +100,10 @@ def test_cast_to_str():
 def test_cast_to_str_union():
     test = MockController()
     ui = UI(test)
-    assert ui.cast_to_type("nan", Union[int, str]) == "nan"
-    assert ui.cast_to_type("10", Union[str, int]) == "10"
-    assert ui.cast_to_type("True", Union[str, bool]) == "True"
-    assert ui.cast_to_type("False", Union[str, bool]) == "False"
+    assert ui.cast_to_type("nan", int | str) == "nan"
+    assert ui.cast_to_type("10", str | int) == "10"
+    assert ui.cast_to_type("True", str | bool) == "True"
+    assert ui.cast_to_type("False", str | bool) == "False"
 
 
 class TestAutocompleteModUI:
@@ -117,7 +116,7 @@ class TestAutocompleteModUI:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.ui.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     #  Any exception raised during the evaluation of the expression is caught,
                     # silenced and None is returned.
                     # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
@@ -175,7 +174,7 @@ class TestAutocompleteBethesdaUI:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.ui.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     #  Any exception raised during the evaluation of the expression is caught,
                     # silenced and None is returned.
                     # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer
@@ -233,7 +232,7 @@ class TestAutocompleteToolUI:
             def complete(self, text: str, state: int) -> str | None:
                 try:
                     return request.cls.ui.autocomplete(text, state)
-                except Exception:
+                except Exception:  # noqa: BLE001
                     #  Any exception raised during the evaluation of the expression is caught,
                     # silenced and None is returned.
                     # https://docs.python.org/3/library/rlcompleter.html#rlcompleter.Completer

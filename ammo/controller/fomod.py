@@ -185,15 +185,16 @@ class FomodController(Controller):
                     # Collect this step's visibility conditions. Associate it
                     # with the group instead of the step. This is inefficient
                     # but fits into the "each step is a page" paradigm better.
-                    if visible := step.find("visible"):
-                        if dependencies := visible.find("dependencies"):
-                            dep_op = dependencies.get("operator", "").lower()
-                            dependency.operator = dep_op
-                            for xml_flag in dependencies:
-                                if flag := xml_flag.get("flag"):
-                                    dependency.flags[flag] = xml_flag.get(
-                                        "value", ""
-                                    ).lower() in ["on", "1", "active"]
+                    if (visible := step.find("visible")) and (
+                        dependencies := visible.find("dependencies")
+                    ):
+                        dep_op = dependencies.get("operator", "").lower()
+                        dependency.operator = dep_op
+                        for xml_flag in dependencies:
+                            if flag := xml_flag.get("flag"):
+                                dependency.flags[flag] = xml_flag.get(
+                                    "value", ""
+                                ).lower() in ["on", "1", "active"]
 
                     page = Page(
                         name=group.get("name"),

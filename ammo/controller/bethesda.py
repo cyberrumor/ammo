@@ -306,13 +306,15 @@ class BethesdaController(ModController):
             ):
                 continue
 
-            if self.game.name.endswith("Special Edition"):
+            if (
+                self.game.name.endswith("Special Edition")
+                and file.name in SE_IGNORELIST
+            ):
                 # Skyrim SE / Enderal SE don't support disabling or reordering
                 # DLC. The games just overwrite their plugins.txt file without
                 # these files every time it launches, which would cause ammo to
                 # append them as disabled to self.plugins.
-                if file.name in SE_IGNORELIST:
-                    continue
+                continue
 
             self.plugins.append(
                 Plugin(
@@ -397,15 +399,13 @@ class BethesdaController(ModController):
 
             case self.do_configure.__func__:
                 for i in range(len(self.mods)):
-                    if str(i).startswith(text):
-                        if self.mods[i].fomod:
-                            completions.append(str(i))
+                    if str(i).startswith(text) and self.mods[i].fomod:
+                        completions.append(str(i))
 
             case self.do_collisions.__func__:
                 for i in range(len(self.mods)):
-                    if str(i).startswith(text):
-                        if self.mods[i].conflict:
-                            completions.append(str(i))
+                    if str(i).startswith(text) and self.mods[i].conflict:
+                        completions.append(str(i))
 
             case self.do_tag.__func__:
                 if len(args) >= 1 and (buf.endswith(" ") or len(args) >= 2):
@@ -461,69 +461,66 @@ class BethesdaController(ModController):
                     completions.append(str(i))
 
         if isinstance(target_type, EnumMeta):
-            if target_type == ComponentMove:
+            if target_type == ComponentMove and not len(args):
                 # If we're activating, deactivating, or moving something,
                 # and there's only one type of component, only autocomplete
                 # that component. Take care not to switch a component a
                 # user has already typed though!
-                if not len(args):
-                    if (
-                        self.mods
-                        and not self.plugins
-                        and ComponentMove.MOD.value.startswith(text)
-                    ):
-                        completions.append(ComponentMove.MOD.value)
-                    if (
-                        self.plugins
-                        and not self.mods
-                        and ComponentMove.PLUGIN.value.startswith(text)
-                    ):
-                        completions.append(ComponentMove.PLUGIN.value)
+                if (
+                    self.mods
+                    and not self.plugins
+                    and ComponentMove.MOD.value.startswith(text)
+                ):
+                    completions.append(ComponentMove.MOD.value)
+                if (
+                    self.plugins
+                    and not self.mods
+                    and ComponentMove.PLUGIN.value.startswith(text)
+                ):
+                    completions.append(ComponentMove.PLUGIN.value)
 
-            if target_type == ComponentDelete:
+            if target_type == ComponentDelete and not len(args):
                 # If we're deleting something and there's only one type of component
                 # available, only autocomplete that component. Take care not to
                 # switch a component a user has already typed though!
-                if not len(args):
-                    if (
-                        self.mods
-                        and not self.downloads
-                        and not self.plugins
-                        and ComponentDelete.MOD.value.startswith(text)
-                    ):
-                        completions.append(ComponentDelete.MOD.value)
-                    if (
-                        self.plugins
-                        and not self.mods
-                        and not self.downloads
-                        and ComponentDelete.PLUGIN.value.startswith(text)
-                    ):
-                        completions.append(ComponentDelete.PLUGIN.value)
-                    if (
-                        self.downloads
-                        and not self.mods
-                        and not self.plugins
-                        and ComponentDelete.DOWNLOAD.value.startswith(text)
-                    ):
-                        completions.append(ComponentDelete.DOWNLOAD.value)
+                if (
+                    self.mods
+                    and not self.downloads
+                    and not self.plugins
+                    and ComponentDelete.MOD.value.startswith(text)
+                ):
+                    completions.append(ComponentDelete.MOD.value)
+                if (
+                    self.plugins
+                    and not self.mods
+                    and not self.downloads
+                    and ComponentDelete.PLUGIN.value.startswith(text)
+                ):
+                    completions.append(ComponentDelete.PLUGIN.value)
+                if (
+                    self.downloads
+                    and not self.mods
+                    and not self.plugins
+                    and ComponentDelete.DOWNLOAD.value.startswith(text)
+                ):
+                    completions.append(ComponentDelete.DOWNLOAD.value)
 
-            if target_type == ComponentWrite:
+            if target_type == ComponentWrite and not len(args):
                 # If we're renaming something and there's only one type fo component
                 # available, only autocomplete that component. Take care not to
                 # switch a component a user has already typed though!
-                if not len(args):
-                    if (
-                        self.mods
-                        and not self.downloads
-                        and ComponentWrite.MOD.value.startswith(text)
-                    ):
-                        completions.append(ComponentWrite.MOD.value)
-                    if (
-                        self.downloads
-                        and not self.mods
-                        and ComponentWrite.DOWNLOAD.value.startswith(text)
-                    ):
-                        completions.append(ComponentWrite.DOWNLOAD.value)
+                if (
+                    self.mods
+                    and not self.downloads
+                    and ComponentWrite.MOD.value.startswith(text)
+                ):
+                    completions.append(ComponentWrite.MOD.value)
+                if (
+                    self.downloads
+                    and not self.mods
+                    and ComponentWrite.DOWNLOAD.value.startswith(text)
+                ):
+                    completions.append(ComponentWrite.DOWNLOAD.value)
 
             if not completions:
                 for i in list(target_type):
@@ -779,18 +776,23 @@ class BethesdaController(ModController):
                     component.visible = True
 
                 # Hack to filter by fomods
-                if kw.lower() == "fomods" and isinstance(component, BethesdaMod):
-                    if component.fomod:
-                        component.visible = True
+                if (
+                    kw.lower() == "fomods"
+                    and isinstance(component, BethesdaMod)
+                    and component.fomod
+                ):
+                    component.visible = True
 
                 if name.count(kw.lower()):
                     component.visible = True
 
                 # Show plugins of visible mods.
-                if isinstance(component, Plugin):
-                    if component.mod is not None:
-                        if component.mod.visible:
-                            component.visible = True
+                if (
+                    isinstance(component, Plugin)
+                    and component.mod is not None
+                    and component.mod.visible
+                ):
+                    component.visible = True
 
                 if component.visible:
                     break

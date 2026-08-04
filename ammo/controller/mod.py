@@ -265,15 +265,13 @@ class ModController(DownloadController):
 
             case self.do_configure.__func__:
                 for i in range(len(self.mods)):
-                    if str(i).startswith(text):
-                        if self.mods[i].fomod:
-                            completions.append(str(i))
+                    if str(i).startswith(text) and self.mods[i].fomod:
+                        completions.append(str(i))
 
             case self.do_collisions.__func__:
                 for i in range(len(self.mods)):
-                    if str(i).startswith(text):
-                        if self.mods[i].conflict:
-                            completions.append(str(i))
+                    if str(i).startswith(text) and self.mods[i].conflict:
+                        completions.append(str(i))
 
             case self.do_tag.__func__:
                 if len(args) >= 1 and (buf.endswith(" ") or len(args) >= 2):
@@ -324,24 +322,23 @@ class ModController(DownloadController):
                     completions.append(str(i))
 
         if isinstance(target_type, EnumMeta):
-            if target_type == ComponentWrite:
+            if target_type == ComponentWrite and not len(args):
                 # If we're renaming or deleting something,
                 # and there's only one type of component available,
                 # only autocomplete that component. Take care not
                 # to switch a component a user has already typed though!
-                if not len(args):
-                    if (
-                        self.mods
-                        and not self.downloads
-                        and ComponentWrite.MOD.value.startswith(text)
-                    ):
-                        completions.append(ComponentWrite.MOD.value)
-                    if (
-                        self.downloads
-                        and not self.mods
-                        and ComponentWrite.DOWNLOAD.value.startswith(text)
-                    ):
-                        completions.append(ComponentWrite.DOWNLOAD.value)
+                if (
+                    self.mods
+                    and not self.downloads
+                    and ComponentWrite.MOD.value.startswith(text)
+                ):
+                    completions.append(ComponentWrite.MOD.value)
+                if (
+                    self.downloads
+                    and not self.mods
+                    and ComponentWrite.DOWNLOAD.value.startswith(text)
+                ):
+                    completions.append(ComponentWrite.DOWNLOAD.value)
 
             if not completions:
                 for i in list(target_type):
@@ -765,8 +762,8 @@ class ModController(DownloadController):
         for file, mods in sorted(conflicts.items(), key=lambda x: x[0]):
             result += f"{file}\n"
             sorted_mods = sorted(mods, key=lambda x: enabled_mod_names.index(x))
-            for index, mod in enumerate(sorted_mods):
-                winner = "*" if index == len(sorted_mods) - 1 else " "
+            for i, mod in enumerate(sorted_mods):
+                winner = "*" if i == len(sorted_mods) - 1 else " "
                 result += f"  {winner} {mod}\n"
 
         raise Warning(result)
@@ -802,16 +799,20 @@ class ModController(DownloadController):
                 component.visible = False
 
                 # Hack to filter by fomods
-                if kw.lower() == "fomods" and isinstance(component, Mod):
-                    if component.fomod:
-                        component.visible = True
+                if (
+                    kw.lower() == "fomods"
+                    and isinstance(component, Mod)
+                    and component.fomod
+                ):
+                    component.visible = True
 
                 if name.count(kw.lower()):
                     component.visible = True
 
-                if hasattr(component, "tags"):
-                    if set(component.tags).intersection(self.keywords):
-                        component.visible = True
+                if hasattr(component, "tags") and set(component.tags).intersection(
+                    self.keywords
+                ):
+                    component.visible = True
 
                 if component.visible:
                     break

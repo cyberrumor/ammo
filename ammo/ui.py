@@ -17,9 +17,6 @@ from enum import (
 )
 from itertools import product
 from types import UnionType
-from typing import (
-    Union,
-)
 
 from ammo.lib import (
     UserExit,
@@ -39,9 +36,8 @@ class Controller(ABC):
 
     The UI performs validation and type casting based on type
     hinting and doc inspection, so type hints for public methods
-    are required. It is required to use Union hinting instead of
-    shorthand for ambiguous types.
-    E.g. do Union[int, str] instead of type[int, str].
+    are required. Use PEP 604 union syntax for ambiguous types,
+    e.g. int | str.
 
     A recoverable error from any public methods should be raised
     as a Warning(). This will cause the UI to display the warning
@@ -254,7 +250,7 @@ class UI:
                         description = f"<{param.name}>"
                         required = True
                         t = type_hints.get(param.name, None)
-                        if t is Union[int, str]:
+                        if t is (int | str):
                             expressions.append(f"{index}")
                             # guh, business logic in the UI class :c
                             expressions.append("all")
@@ -266,14 +262,13 @@ class UI:
                         else:
                             expressions.append(param.name)
 
-                if t := type_hints.get(param.name, None):
+                if (t := type_hints.get(param.name, None)) and isinstance(t, EnumMeta):
                     # If the argument is an enum, only provide the explicit values that
                     # the enum can represent. Show these as (state1|state2|state3).
-                    if isinstance(t, EnumMeta):
-                        required = True
-                        description = "(" + "|".join([e.value for e in t]) + ")"
-                        for e in t:
-                            expressions.append(e.value)
+                    required = True
+                    description = "(" + "|".join([e.value for e in t]) + ")"
+                    for e in t:
+                        expressions.append(e.value)
 
                 args.append(
                     Arg(
