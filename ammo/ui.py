@@ -16,7 +16,9 @@ from enum import (
     EnumMeta,
 )
 from itertools import product
+from pathlib import Path
 from types import UnionType
+from typing import Optional
 
 from ammo.lib import (
     UserExit,
@@ -26,6 +28,31 @@ from ammo.lib import (
 SEPARATOR_ROW = "."
 SEPARATOR_COL = ":"
 TERM_WIDTH = 92
+HISTORY_LENGTH = 1000
+_history_path: Optional[Path] = None
+
+
+def load_history(path: Path) -> None:
+    """
+    Load readline command history from path.
+    Call once at program start so nested UIs share history.
+    """
+    global _history_path
+    _history_path = path
+    readline.set_history_length(HISTORY_LENGTH)
+    with ignored(FileNotFoundError):
+        readline.read_history_file(path)
+
+
+def save_history() -> None:
+    """
+    Persist readline command history when load_history was used.
+    """
+    if _history_path is None:
+        return
+    with ignored(OSError):
+        _history_path.parent.mkdir(parents=True, exist_ok=True)
+        readline.write_history_file(_history_path)
 
 
 class Controller(ABC):
@@ -428,6 +455,8 @@ class UI:
                     continue
             except (KeyboardInterrupt, EOFError):
                 raise UserExit("KeyboardInterrupt or EOFError detected.")
+
+            save_history()
 
             cmds = stdin.split()
             args = [] if len(cmds) <= 1 else cmds[1:]
