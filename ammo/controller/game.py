@@ -66,6 +66,23 @@ class BethesdaGameSelection(GameSelection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class OpenMWGameSelection(GameSelection):
+    # Absolute path to the detected openmw.cfg. OpenMW aggregates every
+    # directory listed via a data="..." line in this file into one virtual
+    # file system, so directory is the single ammo-owned dir we stage mods
+    # into. A later slice registers that dir here; nothing reads cfg yet,
+    # but finding it is how we detect that OpenMW is installed.
+    cfg: field(default_factory=Path)
+
+    def __post_init__(self):
+        """
+        Validate that all paths are absolute.
+        """
+        super().__post_init__()
+        assert self.cfg.is_absolute()
+
+
+@dataclass(frozen=True, kw_only=True)
 class SteamGame:
     name: str
     id: int
@@ -157,6 +174,14 @@ class GameController(Controller):
 
         for game in self.get_custom_games(args.conf):
             self.games.append(game)
+
+        # Detect an OpenMW install by its openmw.cfg so users don't have to
+        # hand-write a custom game file for it. Skip it if a game named
+        # "OpenMW" already came from a custom file, so the user's explicit
+        # configuration wins over autodetection.
+        for game in self.get_openmw_games(Path.home()):
+            if game.name not in [i.name for i in self.games]:
+                self.games.append(game)
 
         # Find games from instances of Steam
         self.libraries: list[Path] = []
@@ -297,6 +322,35 @@ class GameController(Controller):
                         )
 
                     yield game_selection
+
+    def get_openmw_games(self, home: Path) -> Iterator[OpenMWGameSelection]:
+        """
+        Detect OpenMW installations by locating openmw.cfg and yield them as
+        OpenMWGameSelections. home is like Path.home().
+
+        OpenMW aggregates every directory listed via a data="..." line in
+        openmw.cfg into one virtual file system. ammo owns a single such
+        directory and stages all mods into it; because "OpenMW" is not a
+        Bethesda title, this yields a generic ModController. openmw.cfg lives
+        under ~/.config for a native install and under ~/.var/app for a
+        flatpak install, mirroring native vs flatpak Steam detection.
+        """
+        candidates = [
+            home / ".config/openmw/openmw.cfg",
+            home / ".var/app/org.openmw.OpenMW/config/openmw/openmw.cfg",
+        ]
+        # The ammo-owned data directory ammo stages mods into. It lives beside
+        # the mods/, tools/, and ammo.conf that manage_game derives from the
+        # same conf dir and game name. It need not exist yet; ModController
+        # creates the install directory on demand.
+        directory = self.args.conf.resolve() / "OpenMW" / "data"
+        for cfg in candidates:
+            if cfg.is_file():
+                yield OpenMWGameSelection(
+                    name="OpenMW",
+                    directory=directory,
+                    cfg=cfg,
+                )
 
     def prompt(self) -> str:
         return super().prompt()
