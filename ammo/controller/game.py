@@ -11,6 +11,7 @@ from pathlib import Path
 from ammo.component import (
     BethesdaGame,
     Game,
+    OpenMWGame,
 )
 from ammo.ui import (
     UI,
@@ -19,6 +20,7 @@ from ammo.ui import (
 
 from .bethesda import BethesdaController
 from .mod import ModController
+from .openmw import OpenMWController
 
 BETHESDA_TITLES = [
     "Enderal Special Edition",
@@ -429,6 +431,18 @@ class GameController(Controller):
                     enabled_formula=enabled_formula,
                 )
                 controller_class = BethesdaController
+
+            case OpenMWGameSelection():
+                game = OpenMWGame(
+                    ammo_conf=ammo_conf,
+                    ammo_log=ammo_log,
+                    ammo_mods_dir=ammo_mods_dir,
+                    ammo_tools_dir=ammo_tools_dir,
+                    name=game_selection.name,
+                    directory=game_selection.directory,
+                    cfg=game_selection.cfg,
+                )
+                controller_class = OpenMWController
 
             case GameSelection():
                 game = Game(

@@ -55,6 +55,16 @@ class BethesdaGame(Game):
         )
 
 
+@dataclass(frozen=True, kw_only=True)
+class OpenMWGame(Game):
+    # Absolute path to the openmw.cfg this install reads. OpenMW
+    # aggregates every directory listed via a data="..." line in this
+    # file into one virtual file system, so directory is the single
+    # ammo-owned dir we stage mods into. OpenMWController registers that
+    # dir here on commit.
+    cfg: Path
+
+
 @dataclass(kw_only=True, slots=True)
 class Mod:
     location: Path

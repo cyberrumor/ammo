@@ -243,6 +243,32 @@ def test_openmw_not_detected_without_cfg(ammo_dir, args, tmp_path):
     assert "OpenMW" not in [i.name for i in game_controller.games]
 
 
+def test_openmw_managed_by_openmw_controller(ammo_dir, args, tmp_path):
+    """
+    Test that a detected OpenMW install is handed to OpenMWController,
+    which registers the ammo data dir in openmw.cfg, rather than the
+    plain ModController that has no knowledge of openmw.cfg.
+    """
+    from ammo.controller.openmw import OpenMWController
+
+    home = tmp_path / "home"
+    cfg = home / ".config/openmw/openmw.cfg"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text('data="/games/Morrowind/Data Files"\n')
+
+    # OpenMW is the only detected game, so manage_game runs
+    # automatically and builds the controller. UI is patched so its repl
+    # doesn't block; the controller it was handed is what we assert on.
+    with (
+        patch("ammo.controller.game.Path.home", return_value=home),
+        patch("ammo.controller.game.UI") as mock_ui,
+    ):
+        GameController(args)
+
+    controller = mock_ui.call_args[0][0]
+    assert isinstance(controller, OpenMWController)
+
+
 def test_openmw_custom_json_wins_over_autodetect(ammo_dir, args, tmp_path):
     """
     Test that an explicit OpenMW.json custom game takes precedence over
