@@ -266,6 +266,50 @@ class BethesdaMod(Mod):
 
 
 @dataclass(kw_only=True, slots=True)
+class OpenMWMod(Mod):
+    def __post_init__(self) -> None:
+        self.name = self.location.name
+        self.fomod_target = Path("ammo_fomod")
+        self.replacements = {
+            "bookart": "BookArt",
+            "fonts": "Fonts",
+            "icons": "Icons",
+            "meshes": "Meshes",
+            "music": "Music",
+            "sound": "Sound",
+            "splash": "Splash",
+            "textures": "Textures",
+            "video": "Video",
+        }
+
+        self.files = {}
+        self.modconf = self.find_module_conf(self.location)
+
+        if self.modconf is not None:
+            self.fomod = True
+
+        location = self.location
+        if self.fomod:
+            location = self.modconf.parent.parent / "ammo_fomod"
+
+        if not location.exists():
+            return
+
+        # Morrowind mods are commonly wrapped in a Data Files/ folder
+        # (Morrowind's real data directory name), sometimes beside a
+        # readme or screenshots. OpenMW's VFS scans ammo's data dir
+        # at its root, so populate relative to Data Files/ to elevate
+        # assets, plugins, and .bsa archives to the root where OpenMW
+        # can see them.
+        for entry in location.iterdir():
+            if entry.is_dir() and entry.name.lower() == "data files":
+                location = entry
+                break
+
+        self.populate_files(location, self.game_root)
+
+
+@dataclass(kw_only=True, slots=True)
 class Plugin:
     name: str
     mod: None | Mod

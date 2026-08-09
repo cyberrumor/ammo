@@ -1,23 +1,110 @@
 #!/usr/bin/env python3
 import logging
 
+from ammo.component import OpenMWMod
+
 from .mod import ModController
 
 log = logging.getLogger(__name__)
+
+# has_extra_folder can lift a mod out of a single wrapping folder. A
+# folder whose name is real mod content must never be lifted. These
+# are those names. "data files" is here because OpenMWMod strips that
+# wrapper later, at populate time. The rest are Morrowind's asset
+# folders.
+OPENMW_NO_EXTRACT_DIRS = [
+    "bookart",
+    "data files",
+    "fonts",
+    "icons",
+    "meshes",
+    "music",
+    "sound",
+    "splash",
+    "textures",
+    "video",
+]
+
+# The file extensions OpenMW loads as plugins. A mod that is a single
+# plugin file is already laid out correctly, so has_extra_folder leaves
+# it alone.
+OPENMW_PLUGIN_EXTENSIONS = (
+    ".esp",
+    ".esm",
+    ".omwaddon",
+    ".omwgame",
+    ".omwscripts",
+)
 
 
 class OpenMWController(ModController):
     """
     Manage mods for OpenMW.
 
-    Staging is identical to the generic ModController: every mod is
-    symlinked into one ammo-owned data directory. On top of that,
-    OpenMWController registers that directory in openmw.cfg with a
-    single data="..." line so OpenMW's virtual file system scans the
-    staged mods. Every other line in the file (the base game's data,
-    plugin activation the OpenMW Launcher owns, fallback settings) is
-    left untouched.
+    Staging symlinks every mod into one ammo-owned data directory,
+    the way the generic ModController does, but through OpenMWMod so
+    a Morrowind Data Files/ wrapper is stripped and asset folders get
+    canonical casing. On top of that, OpenMWController registers that
+    directory in openmw.cfg with a single data="..." line so OpenMW's
+    virtual file system scans the staged mods. Every other line in the
+    file (the base game's data, plugin activation the OpenMW Launcher
+    owns, fallback settings) is left untouched.
     """
+
+    def get_mods(self):
+        """
+        Build an OpenMWMod for each mod folder.
+
+        populate_mods in the parent calls this. OpenMWMod is what strips
+        the Data Files/ wrapper and folds casing, so mods land at the
+        root of the data dir OpenMW scans.
+        """
+        mods = []
+        for path in self.game.ammo_mods_dir.iterdir():
+            if path.is_dir():
+                mods.append(
+                    OpenMWMod(
+                        location=path,
+                        game_root=self.game.directory,
+                    )
+                )
+        return mods
+
+    def has_extra_folder(self, path) -> bool:
+        """
+        Lift a mod out of a single redundant wrapper folder, no prompt.
+
+        Mods sometimes arrive double-wrapped, like ModName/ModName/
+        or ModName/SomeFolder/meshes/. do_install calls this to decide
+        whether to elevate the contents to the data dir root. Only lift
+        a lone top folder that is not real content: not Data Files/
+        (OpenMWMod strips that later), not an asset folder, not a
+        plugin. Mirrors BethesdaController.has_extra_folder.
+        """
+        contents = list(path.iterdir())
+        if len(contents) != 1:
+            return False
+
+        folders = [i for i in contents if i.is_dir()]
+        if len(folders) != 1:
+            return False
+
+        subdir_contents = list(folders[0].iterdir())
+
+        if any(p.name == folders[0].name for p in subdir_contents):
+            # Returning True here would force trying to rename
+            # extract_to / my_mod_dir / my_mod_dir
+            # to
+            # extract_to / my_mod_dir
+            # which can't be done.
+            return False
+
+        return all(
+            [
+                contents[0].name.lower() not in OPENMW_NO_EXTRACT_DIRS,
+                contents[0].suffix.lower() not in OPENMW_PLUGIN_EXTENSIONS,
+            ]
+        )
 
     @staticmethod
     def data_dir_of(line: str) -> str | None:
