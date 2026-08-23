@@ -437,20 +437,6 @@ class ModController(DownloadController):
                 with ignored(OSError):
                     (parent_path / folder).resolve().rmdir()
 
-    def clean_game_dir(self):
-        """
-        Removes all links and deletes empty folders.
-        """
-        for parent_dir, _, files in os.walk(self.game.directory):
-            parent_path = Path(parent_dir)
-            for file in files:
-                full_path = parent_path / file
-                if full_path.is_symlink():
-                    with ignored(FileNotFoundError):
-                        full_path.unlink()
-
-        self.remove_empty_dirs()
-
     def current_links(self) -> dict[Path, Path]:
         """
         Return a mapping of every symlink currently under game.directory
@@ -976,11 +962,6 @@ class ModController(DownloadController):
         new_location = self.game.ammo_mods_dir / name
         if new_location.exists():
             raise Warning(f"A mod named {new_location!s} already exists!")
-
-        if mod.enabled:
-            # Remove symlinks instead of breaking them in case something goes
-            # wrong with the rename and ammo exits before it can commit.
-            self.clean_game_dir()
 
         # Move the folder, update the mod.
         log.info(f"Renaming MOD {mod.name} to {name}")
