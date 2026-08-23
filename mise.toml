@@ -6,6 +6,6 @@
 # Normal users do NOT need mise: they can just install ammo with
 # `pipx install ammo`, assuming they have pipx installed.
 [tools]
-uv = "0.12.1"
-ruff = "0.16.1"
-pipx = "1.16.5"
+uv = "0.12.5"
+ruff = "0.16.4"
+pipx = "1.16.7"

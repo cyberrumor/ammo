@@ -15,17 +15,33 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # Exists just so we get caching on uv packages. mise will install
+    # uv itself.
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    # Pin the mise CLI version to the one in ammo/mise.
+    - name: Determine mise version
+      id: mise-version
+      run: |
+        version=$(grep -oP 'MISE_VERSION:-\Kv?[0-9]+\.[0-9]+\.[0-9]+' mise | head -n1)
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
     - name: Install mise
       uses: jdx/mise-action@v2
+      with:
+        version: ${{ steps.mise-version.outputs.version }}
 
     - name: Lint
-      run: ruff check --output-format=github
+      run: exec mise x -- ruff check --output-format=github
 
     - name: Format
-      run: ruff format --diff
+      run: exec mise x -- ruff format --diff
 
     - name: Test
-      run: uv run --extra test pytest --cov=.
+      run: exec mise x -- uv run --extra test pytest --cov=.
 
     - name: Install ammo with pipx
-      run: pipx install .
+      run: exec mise x -- pipx install .
