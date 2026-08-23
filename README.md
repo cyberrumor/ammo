@@ -150,12 +150,6 @@ view_files : <index>                          : Show mod files relative to the g
 - <a href=https://github.com/cyberrumor/ammo/wiki>GitHub Wiki</a>
 - <a href=https://deepwiki.com/cyberrumor/ammo/1-overview>DeepWiki</a>
 
-## Support
-
-<a href="https://discord.gg/V6qa82Spxw">
-  <img src="discord_banner.gif" alt="The Discord" />
-</a>
-
 ## License
 
 GNU General Public License v2, with the exception of some of the mock mods used for testing,
