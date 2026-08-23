@@ -80,6 +80,40 @@ checksum = "sha256:302633d0061e0ab4269257501cbe1338cde5f00f22f121543706624aada01
 url = "https://github.com/pypa/pipx/releases/download/1.16.7/pipx.pyz"
 url_api = "https://api.github.com/repos/pypa/pipx/releases/assets/513588802"
 
+[[tools.pre-commit]]
+version = "4.6.2"
+backend = "aqua:pre-commit/pre-commit"
+
+[tools.pre-commit."platforms.linux-arm64"]
+checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16c4b"
+url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
+url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
+
+[tools.pre-commit."platforms.linux-arm64-musl"]
+checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16c4b"
+url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
+url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
+
+[tools.pre-commit."platforms.linux-x64"]
+checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16c4b"
+url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
+url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
+
+[tools.pre-commit."platforms.linux-x64-musl"]
+checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16c4b"
+url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
+url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
+
+[tools.pre-commit."platforms.macos-arm64"]
+checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16c4b"
+url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
+url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
+
+[tools.pre-commit."platforms.macos-x64"]
+checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16c4b"
+url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
+url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
+
 [[tools.ruff]]
 version = "0.16.4"
 backend = "aqua:astral-sh/ruff"

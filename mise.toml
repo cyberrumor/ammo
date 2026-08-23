@@ -9,5 +9,6 @@
 uv = "0.12.5"
 ruff = "0.16.4"
 pipx = "1.16.7"
-actionlint = "latest"
-yq = "latest"
+actionlint = "1.7.12"
+yq = "4.53.6"
+pre-commit = "4.6.2"

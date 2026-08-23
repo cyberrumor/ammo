@@ -27,19 +27,10 @@ jobs:
         uses: jdx/mise-action@v2
         with:
           version: ${{ steps.mise-version.outputs.version }}
-      - name: Lint
-        run: exec mise x -- ruff check --output-format=github
-      - name: Format
-        run: exec mise x -- ruff format --diff
-      # Reformat every tracked YAML file with yq and fail if anything changed.
-      - name: Format YAML
-        run: |
-          for f in $(git ls-files '*.yml' '*.yaml'); do
-            mise x -- yq -i '.' "$f"
-          done
-          git diff --exit-code
-      - name: Actionlint
-        run: exec mise x -- actionlint
+      # ruff (lint + format), YAML formatting and actionlint are all defined
+      # as pre-commit hooks so local commits and CI run the same checks.
+      - name: Pre-commit
+        run: exec mise x -- pre-commit run --all-files --show-diff-on-failure
       - name: Test
         run: exec mise x -- uv run --extra test pytest --cov=.
       - name: Install ammo with pipx

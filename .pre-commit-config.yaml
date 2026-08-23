@@ -1,10 +1,30 @@
+# Hooks run the mise-pinned tools (see mise.toml) so local commits and CI
+# check with identical versions. CI runs `pre-commit run --all-files`.
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.14.0
+  - repo: local
     hooks:
-      # Run the linter.
       - id: ruff-check
-        args: [--fix]
-      # Run the formatter.
+        name: ruff check
+        entry: mise x -- ruff check --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
       - id: ruff-format
+        name: ruff format
+        entry: mise x -- ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+      # yq's in-place edit only handles one file per invocation correctly
+      # (multiple files get merged into the first), so loop over each.
+      - id: yaml-format
+        name: yaml format (yq)
+        entry: mise x -- bash -c 'for f in "$@"; do yq -i "." "$f"; done' --
+        language: system
+        types_or: [yaml]
+      - id: actionlint
+        name: actionlint
+        entry: mise x -- actionlint
+        language: system
+        files: ^\.github/workflows/.*\.(yml|yaml)$
+        pass_filenames: false

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import sys
 import argparse
+import sys
 
 import ammo
-
-from test.mod.mod_common import AmmoController
 from test.bethesda.bethesda_common import AmmoController as BethesdaController
+from test.mod.mod_common import AmmoController
 
 
 def parse_args(sys_argv: list[str]) -> argparse.Namespace:
