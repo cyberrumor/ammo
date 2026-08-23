@@ -1,14 +1,22 @@
 # Development tooling for ammo, managed by mise (https://mise.jdx.dev).
 #
 # CI installs mise and runs `mise install` to provision these tools; see
-# .github/workflows/python-app.yml. Contributors can do the same locally.
+# .github/workflows/main.yml. Contributors can do the same locally.
 #
 # Normal users do NOT need mise: they can just install ammo with
 # `pipx install ammo`, assuming they have pipx installed.
 [tools]
+python = "3.12"
 uv = "0.12.5"
 ruff = "0.16.4"
 pipx = "1.16.7"
 actionlint = "1.7.12"
 yq = "4.53.6"
 pre-commit = "4.6.2"
+
+# Make uv use the mise-provided Python instead of downloading its own. From
+# uv's perspective the mise interpreter is a "system" Python (it's on PATH), so
+# only-system pins uv to it; the download guard forbids uv fetching a fallback.
+[env]
+UV_PYTHON_PREFERENCE = "only-system"
+UV_PYTHON_DOWNLOADS = "never"

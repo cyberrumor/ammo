@@ -114,6 +114,45 @@ checksum = "sha256:43c09a73d82af8efff09900e60d76d67a2c3d990613c3c770b2b5c4418a16
 url = "https://github.com/pre-commit/pre-commit/releases/download/v4.6.2/pre-commit-4.6.2.pyz"
 url_api = "https://api.github.com/repos/pre-commit/pre-commit/releases/assets/509317714"
 
+[[tools.python]]
+version = "3.12.14"
+backend = "core:python"
+
+[tools.python."platforms.linux-arm64"]
+checksum = "sha256:2d8e17dfd732102cfeb18e0e1fa6769b24caa034e159981129590fe409c7157a"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.linux-arm64-musl"]
+checksum = "sha256:4167705abc3e40767c7bd8f006ae5dbe677397391a2d9f7549e7759e3806180a"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-aarch64-unknown-linux-musl-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.linux-x64"]
+checksum = "blake3:c81b06cfedc5e7e02fdffcf41cb8d583c9018ded1f33e6a72d9e4153b5c32b03"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.linux-x64-musl"]
+checksum = "sha256:25adbf9d865ada81c728ba9ee6cd042736b6b46dcd3a889198038da04eed9c4a"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-x86_64-unknown-linux-musl-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.macos-arm64"]
+checksum = "sha256:dd5b76ab11451a4a4367c17c61d944dded56b425396b07f102922a7ebef7d55f"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-aarch64-apple-darwin-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.macos-x64"]
+checksum = "sha256:aec265e3cddaccdb2a3d783331596351b24d4a63c97af0a38f75f643c9451de9"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-x86_64-apple-darwin-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
+[tools.python."platforms.windows-x64"]
+checksum = "sha256:89f18f6932917163b74339ebcec2645c8e47ae7f1c5f2ac37f2b4f4cf3beb647"
+url = "https://github.com/astral-sh/python-build-standalone/releases/download/20260814/cpython-3.12.14+20260814-x86_64-pc-windows-msvc-install_only_stripped.tar.gz"
+provenance = "github-attestations"
+
 [[tools.ruff]]
 version = "0.16.4"
 backend = "aqua:astral-sh/ruff"
