@@ -349,13 +349,17 @@ class ModController(DownloadController):
 
     def save_order(self):
         """
-        Writes ammo.conf.
+        Writes ammo.conf, unless its contents would be unchanged.
         """
+        content = "".join(
+            f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
+            for mod in self.mods
+        )
+        with ignored(FileNotFoundError):
+            if self.game.ammo_conf.read_text() == content:
+                return
         with open(self.game.ammo_conf, "w") as file:
-            file.writelines(
-                f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
-                for mod in self.mods
-            )
+            file.write(content)
 
     def set_mod_state(self, index: int, desired_state: bool):
         """
@@ -446,6 +450,22 @@ class ModController(DownloadController):
                         full_path.unlink()
 
         self.remove_empty_dirs()
+
+    def current_links(self) -> dict[Path, Path]:
+        """
+        Return a mapping of every symlink currently under game.directory
+        to its raw target. ammo treats the whole game directory as its own,
+        so all symlinks are considered managed. Targets are read without
+        resolving so they compare directly against stage() sources.
+        """
+        result: dict[Path, Path] = {}
+        for parent_dir, _, files in os.walk(self.game.directory):
+            parent_path = Path(parent_dir)
+            for file in files:
+                full_path = parent_path / file
+                if full_path.is_symlink():
+                    result[full_path] = Path(os.readlink(full_path))
+        return result
 
     def has_extra_folder(self, path: Path) -> bool:
         """
@@ -684,28 +704,49 @@ class ModController(DownloadController):
     def do_commit(self) -> None:
         """
         Apply pending changes.
+
+        Reconciles the game directory against the staged configuration
+        instead of tearing down and recreating every symlink: symlinks
+        that already point at the right source are left alone, stale ones
+        are removed, mispointed ones are repointed, and only missing ones
+        are created. This makes commit idempotent and avoids issuing a
+        syscall per file when nothing changed.
         """
         log.info("Committing pending changes to storage")
         self.save_order()
         stage = self.stage()
-        self.clean_game_dir()
+        current = self.current_links()
 
-        count = len(stage)
         skipped_files = []
-        for i, (dest, source) in enumerate(stage.items()):
-            (name, src) = source
+
+        # Remove symlinks that are no longer staged, and repoint any
+        # whose target changed.
+        for dest, target in current.items():
+            want = stage.get(dest)
+            if want is None:
+                with ignored(FileNotFoundError):
+                    dest.unlink()
+            elif target != want[1]:
+                with ignored(FileNotFoundError):
+                    dest.unlink()
+                dest.symlink_to(want[1])
+
+        # Create newly staged symlinks. Symlinks already present were
+        # handled (left alone or repointed) in the loop above.
+        count = len(stage)
+        for i, (dest, (name, src)) in enumerate(stage.items()):
             assert dest.is_absolute()
             assert src.is_absolute()
-            Path.mkdir(dest.parent, parents=True, exist_ok=True)
-            try:
-                dest.symlink_to(src)
-            except FileExistsError:
-                skipped_files.append(
-                    f"{name} skipped overwriting an unmanaged file: \
-                        {dest.relative_to(self.game.directory)}."
-                )
-            finally:
-                print(f"files processed: {i + 1}/{count}", end="\r", flush=True)
+            if dest not in current:
+                Path.mkdir(dest.parent, parents=True, exist_ok=True)
+                try:
+                    dest.symlink_to(src)
+                except FileExistsError:
+                    skipped_files.append(
+                        f"{name} skipped overwriting an unmanaged file: \
+                            {dest.relative_to(self.game.directory)}."
+                    )
+            print(f"files processed: {i + 1}/{count}", end="\r", flush=True)
 
         warn = ""
         for skipped_file in skipped_files:

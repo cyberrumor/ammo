@@ -531,20 +531,32 @@ class BethesdaController(ModController):
 
     def save_order(self):
         """
-        Writes ammo.conf and Plugins.txt.
+        Writes ammo.conf and Plugins.txt, skipping either file whose
+        contents would be unchanged.
         """
-        with open(self.game.plugin_file, "w") as file:
-            for plugin in self.plugins:
-                if self.game.enabled_formula("*"):
-                    file.write(f"{'*' if plugin.enabled else ''}{plugin.name}\n")
-                else:
-                    file.write(f"{'' if plugin.enabled else '*'}{plugin.name}\n")
+        plugins = ""
+        for plugin in self.plugins:
+            if self.game.enabled_formula("*"):
+                plugins += f"{'*' if plugin.enabled else ''}{plugin.name}\n"
+            else:
+                plugins += f"{'' if plugin.enabled else '*'}{plugin.name}\n"
 
+        write_plugins = True
+        with ignored(FileNotFoundError):
+            write_plugins = self.game.plugin_file.read_text() != plugins
+        if write_plugins:
+            with open(self.game.plugin_file, "w") as file:
+                file.write(plugins)
+
+        conf = "".join(
+            f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
+            for mod in self.mods
+        )
+        with ignored(FileNotFoundError):
+            if self.game.ammo_conf.read_text() == conf:
+                return
         with open(self.game.ammo_conf, "w") as file:
-            file.writelines(
-                f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
-                for mod in self.mods
-            )
+            file.write(conf)
 
     def has_extra_folder(self, path) -> bool:
         """
