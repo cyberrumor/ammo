@@ -1,47 +1,46 @@
 name: main
-
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
-
+    branches: ["main"]
 permissions:
   contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-
-    # Exists just so we get caching on uv packages. mise will install
-    # uv itself.
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        enable-cache: true
-
-    # Pin the mise CLI version to the one in ammo/mise.
-    - name: Determine mise version
-      id: mise-version
-      run: |
-        version=$(grep -oP 'MISE_VERSION:-\Kv?[0-9]+\.[0-9]+\.[0-9]+' mise | head -n1)
-        echo "version=$version" >> "$GITHUB_OUTPUT"
-
-    - name: Install mise
-      uses: jdx/mise-action@v2
-      with:
-        version: ${{ steps.mise-version.outputs.version }}
-
-    - name: Lint
-      run: exec mise x -- ruff check --output-format=github
-
-    - name: Format
-      run: exec mise x -- ruff format --diff
-
-    - name: Test
-      run: exec mise x -- uv run --extra test pytest --cov=.
-
-    - name: Install ammo with pipx
-      run: exec mise x -- pipx install .
+      - uses: actions/checkout@v7
+      # Exists just so we get caching on uv packages. mise will install
+      # uv itself.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      # Pin the mise CLI version to the one in ammo/mise.
+      - name: Determine mise version
+        id: mise-version
+        run: |
+          version=$(grep -oP 'MISE_VERSION:-\Kv?[0-9]+\.[0-9]+\.[0-9]+' mise | head -n1)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Install mise
+        uses: jdx/mise-action@v2
+        with:
+          version: ${{ steps.mise-version.outputs.version }}
+      - name: Lint
+        run: exec mise x -- ruff check --output-format=github
+      - name: Format
+        run: exec mise x -- ruff format --diff
+      # Reformat every tracked YAML file with yq and fail if anything changed.
+      - name: Format YAML
+        run: |
+          for f in $(git ls-files '*.yml' '*.yaml'); do
+            mise x -- yq -i '.' "$f"
+          done
+          git diff --exit-code
+      - name: Actionlint
+        run: exec mise x -- actionlint
+      - name: Test
+        run: exec mise x -- uv run --extra test pytest --cov=.
+      - name: Install ammo with pipx
+        run: exec mise x -- pipx install .
