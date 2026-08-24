@@ -172,6 +172,18 @@ class BethesdaController(ModController):
             reset_log=reset_log,
         )
 
+        self.populate_plugins()
+
+        self.populate_downloads()
+        self.changes = False
+        self.do_find(*self.keywords)
+        self.stage()
+
+    def populate_plugins(self):
+        """
+        Build self.plugins in load order from DLCList.txt and
+        Plugins.txt, plus any orphaned plugins on disk.
+        """
         # Create required directories. Harmless if exists.
         Path.mkdir(self.game.data, parents=True, exist_ok=True)
         Path.mkdir(self.game.plugin_file.parent, parents=True, exist_ok=True)
@@ -323,11 +335,6 @@ class BethesdaController(ModController):
                     enabled=False,
                 )
             )
-
-        self.populate_downloads()
-        self.changes = False
-        self.do_find(*self.keywords)
-        self.stage()
 
     def get_mods(self):
         """
