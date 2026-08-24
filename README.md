@@ -14,6 +14,7 @@ overhead.
 - Fallout New Vegas
 - Oblivion
 - Oblivion Remastered
+- OpenMW
 - Sims 4
 - Skyrim
 - Skyrim Special Edition
