@@ -305,7 +305,7 @@ class BethesdaController(ModController):
                 continue
             if file.is_dir():
                 continue
-            if file.suffix.lower() not in (".esp", ".esm", ".esl"):
+            if file.suffix.lower() not in self.game.plugin_extensions:
                 continue
             if file.name in (plugin.name for plugin in self.plugins):
                 continue
@@ -354,6 +354,7 @@ class BethesdaController(ModController):
                     game_dll=self.game.dll
                     if self.game.name == "Oblivion Remastered"
                     else self.game.directory,
+                    game_plugin_extensions=self.game.plugin_extensions,
                 )
                 mods.append(mod)
         return mods
@@ -599,7 +600,7 @@ class BethesdaController(ModController):
             [
                 contents[0].name.lower() != self.game.data.name.lower(),
                 contents[0].name.lower() not in NO_EXTRACT_DIRS,
-                contents[0].suffix.lower() not in [".esp", ".esl", ".esm"],
+                contents[0].suffix.lower() not in self.game.plugin_extensions,
             ]
         )
 

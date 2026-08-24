@@ -25,6 +25,11 @@ class BethesdaGame(Game):
     data: Path
     dlc_file: Path
     plugin_file: Path
+    # The file extensions this game loads as plugins. Classic Bethesda
+    # games use .esp/.esl/.esm; OpenMW overrides this to add its own
+    # plugin types. Kept on the game so it is the single source of truth
+    # both the controller and the mod read from.
+    plugin_extensions: tuple[str, ...] = (".esp", ".esl", ".esm")
     enabled_formula: Callable[[str], bool] = field(
         default=lambda line: line.strip().startswith("*")
     )
@@ -146,6 +151,7 @@ class BethesdaMod(Mod):
     game_data: Path
     game_pak: Path
     game_dll: Path
+    game_plugin_extensions: tuple[str, ...] = (".esp", ".esl", ".esm")
     plugins: list[Path] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
@@ -261,7 +267,7 @@ class BethesdaMod(Mod):
 
         if plugin_dir.exists():
             for f in plugin_dir.iterdir():
-                if f.suffix.lower() in (".esp", ".esl", ".esm") and not f.is_dir():
+                if f.suffix.lower() in self.game_plugin_extensions and not f.is_dir():
                     self.plugins.append(f)
 
 
