@@ -225,6 +225,43 @@ def test_has_extra_folder_keeps_multiple_top_level_entries():
         assert controller.has_extra_folder(root) is False
 
 
+def test_discovers_root_level_plugins():
+    """
+    Test that OpenMWMod exposes its root-level plugins, including the
+    OpenMW-only .omwaddon and .omwscripts types, so the controller can
+    order them. Assets and .bsa archives are not plugins.
+    """
+    with openmw_controller() as controller:
+        make_mod(
+            controller,
+            "PluginMod",
+            "Data Files/PluginMod.esp",
+            "Data Files/PluginMod.esm",
+            "Data Files/PluginMod.omwaddon",
+            "Data Files/PluginMod.omwscripts",
+            "Data Files/PluginMod.bsa",
+            "Data Files/meshes/foo.nif",
+        )
+        mod = get_mod(controller, "PluginMod")
+        assert {p.name for p in mod.plugins} == {
+            "PluginMod.esp",
+            "PluginMod.esm",
+            "PluginMod.omwaddon",
+            "PluginMod.omwscripts",
+        }
+
+
+def test_esl_not_treated_as_plugin():
+    """
+    Test that .esl is not a plugin for OpenMW. Morrowind has no light
+    plugins; .esl is a Skyrim SE / Fallout 4 type, so OpenMW's extension
+    set excludes it.
+    """
+    with openmw_controller() as controller:
+        make_mod(controller, "EslMod", "Data Files/EslMod.esl")
+        assert get_mod(controller, "EslMod").plugins == []
+
+
 def test_install_elevates_redundant_wrapper():
     """
     Test end-to-end that do_install auto-elevates a mod wrapped in a

@@ -272,7 +272,7 @@ class BethesdaMod(Mod):
 
 
 @dataclass(kw_only=True, slots=True)
-class OpenMWMod(Mod):
+class OpenMWMod(BethesdaMod):
     def __post_init__(self) -> None:
         self.name = self.location.name
         self.fomod_target = Path("ammo_fomod")
@@ -313,6 +313,16 @@ class OpenMWMod(Mod):
                 break
 
         self.populate_files(location, self.game_root)
+
+        # Morrowind loads plugins from the data-dir, never the game dir.
+        # self.files keys are destinations relative to game_root, so a
+        # root-level plugin has an empty parent (Path(".")).
+        for dest, src in self.files.items():
+            if (
+                dest.parent == Path(".")
+                and dest.suffix.lower() in self.game_plugin_extensions
+            ):
+                self.plugins.append(src)
 
 
 @dataclass(kw_only=True, slots=True)

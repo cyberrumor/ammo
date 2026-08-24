@@ -66,6 +66,10 @@ class OpenMWController(ModController):
                     OpenMWMod(
                         location=path,
                         game_root=self.game.directory,
+                        game_data=self.game.directory,
+                        game_pak=self.game.directory,
+                        game_dll=self.game.directory,
+                        game_plugin_extensions=OPENMW_PLUGIN_EXTENSIONS,
                     )
                 )
         return mods
