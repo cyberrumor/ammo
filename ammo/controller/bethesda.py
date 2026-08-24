@@ -529,10 +529,10 @@ class BethesdaController(ModController):
 
         return completions[state] + " "
 
-    def save_order(self):
+    def write_plugins(self):
         """
-        Writes ammo.conf and Plugins.txt, skipping either file whose
-        contents would be unchanged.
+        Writes Plugins.txt from self.plugins, unless its contents would
+        be unchanged.
         """
         plugins = ""
         for plugin in self.plugins:
@@ -541,12 +541,19 @@ class BethesdaController(ModController):
             else:
                 plugins += f"{'' if plugin.enabled else '*'}{plugin.name}\n"
 
-        write_plugins = True
+        should_write = True
         with ignored(FileNotFoundError):
-            write_plugins = self.game.plugin_file.read_text() != plugins
-        if write_plugins:
+            should_write = self.game.plugin_file.read_text() != plugins
+        if should_write:
             with open(self.game.plugin_file, "w") as file:
                 file.write(plugins)
+
+    def save_order(self):
+        """
+        Writes ammo.conf and Plugins.txt, skipping either file whose
+        contents would be unchanged.
+        """
+        self.write_plugins()
 
         conf = "".join(
             f"{'*' if mod.enabled else ''}{mod.name}{' ' if mod.tags else ''}{' '.join(mod.tags)}\n"
