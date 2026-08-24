@@ -61,12 +61,16 @@ class BethesdaGame(Game):
 
 
 @dataclass(frozen=True, kw_only=True)
-class OpenMWGame(Game):
+class OpenMWGame(BethesdaGame):
+    # OpenMW is a Bethesda game (Morrowind), so it reuses the
+    # BethesdaController plugin machinery. Its whole file surface lives
+    # in one merged data dir and its load order lives in openmw.cfg, so
+    # BethesdaGame.data is that dir and the plugin_file/dlc_file are the
+    # cfg. cfg is also kept named for the code that edits it directly.
+    #
     # Absolute path to the openmw.cfg this install reads. OpenMW
     # aggregates every directory listed via a data="..." line in this
-    # file into one virtual file system, so directory is the single
-    # ammo-owned dir we stage mods into. OpenMWController registers that
-    # dir here on commit.
+    # file into one virtual file system.
     cfg: Path
 
 

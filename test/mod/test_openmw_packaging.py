@@ -7,7 +7,10 @@ from ammo.component import (
     OpenMWGame,
     OpenMWMod,
 )
-from ammo.controller.openmw import OpenMWController
+from ammo.controller.openmw import (
+    OPENMW_PLUGIN_EXTENSIONS,
+    OpenMWController,
+)
 
 # Real Morrowind mods are usually packaged with their assets and plugins
 # inside a "Data Files/" folder (Morrowind's real data directory name),
@@ -29,6 +32,10 @@ def make_game() -> OpenMWGame:
         name="OpenMW",
         directory=DATA_DIR,
         cfg=CFG,
+        data=DATA_DIR,
+        dlc_file=CFG,
+        plugin_file=CFG,
+        plugin_extensions=OPENMW_PLUGIN_EXTENSIONS,
         ammo_conf=OPENMW_TEST_ROOT / "OpenMW" / "ammo.conf",
         ammo_log=OPENMW_TEST_ROOT / "OpenMW" / "ammo.log",
         ammo_mods_dir=OPENMW_TEST_ROOT / "OpenMW" / "mods",

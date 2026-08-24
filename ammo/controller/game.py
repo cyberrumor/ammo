@@ -20,7 +20,10 @@ from ammo.ui import (
 
 from .bethesda import BethesdaController
 from .mod import ModController
-from .openmw import OpenMWController
+from .openmw import (
+    OPENMW_PLUGIN_EXTENSIONS,
+    OpenMWController,
+)
 
 BETHESDA_TITLES = [
     "Enderal Special Edition",
@@ -434,12 +437,22 @@ class GameController(Controller):
 
             case OpenMWGameSelection():
                 game = OpenMWGame(
+                    # Generic attributes
                     ammo_conf=ammo_conf,
                     ammo_log=ammo_log,
                     ammo_mods_dir=ammo_mods_dir,
                     ammo_tools_dir=ammo_tools_dir,
                     name=game_selection.name,
                     directory=game_selection.directory,
+                    # Bethesda attributes. OpenMW keeps its whole file
+                    # surface in the merged data dir and its load order in
+                    # openmw.cfg, so data is that dir and the plugin/dlc
+                    # "file" is the cfg.
+                    data=game_selection.directory,
+                    dlc_file=game_selection.cfg,
+                    plugin_file=game_selection.cfg,
+                    plugin_extensions=OPENMW_PLUGIN_EXTENSIONS,
+                    # OpenMW attributes
                     cfg=game_selection.cfg,
                 )
                 controller_class = OpenMWController
