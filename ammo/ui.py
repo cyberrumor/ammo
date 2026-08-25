@@ -18,7 +18,6 @@ from enum import (
 from itertools import product
 from pathlib import Path
 from types import UnionType
-from typing import Optional
 
 from ammo.lib import (
     UserExit,
@@ -29,7 +28,7 @@ SEPARATOR_ROW = "."
 SEPARATOR_COL = ":"
 TERM_WIDTH = 92
 HISTORY_LENGTH = 1000
-_history_path: Optional[Path] = None
+_history_path: Path | None = None
 
 
 def load_history(path: Path) -> None:
