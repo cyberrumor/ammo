@@ -9,7 +9,11 @@ from ammo.lib import (
     UserExit,
     ignored,
 )
-from ammo.ui import UI
+from ammo.ui import (
+    UI,
+    load_history,
+    save_history,
+)
 
 
 @contextmanager
@@ -84,7 +88,12 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    with unique_pid(), ignored(UserExit):
-        controller = GameController(args)
-        ui = UI(controller)
-        ui.repl()
+    with unique_pid():
+        load_history(args.conf.resolve() / "history")
+        try:
+            with ignored(UserExit):
+                controller = GameController(args)
+                ui = UI(controller)
+                ui.repl()
+        finally:
+            save_history()
